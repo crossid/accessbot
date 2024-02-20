@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "@crossid/accessbot"
+version = "0.0.1-alpha"
+description = "Request access via a bot"
+authors = ["Indexia Technologies, ltd."]
+license = "Proprietary"
+readme = "README.md"
+packages = [{include = "@crossid"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.2"
+uvicorn = {extras = ["standard"], version = "^0.27.1"}
