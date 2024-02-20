@@ -1,7 +1,6 @@
 from typing import List
 
-from sqlalchemy import text
-from sqlmodel import Session
+from sqlalchemy import Engine, text
 
 from .domain import HealthCheckInterface
 from .enum import HealthCheckStatusEnum
@@ -10,24 +9,22 @@ from .service import HealthCheckBase
 
 class HealthCheckSQL(HealthCheckBase, HealthCheckInterface):
     _tags: List[str]
-    _session: Session
+    _engine: Engine
     _table: str
 
-    def __init__(
-        self, table: str, alias: str, tags: List[str], session: Session
-    ) -> None:
+    def __init__(self, table: str, alias: str, tags: List[str], engine: Engine) -> None:
         self._alias = alias
         self._table = table
         self._tags = tags
-        self._session = session
+        self._engine = engine
 
     def __checkHealth__(self) -> HealthCheckStatusEnum:
         res: HealthCheckStatusEnum = HealthCheckStatusEnum.UNHEALTHY
-        with self._session:
+        with self._engine.connect() as conn:
             try:
                 r = -1
                 r = (
-                    self._session.exec(text(f"SELECT count(*) from {self._table}"))
+                    conn.execute(text(f"SELECT count(*) from {self._table}"))
                     .scalars()
                     .all()
                 )
