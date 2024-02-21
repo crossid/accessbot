@@ -14,3 +14,5 @@ uvicorn = {extras = ["standard"], version = "^0.27.1"}
 sqlalchemy = "^2.0.27"
 nanoid = "^2.0.0"
 pydantic-settings = "^2.2.1"
+pyjwt = "^2.8.0"
+cryptography = "^42.0.4"

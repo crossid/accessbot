@@ -1,8 +1,110 @@
-from fastapi import Request
+import logging
+from abc import ABC, abstractmethod
+from typing import Any, Optional
 
-from app.models import User
+import jwt
+import requests
+from cachetools import TTLCache, cached
+from fastapi import HTTPException, Request
+
+from app.models import CurrentUser
+from app.settings import settings
+
+log = logging.getLogger(__name__)
 
 
-# TODO implement
-async def get_current_active_user(request: Request) -> User:
-    return User(id="123", email="john@acme.io", full_name="John Doe", disabled=False)
+class AuthAPI(ABC):
+    @abstractmethod
+    def authenticate(request: Request) -> bool:
+        pass
+
+    @abstractmethod
+    def get_current_user(request: Request) -> Optional[CurrentUser]:
+        pass
+
+
+class OAuth2Impl(AuthAPI):
+    def __init__(self):
+        if not jwt.algorithms.has_crypto:
+            raise Exception(
+                "No crypto support for JWT, please install the cryptography dependency"
+            )
+        resp = requests.get(settings.OAUTH2_OPENID_CONFIGURATION)
+        if resp.status_code != 200:
+            raise Exception("Could not fetch openid configuration")
+        self._oauth_configuration = resp.json()
+
+    def _get_token_from_request(self, request: Request) -> str:
+        authorization_header = request.headers.get("Authorization")
+
+        if not authorization_header:
+            raise HTTPException(
+                status_code=401, detail="Authorization header is missing"
+            )
+
+        _, token = authorization_header.split(" ")
+
+        return token
+
+    def authenticate(self, request: Request) -> bool:
+        access_token = self._get_token_from_request(request)
+        try:
+            jwks_client = jwt.PyJWKClient(
+                self._oauth_configuration["jwks_uri"], cache_jwk_set=True, lifespan=360
+            )
+            signing_key = jwks_client.get_signing_key_from_jwt(access_token)
+            data = jwt.decode(
+                access_token,
+                key=signing_key.key,
+                algorithms=["RS256"],
+                issuer=self._oauth_configuration["issuer"],
+                audience=settings.OAUTH2_AUDIENCE,
+                # should be default, but just to be doubly clear
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_nbf": True,
+                    "verify_iat": True,
+                    "verify_aud": True,
+                    "verify_iss": True,
+                },
+            )
+            log.debug(data)
+            return True
+        except jwt.exceptions.PyJWTError as err:
+            raise ValueError(f"invalid jwk: {err}")
+
+    @cached(cache=TTLCache(maxsize=1000, ttl=300))
+    def fetch_userinfo_by_access_token(self, access_token: str) -> dict[str, Any]:
+        try:
+            data = requests.get(
+                url=self._oauth_configuration["userinfo_endpoint"],
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            return data.json()
+
+        except Exception as err:
+            raise HTTPException(status_code=401, detail=f"{err}")
+
+    def get_current_user(self, request: Request):
+        access_token = self._get_token_from_request(request)
+        user = self.fetch_userinfo_by_access_token(access_token)
+        return CurrentUser.from_userinfo(user)
+
+
+# factory method for AuthAPI
+def create_auth_api() -> AuthAPI:
+    return OAuth2Impl()
+
+
+auth_api = create_auth_api()
+
+
+def get_current_active_user(request: Request) -> Optional[CurrentUser]:
+    if not auth_api.authenticate(request):
+        raise Exception("Not authenticated")
+    return auth_api.get_current_user(request)
+
+
+def factory_auth_api(request: Request) -> AuthAPI:
+    return auth_api

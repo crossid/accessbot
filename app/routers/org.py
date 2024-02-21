@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
 from starlette import status
 
-from app.auth import User, get_current_active_user
+from app.auth import (
+    CurrentUser,
+    get_current_active_user,
+)
 from app.models import Org
 from app.models_facade import OrgFacade
 from app.services import factory_org_db_facade
@@ -32,7 +35,7 @@ class CreateOrgRequest(BaseModel):
 )
 def create(
     body: CreateOrgRequest,
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_facade: OrgFacade = Depends(factory_org_db_facade),
 ):
     try:
@@ -43,13 +46,14 @@ def create(
         raise HTTPException(status_code=422, detail=e.errors())
 
 
-@router.get("/{org_id}", response_model=Org)
+@router.get("/{org_id}", response_model=Org, response_model_exclude_none=True)
 def get(
     org_id: str,
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_facade: OrgFacade = Depends(factory_org_db_facade),
 ):
     org = org_facade.get_by_id(org_id)
+    # TODO check if user is a member of the org, oterhwise return 404
     if not org:
         raise HTTPException(status_code=404, detail="Org not found")
     return org

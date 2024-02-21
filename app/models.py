@@ -12,6 +12,21 @@ class User(BaseModel):
     disabled: bool | None = None
 
 
+class CurrentUser(User):
+    org_id: Optional[str] = ""
+
+    def from_userinfo(data):
+        self = CurrentUser(
+            id=data["sub"],
+            email=data["email"],
+            full_name=data["name"],
+            disabled=data.get("blocked", False),
+            org_id=data.get("org_id") or data.get("ext", {}).get("org_id"),
+        )
+
+        return self
+
+
 class Org(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
