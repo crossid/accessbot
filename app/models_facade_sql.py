@@ -22,7 +22,7 @@ class OrgFacadeSQL(OrgFacade):
     default_table_name: str = ORG_TABLE_NAME
     engine: Engine
     metadata: MetaData
-    installations: Table
+    orgs: Table
 
     @classmethod
     def build_table(cls, metadata: MetaData, table_name: str) -> Table:
