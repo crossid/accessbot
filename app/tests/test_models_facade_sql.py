@@ -1,7 +1,5 @@
-import logging.config
 import unittest
 
-import yaml
 from sqlalchemy.engine import create_engine
 
 from app.id import generate
@@ -15,14 +13,14 @@ from app.tx import TransactionContext
 class TestOrgFacadeSQL(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open("log_conf.yml", "r") as f:
-            config = yaml.safe_load(f)
-            logging.config.dictConfig(config)
+        # with open("log_conf.yml", "r") as f:
+        #     config = yaml.safe_load(f)
+        #     logging.config.dictConfig(config)
 
         # Set up a test engine, possibly an in-memory database
         cls.engine = create_engine("sqlite:///:memory:")
-        cls.test_facade = OrgFacadeSQL(engine=cls.engine)
-        cls.test_facade.create_tables()
+        cls.test_facade = OrgFacadeSQL()
+        cls.test_facade.create_tables(cls.engine)
 
     def test_insert_org(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:

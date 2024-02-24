@@ -1,8 +1,6 @@
-import logging.config
 import unittest
 from unittest import TestCase
 
-import yaml
 from sqlalchemy import create_engine
 
 from app.ai.messages import get_chat_msg_history
@@ -13,9 +11,9 @@ from app.sql import SQLAlchemyTransactionContext
 class TestMessages(TestCase):
     @classmethod
     def setUpClass(cls):
-        with open("log_conf.yml", "r") as f:
-            config = yaml.safe_load(f)
-            logging.config.dictConfig(config)
+        # with open("log_conf.yml", "r") as f:
+        #     config = yaml.safe_load(f)
+        #     logging.config.dictConfig(config)
 
         # Set up a test engine, possibly an in-memory database
         cls.engine = create_engine("sqlite:///:memory:")
