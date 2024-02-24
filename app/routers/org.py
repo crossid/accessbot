@@ -12,6 +12,7 @@ from app.auth import (
 from app.models import Org
 from app.models_facade import OrgFacade
 from app.services import factory_org_db_facade
+from app.sql import SQLAlchemyTransactionContext
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +39,13 @@ def create(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_facade: OrgFacade = Depends(factory_org_db_facade),
 ):
-    try:
-        org = Org(**body.model_dump(exclude_none=True), creator_id=current_user.id)
-        porg = org_facade.insert(org)
-        return porg
-    except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        try:
+            org = Org(**body.model_dump(exclude_none=True), creator_id=current_user.id)
+            porg = org_facade.insert(org, tx_context=tx_context)
+            return porg
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
 
 
 @router.get("/{org_id}", response_model=Org, response_model_exclude_none=True)
@@ -52,8 +54,9 @@ def get(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_facade: OrgFacade = Depends(factory_org_db_facade),
 ):
-    org = org_facade.get_by_id(org_id)
-    # TODO check if user is a member of the org, oterhwise return 404
-    if not org:
-        raise HTTPException(status_code=404, detail="Org not found")
-    return org
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        # TODO check if user is a member of the org, oterhwise return 404
+        if not org:
+            raise HTTPException(status_code=404, detail="Org not found")
+        return org

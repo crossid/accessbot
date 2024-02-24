@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from app.routers import internal, org
+from app.routers import internal, org, request
 from app.sql import create_tables
 
 logger = logging.getLogger(__name__)
@@ -23,4 +23,5 @@ app.include_router(internal.router)
 # api routers
 api = APIRouter(prefix="/api")
 api.include_router(org.router)
+api.include_router(request.router)
 app.include_router(api)
