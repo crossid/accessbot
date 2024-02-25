@@ -2,15 +2,7 @@ import logging
 from typing import Optional
 
 import sqlalchemy
-from sqlalchemy import (
-    JSON,
-    Column,
-    DateTime,
-    ForeignKey,
-    MetaData,
-    String,
-    Table,
-)
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Table
 from sqlalchemy.engine import Engine
 
 from app.id import generate
@@ -32,9 +24,9 @@ org_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column("display_name", String(32), nullable=False),
-    Column("external_id", String(10), nullable=True),
+    Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
-    Column("creator_id", String(32), nullable=False),
+    Column("creator_id", String(), nullable=False),
 )
 
 
@@ -43,9 +35,9 @@ request_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column("org_id", String(10), ForeignKey(org_table.c.id), nullable=True),
-    Column("owner_id", String(32), nullable=False),
+    Column("owner_id", String(), nullable=False),
     Column("status", String(32), nullable=False),
-    Column("external_id", String(10), nullable=True),
+    Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
     Column("created_at", DateTime(), nullable=False),
 )
@@ -77,7 +69,11 @@ class OrgFacadeSQL(OrgFacade):
         return self._logger
 
     def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
-        query = self.orgs.select().where(self.orgs.c.id == org_id).limit(1)
+        query = (
+            self.orgs.select()
+            .where((self.orgs.c.id == org_id) | (self.orgs.c.external_id == org_id))
+            .limit(1)
+        )
         result: object = tx_context.connection.execute(query).first()
         if result:
             return Org(**result._asdict())
