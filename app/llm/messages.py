@@ -1,6 +1,6 @@
 from sqlalchemy import Engine
 
-from app.ai.sql_chat_message_history import SQLChatMessageHistory
+from app.llm.sql_chat_message_history import SQLChatMessageHistory
 from app.models_facade import ChatMessageFacade
 
 

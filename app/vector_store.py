@@ -27,7 +27,6 @@ def create_org_vstore(
     elif protocol == "sqlite":
         db_file = parsed_url.netloc + parsed_url.path
         connection = SQLiteVSS.create_connection(db_file=db_file)
-        print(org_id)
         table = f"{org_id.translate(ID_TRANS_TABLE)}_data"
         return SQLiteVSS(
             table=table,

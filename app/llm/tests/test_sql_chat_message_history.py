@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from sqlalchemy import create_engine
 
-from app.ai.messages import get_chat_msg_history
+from app.llm.messages import get_chat_msg_history
 from app.models_facade_sql import ChatMessageFacadeSQL
 from app.sql import SQLAlchemyTransactionContext
 
