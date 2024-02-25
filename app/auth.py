@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 class AuthAPI(ABC):
     @abstractmethod
-    def authenticate(request: Request) -> bool:
+    def authenticate(request: Request) -> dict[str, Any]:
         pass
 
     @abstractmethod
@@ -46,7 +46,7 @@ class OAuth2Impl(AuthAPI):
 
         return token
 
-    def authenticate(self, request: Request) -> bool:
+    def authenticate(self, request: Request) -> dict[str, Any]:
         access_token = self._get_token_from_request(request)
         try:
             jwks_client = jwt.PyJWKClient(
@@ -69,10 +69,11 @@ class OAuth2Impl(AuthAPI):
                     "verify_iss": True,
                 },
             )
-            log.debug(data)
-            return True
-        except jwt.exceptions.PyJWTError as err:
-            raise ValueError(f"invalid jwk: {err}")
+            log.debug("decoded token: ", data)
+            return data
+        except jwt.exceptions.PyJWTError as e:
+            log.info("Token is invalid: %s", e)
+            raise HTTPException(status_code=401, detail="token is invalid")
 
     @cached(cache=TTLCache(maxsize=1000, ttl=300))
     def fetch_userinfo_by_access_token(self, access_token: str) -> dict[str, Any]:
@@ -86,10 +87,10 @@ class OAuth2Impl(AuthAPI):
         except Exception as err:
             raise HTTPException(status_code=401, detail=f"{err}")
 
-    def get_current_user(self, request: Request):
+    def get_current_user(self, request: Request, decoded_access_token: dict[str, Any]):
         access_token = self._get_token_from_request(request)
         user = self.fetch_userinfo_by_access_token(access_token)
-        return CurrentUser.from_userinfo(user)
+        return CurrentUser.from_oauth2(user, decoded_access_token)
 
 
 # factory method for AuthAPI
@@ -101,9 +102,11 @@ auth_api = create_auth_api()
 
 
 def get_current_active_user(request: Request) -> Optional[CurrentUser]:
-    if not auth_api.authenticate(request):
+    try:
+        decoded_token = auth_api.authenticate(request)
+        return auth_api.get_current_user(request, decoded_token)
+    except Exception:
         raise Exception("Not authenticated")
-    return auth_api.get_current_user(request)
 
 
 def factory_auth_api(request: Request) -> AuthAPI:

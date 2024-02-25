@@ -17,13 +17,14 @@ class User(BaseModel):
 class CurrentUser(User):
     org_id: Optional[str] = ""
 
-    def from_userinfo(data):
+    def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
         self = CurrentUser(
-            id=data["sub"],
-            email=data["email"],
-            full_name=data["name"],
-            disabled=data.get("blocked", False),
-            org_id=data.get("org_id") or data.get("ext", {}).get("org_id"),
+            id=decoded_access_token["sub"],
+            email=userinfo["email"],
+            full_name=userinfo["name"],
+            disabled=userinfo.get("blocked", False),
+            org_id=decoded_access_token.get("org_id")
+            or decoded_access_token.get("ext", {}).get("org_id"),
         )
 
         return self
