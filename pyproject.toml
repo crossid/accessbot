@@ -26,3 +26,7 @@ psycopg2-binary = "^2.9.9"
 ruff = "^0.2.2"
 sqlite-vss = "^0.1.2"
 sentence-transformers = "^2.4.0"
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.2"
+
