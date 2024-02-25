@@ -7,6 +7,8 @@ from langchain_core.embeddings import Embeddings
 
 from .settings import settings
 
+ID_TRANS_TABLE = str.maketrans("-", "_")
+
 
 # TODO embedding function should be generalized
 def create_org_vstore(
@@ -25,8 +27,12 @@ def create_org_vstore(
     elif protocol == "sqlite":
         db_file = parsed_url.netloc + parsed_url.path
         connection = SQLiteVSS.create_connection(db_file=db_file)
+        print(org_id)
+        table = f"{org_id.translate(ID_TRANS_TABLE)}_data"
         return SQLiteVSS(
-            table=f"{org_id}_data", embedding=embedding, connection=connection
+            table=table,
+            embedding=embedding,
+            connection=connection,
         )
     else:
         raise ValueError(f"{uri} vector store URI is not supported")
