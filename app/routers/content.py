@@ -4,14 +4,11 @@ from typing import Annotated, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import get_current_active_user
+from app.auth import get_current_org
 from app.embeddings import create_embedding
 from app.id import generate
 from app.models import CurrentUser
-from app.models_facade import OrgFacade
-from app.services import factory_org_db_facade
 from app.settings import settings
-from app.sql import SQLAlchemyTransactionContext
 from app.vector_store import create_org_vstore, delete_ids, get_protocol
 
 logger = logging.getLogger(__name__)
@@ -37,21 +34,9 @@ class AddContentResponse(BaseModel):
     ids: List[str]
 
 
-def setup_org_vstore(current_user: CurrentUser, org_facade: OrgFacade):
-    if current_user.org_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="current user is not a member of an org",
-        )
-
-    with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_facade.get_by_id(org_id=current_user.org_id, tx_context=tx_context)
-        if org is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
-            )
-        ovstore = create_org_vstore(org.id, create_embedding(settings.VSTORE_EMBEDDING))
-        return ovstore
+async def setup_org_vstore(org: Annotated[CurrentUser, Depends(get_current_org)]):
+    ovstore = create_org_vstore(org.id, create_embedding(settings.VSTORE_EMBEDDING))
+    return ovstore
 
 
 def prepare_metadata_ids_content(docs: List[Doc]):
@@ -68,12 +53,7 @@ def prepare_metadata_ids_content(docs: List[Doc]):
 
 
 @router.post("", response_model=AddContentResponse)
-async def add(
-    body: AddContentBody,
-    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
-):
-    ovstore = setup_org_vstore(current_user=current_user, org_facade=org_facade)
+async def add(body: AddContentBody, ovstore=Depends(setup_org_vstore)):
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
     inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
     # convert ids to strings (SQLite returns int)
@@ -86,12 +66,7 @@ class RemoveContentBody(BaseModel):
 
 
 @router.post("/.delete", status_code=status.HTTP_204_NO_CONTENT)
-async def remove(
-    body: RemoveContentBody,
-    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
-):
-    ovstore = setup_org_vstore(current_user=current_user, org_facade=org_facade)
+async def remove(body: RemoveContentBody, ovstore=Depends(setup_org_vstore)):
     try:
         delete_ids(ovstore=ovstore, ids=body.ids)
     except NotImplementedError:

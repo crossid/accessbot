@@ -5,10 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
 from starlette import status
 
-from app.auth import (
-    CurrentUser,
-    get_current_active_user,
-)
+from app.auth import CurrentUser, get_current_active_user
 from app.models import Org
 from app.models_facade import OrgFacade
 from app.services import factory_org_db_facade

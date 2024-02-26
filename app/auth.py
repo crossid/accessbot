@@ -1,14 +1,17 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 import jwt
 import requests
 from cachetools import TTLCache, cached
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request, status
 
-from app.models import CurrentUser
+from app.models import CurrentUser, Org
+from app.models_facade import OrgFacade
+from app.services import factory_org_db_facade
 from app.settings import settings
+from app.sql import SQLAlchemyTransactionContext
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +42,8 @@ class OAuth2Impl(AuthAPI):
 
         if not authorization_header:
             raise HTTPException(
-                status_code=401, detail="Authorization header is missing"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authorization header is missing",
             )
 
         _, token = authorization_header.split(" ")
@@ -73,7 +77,9 @@ class OAuth2Impl(AuthAPI):
             return data
         except jwt.exceptions.PyJWTError as e:
             log.info("Token is invalid: %s", e)
-            raise HTTPException(status_code=401, detail="token is invalid")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="token is invalid"
+            )
 
     @cached(cache=TTLCache(maxsize=1000, ttl=300))
     def fetch_userinfo_by_access_token(self, access_token: str) -> dict[str, Any]:
@@ -85,7 +91,9 @@ class OAuth2Impl(AuthAPI):
             return data.json()
 
         except Exception as err:
-            raise HTTPException(status_code=401, detail=f"{err}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
+            )
 
     def get_current_user(self, request: Request, decoded_access_token: dict[str, Any]):
         access_token = self._get_token_from_request(request)
@@ -111,3 +119,24 @@ def get_current_active_user(request: Request) -> Optional[CurrentUser]:
 
 def factory_auth_api(request: Request) -> AuthAPI:
     return auth_api
+
+
+async def get_current_org(
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    org_facade: OrgFacade = Depends(factory_org_db_facade),
+) -> Org:
+    org_id = current_user.org_id
+    if org_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="current user is not a member of an org",
+        )
+
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        if org is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
+            )
+
+        return org
