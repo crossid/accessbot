@@ -1,7 +1,7 @@
 import importlib
 
 from app.models_facade import OrgFacadeHooks, OrgFacadeProxy
-from app.models_facade_sql import OrgFacadeSQL, RequestFacadeSQL
+from app.models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
 from app.settings import settings
 
 
@@ -22,3 +22,7 @@ def factory_org_db_facade():
 
 def factory_request_db_facade():
     return RequestFacadeSQL()
+
+
+def factory_message_db_facade():
+    return ChatMessageFacadeSQL()

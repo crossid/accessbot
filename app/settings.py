@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # oauth
     OAUTH2_OPENID_CONFIGURATION: str = ""
     OAUTH2_AUDIENCE: str = ""
+    # llm
+    LLM_MODEL: str = "openai://gpt-4-turbo-preview"
     # extensions
     ORG_FACADE_HOOKS: str = ""
 

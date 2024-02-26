@@ -10,11 +10,10 @@ from langchain_core.messages import (
     SystemMessage,
     message_to_dict,
 )
-from sqlalchemy import Engine
 
 from app.models import ChatMessage
 from app.models_facade import ChatMessageFacade
-from app.sql import SQLAlchemyTransactionContext
+from app.tx import TransactionContext
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +24,11 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         conversation_id: str,
-        engine: Engine,
+        tx_context: TransactionContext,
         facade: ChatMessageFacade,
     ):
         self.conversation_id = conversation_id
-        self.engine = engine
+        self.tx_context = tx_context
         self.facade = facade
 
     def message_to_dict(self, msg: BaseMessage) -> dict:
@@ -61,21 +60,20 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
 
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
-        with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx:
-            messages = []
-            result = self.facade.list(filter=self.conversation_id, tx_context=tx)
-            for record in result:
-                messages.append(self.from_sql_model(record))
-            return messages
+        messages = []
+        result = self.facade.list(
+            filter=self.conversation_id, tx_context=self.tx_context
+        )
+        for record in result:
+            messages.append(self.from_sql_model(record))
+        return messages
 
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
-        with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx:
-            d = self.to_sql_model(message)
-            self.facade.insert(d, tx)
+        d = self.to_sql_model(message)
+        self.facade.insert(d, self.tx_context)
         logger.debug(f"Added message to chat history: {message.content}")
 
     def clear(self) -> None:
         """Clear session memory from db"""
-        with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx:
-            self.facade.delete(filter=self.conversation_id, tx_context=tx)
+        self.facade.delete(filter=self.conversation_id, tx_context=self.tx_context)

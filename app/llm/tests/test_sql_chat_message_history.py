@@ -24,14 +24,14 @@ class TestMessages(TestCase):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             self.test_facade.list(filter="foo", tx_context=tx_context)
             h = get_chat_msg_history(
-                conversation_id="foo", engine=self.engine, facade=self.test_facade
+                conversation_id="foo", facade=self.test_facade, tx_context=tx_context
             )
             self.assertEqual(len(h.messages), 0)
             h.add_user_message("hi there")
             self.assertEqual(len(h.messages), 1)
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             h = get_chat_msg_history(
-                conversation_id="foo", engine=self.engine, facade=self.test_facade
+                conversation_id="foo", facade=self.test_facade, tx_context=tx_context
             )
             self.assertEqual(len(h.messages), 1)
             h.clear()

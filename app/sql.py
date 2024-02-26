@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 
-from app.models_facade_sql import OrgFacadeSQL, RequestFacadeSQL
+from app.models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
 from app.tx import TransactionContext
 
 from .settings import settings
@@ -19,11 +19,13 @@ sqlalchemy_engine = create_engine(
 )
 org_facade = OrgFacadeSQL()
 request_facade = RequestFacadeSQL()
+message_facade = ChatMessageFacadeSQL()
 
 
 def create_tables():
     org_facade.create_tables(sqlalchemy_engine)
     request_facade.create_tables(sqlalchemy_engine)
+    message_facade.create_tables(sqlalchemy_engine)
     pass
 
 

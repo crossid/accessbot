@@ -74,5 +74,5 @@ class AccessRequest(BaseModel):
     owner_id: str
     org_id: Optional[str]
     messages: Optional[list[ChatMessage]] = Field(
-        default=[], description="Messages related to the request"
+        default=None, description="Messages related to the request"
     )

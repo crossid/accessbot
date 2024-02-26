@@ -46,7 +46,13 @@ class RequestFacade(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_by_id(self, request_id: str, tx_context: TransactionContext):
+    def get_by_id(
+        self,
+        org_id: str,
+        request_id: str,
+        tx_context: TransactionContext,
+        links: Optional[list[str]] = None,
+    ):
         pass
 
     @abstractmethod

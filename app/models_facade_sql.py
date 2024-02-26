@@ -18,6 +18,7 @@ metadata = MetaData()
 
 ORG_TABLE_NAME = "org"
 REQUEST_TABLE_NAME = "request"
+MESSAGE_TABLE_NAME = "message"
 
 org_table = sqlalchemy.Table(
     ORG_TABLE_NAME,
@@ -39,6 +40,21 @@ request_table = sqlalchemy.Table(
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
+    Column("created_at", DateTime(), nullable=False),
+)
+
+message_table = sqlalchemy.Table(
+    MESSAGE_TABLE_NAME,
+    metadata,
+    Column("id", String(10), primary_key=True),
+    Column(
+        "conversation_id",
+        String(10),
+        # ForeignKey(request_table.c.id),
+        nullable=False,
+    ),
+    Column("type", String(32), nullable=False),
+    Column("content", String(1024), nullable=True),
     Column("created_at", DateTime(), nullable=False),
 )
 
@@ -86,12 +102,9 @@ class OrgFacadeSQL(OrgFacade):
         return org
 
 
-MESSAGE_TABLE_NAME = "message"
-
-
 class RequestFacadeSQL(RequestFacade):
     default_requests_table_name: str = REQUEST_TABLE_NAME
-    default_messages_table_name: str = MESSAGE_TABLE_NAME
+    default_messages_table_name = MESSAGE_TABLE_NAME
     metadata: MetaData
     requests: Table
     messages: Table
@@ -99,6 +112,10 @@ class RequestFacadeSQL(RequestFacade):
     @classmethod
     def build_request_table(cls, metadata: MetaData, table_name: str) -> Table:
         return request_table
+
+    @classmethod
+    def build_message_table(cls, metadata: MetaData, table_name: str) -> Table:
+        return message_table
 
     def __init__(
         self,
@@ -110,6 +127,9 @@ class RequestFacadeSQL(RequestFacade):
         self.requests = self.build_request_table(
             metadata=self.metadata, table_name=requests_table_name
         )
+        self.messages = self.build_message_table(
+            metadata=self.metadata, table_name=messages_table_name
+        )
         self._logger = logger
 
     def create_tables(self, engine: Engine):
@@ -120,12 +140,30 @@ class RequestFacadeSQL(RequestFacade):
         return self._logger
 
     def get_by_id(
-        self, id: str, tx_context: TransactionContext
+        self,
+        org_id: str,
+        request_id: str,
+        tx_context: TransactionContext,
+        links: Optional[list[str]] = None,
     ) -> Optional[AccessRequest]:
-        query = self.requests.select().where(self.requests.c.id == id).limit(1)
+        query = (
+            self.requests.select()
+            .where(self.requests.c.org_id == org_id)
+            .where(self.requests.c.id == request_id)
+            .limit(1)
+        )
         result: object = tx_context.connection.execute(query).first()
+        req: AccessRequest = None
         if result:
-            return AccessRequest(**result._asdict())
+            req = AccessRequest(**result._asdict())
+        if links and "messages" in links:
+            messages = tx_context.connection.execute(
+                self.messages.select().where(
+                    self.messages.c.conversation_id == request_id
+                )
+            )
+            req.messages = [ChatMessage(**m._asdict()) for m in messages]
+        return req
 
     def insert(
         self, req: AccessRequest, tx_context: TransactionContext
@@ -146,20 +184,7 @@ class ChatMessageFacadeSQL(ChatMessageFacade):
     def build_table(
         cls, metadata: MetaData, table_name: str, request_table: Table
     ) -> Table:
-        return sqlalchemy.Table(
-            table_name,
-            metadata,
-            Column("id", String(10), primary_key=True),
-            Column(
-                "conversation_id",
-                String(10),
-                # ForeignKey(request_table.c.id),
-                nullable=False,
-            ),
-            Column("type", String(32), nullable=False),
-            Column("content", String(1024), nullable=True),
-            Column("created_at", DateTime(), nullable=False),
-        )
+        return message_table
 
     def __init__(
         self,

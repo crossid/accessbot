@@ -1,9 +1,11 @@
 from urllib.parse import urlparse
 
+from langchain.retrievers import EnsembleRetriever
 from langchain_community.vectorstores import VectorStore
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_community.vectorstores.sqlitevss import SQLiteVSS
 from langchain_core.embeddings import Embeddings
+from langchain_core.retrievers import BaseRetriever
 
 from .settings import settings
 
@@ -32,13 +34,28 @@ def create_org_vstore(
             collection_metadata={"org_id": org_id},
         )
     elif protocol == "sqlite":
+        import sqlite3
+
+        try:
+            import sqlite_vss  # noqa  # pylint: disable=unused-import
+        except ImportError:
+            raise ImportError(
+                "Could not import sqlite-vss python package. "
+                "Please install it with `pip install sqlite-vss`."
+            )
+
         db_file = parsed_url.netloc + parsed_url.path
-        connection = SQLiteVSS.create_connection(db_file=db_file)
+        connection = sqlite3.connect(db_file, check_same_thread=False)
+        connection.row_factory = sqlite3.Row
+        connection.enable_load_extension(True)
+        sqlite_vss.load(connection)
+        connection.enable_load_extension(False)
+
         table = f"{org_id.translate(ID_TRANS_TABLE)}_data"
         return SQLiteVSS(
+            connection=connection,
             table=table,
             embedding=embedding,
-            connection=connection,
         )
     else:
         raise ValueError(f"{uri} vector store URI is not supported")
@@ -55,10 +72,24 @@ def delete_ids(ovstore: VectorStore, ids: list[str], uri=settings.VSTORE_URI) ->
         ovstore.delete(ids=ids, collection_only=True)
     else:
         """
-        TODO: delete function return type is incorrect. 
+        TODO: delete function return type is incorrect.
         Not implemented will raise an error, will not return None
         Everything else is up to the implementation, as PGVector return None on success
         """
         ovstore.delete(ids=ids)
 
     return True
+
+
+# NOTE: this crashed if the org's vectorstore has no documents
+def create_retriever(org_id: str, embedding: Embeddings) -> BaseRetriever:
+    retrievers = []
+    weights = [1]
+    if org_id is not None:
+        retrievers.append(
+            create_org_vstore(org_id=org_id, embedding=embedding).as_retriever()
+        )
+        weights = [1]
+
+    ensemble_retriever = EnsembleRetriever(retrievers=retrievers, weights=weights)
+    return ensemble_retriever
