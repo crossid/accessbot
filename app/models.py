@@ -15,7 +15,7 @@ class User(BaseModel):
 
 
 class CurrentUser(User):
-    org_id: Optional[str] = ""
+    org_id: Optional[str] = None
 
     def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
         self = CurrentUser(
@@ -24,7 +24,8 @@ class CurrentUser(User):
             full_name=userinfo["name"],
             disabled=userinfo.get("blocked", False),
             org_id=decoded_access_token.get("org_id")
-            or decoded_access_token.get("ext", {}).get("org_id"),
+            or decoded_access_token.get("ext", {}).get("org_id")
+            or None,
         )
 
         return self
