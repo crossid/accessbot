@@ -76,6 +76,8 @@ async def add(
     ovstore = setup_org_vstore(current_user=current_user, org_facade=org_facade)
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
     inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
+    # convert ids to strings (SQLite returns int)
+    inserted_ids = [str(i) for i in inserted_ids]
     return AddContentResponse(ok=True, ids=inserted_ids)
 
 
