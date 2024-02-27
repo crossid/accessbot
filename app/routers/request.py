@@ -6,15 +6,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 from starlette import status
 
-from app.auth import get_current_active_user
+from app.auth import get_current_active_user, get_optional_current_org
 from app.llm.conversation import (
     create_agent_for_access_request_conversation,
     sse_client_transformer,
 )
 from app.llm.prompts import MEMORY_KEY, ORGID_KEY, REQUEST_ID_KEY, USERNAME_KEY
-from app.llm.sql_chat_message_history import SQLChatMessageHistory
+from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.streaming import streaming
-from app.models import AccessRequest, CurrentUser
+from app.models import AccessRequest, CurrentUser, Org
 from app.models_facade import ChatMessageFacade, OrgFacade
 from app.services import (
     factory_message_db_facade,
@@ -108,14 +108,18 @@ async def conversation(
     request_id: str,
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    optional_org: Annotated[Org | None, Depends(get_optional_current_org)],
     request_facade: OrgFacade = Depends(factory_request_db_facade),
     message_facade: ChatMessageFacade = Depends(factory_message_db_facade),
 ):
+    org_id = optional_org.id if optional_org is not None else None
+
     def add_messages(ai_content: str):
         # Open a new TX because the main tx gets closed after the response is sent which is before the cb is invoked.
         with SQLAlchemyTransactionContext().manage() as tx_context:
-            chat_history = SQLChatMessageHistory(
+            chat_history = LangchainChatMessageHistory(
                 conversation_id=request_id,
+                org_id=org_id,
                 tx_context=tx_context,
                 facade=message_facade,
             )
@@ -123,13 +127,14 @@ async def conversation(
             chat_history.add_ai_message(ai_content)
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        chat_history = SQLChatMessageHistory(
+        chat_history = LangchainChatMessageHistory(
             conversation_id=request_id,
+            org_id=org_id,
             tx_context=tx_context,
             facade=message_facade,
         )
         ar = request_facade.get_by_id(
-            request_id=request_id, org_id=current_user.org_id, tx_context=tx_context
+            request_id=request_id, org_id=org_id, tx_context=tx_context
         )
         if ar is None:
             raise HTTPException(

@@ -59,6 +59,7 @@ class StatusEnum(enum.Enum):
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     conversation_id: str = Field(default=None)
+    org_id: Optional[str] = Field(default=None)
     type: str
     content: str
     created_at: datetime = Field(default_factory=datetime.now)

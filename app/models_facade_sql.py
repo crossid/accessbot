@@ -35,7 +35,14 @@ request_table = sqlalchemy.Table(
     REQUEST_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
-    Column("org_id", String(10), ForeignKey(org_table.c.id), nullable=True),
+    Column(
+        "org_id",
+        String(10),
+        ForeignKey(org_table.c.id),
+        nullable=True,
+        # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
+        # primary_key=True,
+    ),
     Column("owner_id", String(), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
@@ -47,6 +54,14 @@ message_table = sqlalchemy.Table(
     MESSAGE_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
+    Column(
+        "org_id",
+        String(10),
+        ForeignKey(org_table.c.id),
+        nullable=True,
+        # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
+        # primary_key=True,
+    ),
     Column(
         "conversation_id",
         String(10),

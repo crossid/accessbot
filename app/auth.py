@@ -140,3 +140,21 @@ async def get_current_org(
             )
 
         return org
+
+
+async def get_optional_current_org(
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    org_facade: OrgFacade = Depends(factory_org_db_facade),
+):
+    org_id = current_user.org_id
+    if org_id is None:
+        return None
+
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        if org is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
+            )
+
+        return org

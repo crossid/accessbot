@@ -18,16 +18,18 @@ from app.tx import TransactionContext
 logger = logging.getLogger(__name__)
 
 
-class SQLChatMessageHistory(BaseChatMessageHistory):
+class LangchainChatMessageHistory(BaseChatMessageHistory):
     """Chat message history stored in an SQL database."""
 
     def __init__(
         self,
         conversation_id: str,
+        org_id: str,
         tx_context: TransactionContext,
         facade: ChatMessageFacade,
     ):
         self.conversation_id = conversation_id
+        self.org_id = org_id
         self.tx_context = tx_context
         self.facade = facade
 
@@ -53,6 +55,7 @@ class SQLChatMessageHistory(BaseChatMessageHistory):
     def to_sql_model(self, msg: BaseMessage) -> ChatMessage:
         return ChatMessage(
             conversation_id=self.conversation_id,
+            org_id=self.org_id,
             type=msg.type,
             content=msg.content,
             created_at=datetime.now(),
