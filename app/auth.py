@@ -7,11 +7,13 @@ import requests
 from cachetools import TTLCache, cached
 from fastapi import Depends, HTTPException, Request, status
 
+from app.embeddings import create_embedding
 from app.models import CurrentUser, Org
 from app.models_facade import OrgFacade
 from app.services import factory_org_db_facade
 from app.settings import settings
 from app.sql import SQLAlchemyTransactionContext
+from app.vector_store import create_org_vstore
 
 log = logging.getLogger(__name__)
 
@@ -158,3 +160,8 @@ async def get_optional_current_org(
             )
 
         return org
+
+
+async def setup_org_vstore(org: Annotated[Org, Depends(get_current_org)]):
+    ovstore = create_org_vstore(org.id, create_embedding(settings.VSTORE_EMBEDDING))
+    return ovstore

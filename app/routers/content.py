@@ -1,15 +1,13 @@
 import logging
-from typing import Annotated, Any, List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import get_current_org
-from app.embeddings import create_embedding
+from app.auth import setup_org_vstore
 from app.id import generate
-from app.models import CurrentUser
 from app.settings import settings
-from app.vector_store import create_org_vstore, delete_ids, get_protocol
+from app.vector_store import delete_ids, get_protocol
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +30,6 @@ class AddContentBody(BaseModel):
 class AddContentResponse(BaseModel):
     ok: bool
     ids: List[str]
-
-
-async def setup_org_vstore(org: Annotated[CurrentUser, Depends(get_current_org)]):
-    ovstore = create_org_vstore(org.id, create_embedding(settings.VSTORE_EMBEDDING))
-    return ovstore
 
 
 def prepare_metadata_ids_content(docs: List[Doc]):

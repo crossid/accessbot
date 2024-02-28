@@ -61,6 +61,12 @@ def create_org_vstore(
         raise ValueError(f"{uri} vector store URI is not supported")
 
 
+def delete_store(ovstore: VectorStore, uri=settings.VSTORE_URI):
+    protocol = get_protocol(uri)
+    if protocol.startswith("postgresql"):
+        ovstore.delete_collection()
+
+
 def delete_ids(ovstore: VectorStore, ids: list[str], uri=settings.VSTORE_URI) -> bool:
     protocol = get_protocol(uri)
 

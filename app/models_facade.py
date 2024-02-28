@@ -19,10 +19,18 @@ class OrgFacade(ABC):
     def insert(self, org: Org, tx_context: TransactionContext) -> Org:
         pass
 
+    @abstractmethod
+    def delete(self, org: Org, tx_context: TransactionContext):
+        pass
+
 
 class OrgFacadeHooks(ABC):
     @abstractmethod
     def pre_insert(self, org: Org, tx_context: TransactionContext):
+        pass
+
+    @abstractmethod
+    def pre_delete(self, org: Org, tx_context: TransactionContext):
         pass
 
 
@@ -38,6 +46,11 @@ class OrgFacadeProxy:
         if self._hooks:
             self._hooks.pre_insert(org, tx_context)
         return self._facade.insert(org, tx_context)
+
+    def delete(self, org: Org, tx_context: TransactionContext):
+        if self._hooks:
+            self._hooks.pre_delete(org, tx_context)
+        return self._facade.delete(org, tx_context)
 
 
 class RequestFacade(ABC):
@@ -59,6 +72,12 @@ class RequestFacade(ABC):
     def insert(
         self, request: AccessRequest, tx_context: TransactionContext
     ) -> AccessRequest:
+        pass
+
+    @abstractmethod
+    def delete_for_org(
+        self, org_id: str, tx_context: TransactionContext = None
+    ) -> None:
         pass
 
 
@@ -85,4 +104,10 @@ class ChatMessageFacade(ABC):
 
     @abstractmethod
     def delete(self, filter=None, tx_context: TransactionContext = None):
+        pass
+
+    @abstractmethod
+    def delete_for_org(
+        self, org_id: str, tx_context: TransactionContext = None
+    ) -> None:
         pass

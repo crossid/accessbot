@@ -76,6 +76,8 @@ message_table = sqlalchemy.Table(
 
 class OrgFacadeSQL(OrgFacade):
     default_table_name: str = ORG_TABLE_NAME
+    default_requests_table_name: str = REQUEST_TABLE_NAME
+    default_messages_table_name = MESSAGE_TABLE_NAME
     metadata: MetaData
     orgs: Table
 
@@ -115,6 +117,12 @@ class OrgFacadeSQL(OrgFacade):
         o = org.model_dump()
         tx_context.connection.execute(self.orgs.insert(), o)
         return org
+
+    def delete(self, org: Org, tx_context: TransactionContext):
+        q = self.orgs.delete().where(self.orgs.c.id == org.id)
+        tx_context.connection.execute(q)
+
+        return None
 
 
 class RequestFacadeSQL(RequestFacade):
@@ -189,6 +197,14 @@ class RequestFacadeSQL(RequestFacade):
         tx_context.connection.execute(self.requests.insert(), o)
         return req
 
+    def delete_for_org(self, org_id: str, tx_context: TransactionContext = None):
+        if org_id is None:
+            return None
+
+        q = self.requests.delete().where(self.requests.c.org_id == org_id)
+        tx_context.connection.execute(q)
+        return None
+
 
 class ChatMessageFacadeSQL(ChatMessageFacade):
     default_table_name: str = MESSAGE_TABLE_NAME
@@ -256,5 +272,13 @@ class ChatMessageFacadeSQL(ChatMessageFacade):
 
     def delete(self, filter=None, tx_context: TransactionContext = None):
         q = self.messages.delete().where(self.messages.c.conversation_id == filter)
+        tx_context.connection.execute(q)
+        return None
+
+    def delete_for_org(self, org_id: str, tx_context: TransactionContext = None):
+        if org_id is None:
+            return None
+
+        q = self.messages.delete().where(self.messages.c.org_id == org_id)
         tx_context.connection.execute(q)
         return None

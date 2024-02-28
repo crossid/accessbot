@@ -5,11 +5,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
 from starlette import status
 
-from app.auth import CurrentUser, get_current_active_user
+from app.auth import (
+    CurrentUser,
+    get_current_active_user,
+    setup_org_vstore,
+)
 from app.models import Org
-from app.models_facade import OrgFacade
-from app.services import factory_org_db_facade
+from app.models_facade import ChatMessageFacade, OrgFacade, RequestFacade
+from app.services import (
+    factory_message_db_facade,
+    factory_org_db_facade,
+    factory_request_db_facade,
+)
 from app.sql import SQLAlchemyTransactionContext
+from app.tx import TransactionContext
+from app.vector_store import delete_store
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +67,52 @@ def get(
         if not org:
             raise HTTPException(status_code=404, detail="Org not found")
         return org
+
+
+def wipe_org(
+    org: Org,
+    tx_context: TransactionContext,
+    org_facade: OrgFacade,
+    msg_facade: ChatMessageFacade,
+    req_facade: RequestFacade,
+    ovstore,
+):
+    delete_store(ovstore=ovstore)
+    msg_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
+    req_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
+    org_facade.delete(org=org, tx_context=tx_context)
+
+
+@router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete(
+    org_id: str,
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    org_facade: Annotated[OrgFacade, Depends(factory_org_db_facade)],
+    msg_facade: Annotated[ChatMessageFacade, Depends(factory_message_db_facade)],
+    req_facade: Annotated[RequestFacade, Depends(factory_request_db_facade)],
+    ovstore=Depends(setup_org_vstore),
+):
+    # TODO: authorization, replace this check with creator_id?
+
+    if org_id != current_user.org_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to delete this org",
+        )
+
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        current_org = org_facade.get_by_id(org_id=org_id, tx_context=tx_context)
+        if current_org is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="org not found",
+            )
+
+        wipe_org(
+            org=current_org,
+            tx_context=tx_context,
+            org_facade=org_facade,
+            req_facade=req_facade,
+            msg_facade=msg_facade,
+            ovstore=ovstore,
+        )
