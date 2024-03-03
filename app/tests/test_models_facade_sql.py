@@ -36,8 +36,11 @@ class TestOrgFacadeSQL(unittest.TestCase):
 
     def test_insert_org_with_hook(self):
         class OrgHooks(OrgFacadeHooks):
-            def pre_insert(self, org: "Org", tx_context: TransactionContext):
+            def pre_insert(self, org: Org, tx_context: TransactionContext):
                 org.display_name = org.display_name.upper()
+
+            def pre_delete(self, org: Org, tx_context: TransactionContext):
+                pass
 
         f = OrgFacadeProxy(facade=self.test_facade, hooks=OrgHooks())
 
