@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from logging import Logger
 from typing import Optional
 
-from .models import AccessRequest, ChatMessage, Org
+from .models import AccessRequest, ChatMessage, Org, User
 from .tx import TransactionContext
 
 
@@ -55,7 +55,7 @@ class OrgFacadeProxy:
 
 class UserStore(ABC):
     @abstractmethod
-    def get_by_email(self, email: str):
+    def get_by_email(self, email: str) -> Optional[User]:
         pass
 
 
