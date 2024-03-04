@@ -1,9 +1,9 @@
 from urllib.parse import parse_qs, urlparse
 
-from langchain.chat_models.openai import ChatOpenAI
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
 )
+from langchain_openai import ChatOpenAI
 
 from ..settings import settings
 from .fake_model import FakeChatOpenAI
