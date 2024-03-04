@@ -42,12 +42,12 @@ class Org(BaseModel):
 
 class StatusEnum(enum.Enum):
     """
-    Enum class representing the status of a resource
+    Enum class representing the status of a request
 
-    - active: In conversation.
-    - approval: The object is pending approval.
-    - submitted: ???????????
-    - completed: The object has been completed.
+    - active: an active conversation between the requester and the LLM.
+    - submitted: the request has been submitted and is pending approval.
+    - approval: pending data owner approval.
+    - completed: the request has been completed, whether it was approved or denied.
     """
 
     active = "active"
