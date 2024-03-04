@@ -6,12 +6,13 @@ from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Tab
 from sqlalchemy.engine import Engine
 
 from app.id import generate
-from app.models import AccessRequest, ChatMessage, Org
+from app.models import AccessRequest, ChatMessage, Org, User
 from app.models_facade import (
     ChatMessageFacade,
     OrgFacade,
     RequestFacade,
     TransactionContext,
+    UserStore,
 )
 
 metadata = MetaData()
@@ -19,6 +20,7 @@ metadata = MetaData()
 ORG_TABLE_NAME = "org"
 REQUEST_TABLE_NAME = "request"
 MESSAGE_TABLE_NAME = "message"
+USER_TABLE_NAME = "user"
 
 org_table = sqlalchemy.Table(
     ORG_TABLE_NAME,
@@ -28,6 +30,15 @@ org_table = sqlalchemy.Table(
     Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
     Column("creator_id", String(), nullable=False),
+)
+
+user_table = sqlalchemy.Table(
+    USER_TABLE_NAME,
+    metadata,
+    Column("id", String(10), primary_key=True),
+    Column("email", String(64), nullable=False),
+    Column("name", String(64), nullable=False),
+    Column("sub", String(32)),
 )
 
 
@@ -123,6 +134,41 @@ class OrgFacadeSQL(OrgFacade):
         tx_context.connection.execute(q)
 
         return None
+
+
+class UserStoreSQL(UserStore):
+    users: Table
+    metadata = metadata
+
+    def __init__(
+        self,
+    ):
+        self.users = user_table
+        self.metadata = metadata
+
+    def create_tables(self, engine: Engine):
+        self.metadata.create_all(engine)
+
+    def get_by_id(self, user_id: str, tx_context: TransactionContext) -> Optional[User]:
+        query = self.users.select().where(self.users.c.id == user_id).limit(1)
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            return User(**result._asdict())
+
+    def get_by_email(
+        self, email: str, tx_context: TransactionContext
+    ) -> Optional[User]:
+        query = self.users.select().where(self.users.c.email == email).limit(1)
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            return User(**result._asdict())
+
+    def insert(self, user: User, tx_context: TransactionContext) -> User:
+        if user.id is None:
+            user.id = generate()
+        m = user.model_dump()
+        tx_context.connection.execute(self.users.insert(), m)
+        return user
 
 
 class RequestFacadeSQL(RequestFacade):

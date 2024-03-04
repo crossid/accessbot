@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from logging import Logger
 from typing import Optional
 
-from app.models import AccessRequest, ChatMessage, Org
+from app.models import AccessRequest, ChatMessage, Org, User
 from app.tx import TransactionContext
 
 
@@ -51,6 +51,26 @@ class OrgFacadeProxy:
         if self._hooks:
             self._hooks.pre_delete(org, tx_context)
         return self._facade.delete(org, tx_context)
+
+
+class UserStore(ABC):
+    @abstractmethod
+    def get_by_id(self, user_id: str, tx_context: TransactionContext) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def get_by_email(
+        self, email: str, tx_context: TransactionContext
+    ) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def insert(self, user: User, tx_context: TransactionContext) -> User:
+        pass
+
+    @abstractmethod
+    def upsert(self, user: User, tx_context: TransactionContext) -> User:
+        pass
 
 
 class RequestFacade(ABC):
