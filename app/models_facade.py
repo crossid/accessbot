@@ -53,6 +53,12 @@ class OrgFacadeProxy:
         return self._facade.delete(org, tx_context)
 
 
+class UserStore(ABC):
+    @abstractmethod
+    def get_by_email(self, email: str):
+        pass
+
+
 class RequestFacade(ABC):
     @property
     def logger(self) -> Logger:
