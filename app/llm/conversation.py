@@ -1,16 +1,15 @@
 # from langchain.globals import set_debug
 
-from app.embeddings import create_embedding
-from app.llm.agents import create_agent
-from app.llm.prompts import (
+from ..embeddings import create_embedding
+from ..models import AccessRequest, StatusEnum
+from ..vector_store import create_retriever
+from .agents import create_agent
+from .prompts import (
     ORGID_KEY,
     REQUEST_ID_KEY,
     USERNAME_KEY,
+    prompt_facade,
 )
-from app.models import AccessRequest, StatusEnum
-from app.vector_store import create_retriever
-
-from .prompts import prompt_facade
 
 # set_debug(True)
 

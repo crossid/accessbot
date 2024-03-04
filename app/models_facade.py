@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from logging import Logger
 from typing import Optional
 
-from app.models import AccessRequest, ChatMessage, Org
-from app.tx import TransactionContext
+from .models import AccessRequest, ChatMessage, Org
+from .tx import TransactionContext
 
 
 class OrgFacade(ABC):

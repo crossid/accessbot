@@ -4,10 +4,10 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.auth import setup_org_vstore
-from app.id import generate
-from app.settings import settings
-from app.vector_store import delete_ids, get_protocol
+from ..auth import setup_org_vstore
+from ..id import generate
+from ..settings import settings
+from ..vector_store import delete_ids, get_protocol
 
 logger = logging.getLogger(__name__)
 

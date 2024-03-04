@@ -6,22 +6,22 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 from starlette import status
 
-from app.auth import get_current_active_user, get_optional_current_org
-from app.llm.conversation import (
+from ..auth import get_current_active_user, get_optional_current_org
+from ..llm.conversation import (
     create_agent_for_access_request_conversation,
     sse_client_transformer,
 )
-from app.llm.prompts import MEMORY_KEY, ORGID_KEY, REQUEST_ID_KEY, USERNAME_KEY
-from app.llm.sql_chat_message_history import LangchainChatMessageHistory
-from app.llm.streaming import streaming
-from app.models import AccessRequest, CurrentUser, Org
-from app.models_facade import ChatMessageFacade, OrgFacade
-from app.services import (
+from ..llm.prompts import MEMORY_KEY, ORGID_KEY, REQUEST_ID_KEY, USERNAME_KEY
+from ..llm.sql_chat_message_history import LangchainChatMessageHistory
+from ..llm.streaming import streaming
+from ..models import AccessRequest, CurrentUser, Org
+from ..models_facade import ChatMessageFacade, OrgFacade
+from ..services import (
     factory_message_db_facade,
     factory_org_db_facade,
     factory_request_db_facade,
 )
-from app.sql import SQLAlchemyTransactionContext
+from ..sql import SQLAlchemyTransactionContext
 
 logger = logging.getLogger(__name__)
 

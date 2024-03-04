@@ -5,8 +5,8 @@ from langchain_core.language_models.chat_models import (
     BaseChatModel,
 )
 
-from app.llm.fake_model import FakeChatOpenAI
-from app.settings import settings
+from ..settings import settings
+from .fake_model import FakeChatOpenAI
 
 LLM_ALLOWED_ARGS = {
     "openai": ["temperature", "streaming"],

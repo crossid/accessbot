@@ -5,21 +5,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
 from starlette import status
 
-from app.auth import (
+from ..auth import (
     CurrentUser,
     get_current_active_user,
     setup_org_vstore,
 )
-from app.models import Org
-from app.models_facade import ChatMessageFacade, OrgFacade, RequestFacade
-from app.services import (
+from ..models import Org
+from ..models_facade import ChatMessageFacade, OrgFacade, RequestFacade
+from ..services import (
     factory_message_db_facade,
     factory_org_db_facade,
     factory_request_db_facade,
 )
-from app.sql import SQLAlchemyTransactionContext
-from app.tx import TransactionContext
-from app.vector_store import delete_store
+from ..sql import SQLAlchemyTransactionContext
+from ..tx import TransactionContext
+from ..vector_store import delete_store
 
 logger = logging.getLogger(__name__)
 
