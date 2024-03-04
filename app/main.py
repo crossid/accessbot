@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from app.routers import content, internal, org, request
-from app.sql import create_tables
+from .routers import content, internal, org, request
+from .sql import create_tables
 
 logger = logging.getLogger(__name__)
 

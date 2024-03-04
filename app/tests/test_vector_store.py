@@ -1,8 +1,8 @@
 import os
 from unittest import TestCase
 
-from app.embeddings import create_embedding
-from app.vector_store import create_org_vstore
+from ..embeddings import create_embedding
+from ..vector_store import create_org_vstore
 
 
 class TestVectorStore(TestCase):

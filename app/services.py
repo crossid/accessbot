@@ -1,8 +1,8 @@
 import importlib
 
-from app.models_facade import OrgFacadeHooks, OrgFacadeProxy
-from app.models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
-from app.settings import settings
+from .models_facade import OrgFacadeHooks, OrgFacadeProxy
+from .models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
+from .settings import settings
 
 
 def factory_org_db_facade():

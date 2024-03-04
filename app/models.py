@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from app.id import generate
+from .id import generate
 
 
 class User(BaseModel):

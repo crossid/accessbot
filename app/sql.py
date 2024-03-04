@@ -3,10 +3,9 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 
-from app.models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
-from app.tx import TransactionContext
-
+from .models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
 from .settings import settings
+from .tx import TransactionContext
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ from langchain_community.embeddings.sentence_transformer import (
 from langchain_core.embeddings import Embeddings
 from langchain_openai import OpenAIEmbeddings
 
-from app.settings import settings
+from .settings import settings
 
 
 def create_embedding(embedding_type: str = settings.VSTORE_EMBEDDING) -> Embeddings:

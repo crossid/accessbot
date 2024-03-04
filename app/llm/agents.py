@@ -11,9 +11,9 @@ from langchain.tools import Tool
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils.function_calling import convert_to_openai_function
 
-from app.llm.model import create_model, get_model_from_uri
-from app.llm.prompts import MEMORY_KEY
-from app.settings import settings
+from ..settings import settings
+from .model import create_model, get_model_from_uri
+from .prompts import MEMORY_KEY
 
 
 def create_llm_function_converter(type: str):

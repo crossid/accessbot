@@ -11,9 +11,9 @@ from langchain_core.messages import (
     message_to_dict,
 )
 
-from app.models import ChatMessage
-from app.models_facade import ChatMessageFacade
-from app.tx import TransactionContext
+from ..models import ChatMessage
+from ..models_facade import ChatMessageFacade
+from ..tx import TransactionContext
 
 logger = logging.getLogger(__name__)
 

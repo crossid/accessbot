@@ -5,9 +5,9 @@ import sqlalchemy
 from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Table
 from sqlalchemy.engine import Engine
 
-from app.id import generate
-from app.models import AccessRequest, ChatMessage, Org
-from app.models_facade import (
+from .id import generate
+from .models import AccessRequest, ChatMessage, Org
+from .models_facade import (
     ChatMessageFacade,
     OrgFacade,
     RequestFacade,

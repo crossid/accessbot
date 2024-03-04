@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 
-from app.health.route import healthCheckRoute
-from app.health.service import HealthCheckFactory
-from app.health.sqlalchemy_service import HealthCheckSQL
-from app.models_facade_sql import ORG_TABLE_NAME
-from app.sql import sqlalchemy_engine as engine
+from ..health.route import healthCheckRoute
+from ..health.service import HealthCheckFactory
+from ..health.sqlalchemy_service import HealthCheckSQL
+from ..models_facade_sql import ORG_TABLE_NAME
+from ..sql import sqlalchemy_engine as engine
 
 router = APIRouter(
     prefix="/internal",
