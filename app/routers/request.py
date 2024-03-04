@@ -8,6 +8,7 @@ from starlette import status
 
 from ..auth import get_current_active_user, get_optional_current_org
 from ..llm.conversation import (
+    add_messages,
     create_agent_for_access_request_conversation,
     sse_client_transformer,
 )
@@ -57,7 +58,7 @@ def create(
                 org_id = org.id
 
             ar = AccessRequest(
-                org_id=org_id, owner_id=current_user.id, context={}, messages=None
+                org_id=org_id, requestee_id=current_user.id, context={}, messages=None
             )
             par = request_facade.insert(ar, tx_context=tx_context)
             return par
@@ -114,19 +115,23 @@ async def conversation(
 ):
     org_id = optional_org.id if optional_org is not None else None
 
-    def add_messages(ai_content: str):
-        # Open a new TX because the main tx gets closed after the response is sent which is before the cb is invoked.
-        with SQLAlchemyTransactionContext().manage() as tx_context:
-            chat_history = LangchainChatMessageHistory(
-                conversation_id=request_id,
-                org_id=org_id,
-                tx_context=tx_context,
-                facade=message_facade,
-            )
-            chat_history.add_user_message(body.input)
-            chat_history.add_ai_message(ai_content)
-
     with SQLAlchemyTransactionContext().manage() as tx_context:
+
+        def _add_messages(ai_content: str):
+            # Open a new TX because the main tx gets closed after the response is sent which is before the cb is invoked.
+            with SQLAlchemyTransactionContext().manage() as tx_context:
+                chat_history = LangchainChatMessageHistory(
+                    conversation_id=request_id,
+                    org_id=org_id,
+                    tx_context=tx_context,
+                    facade=message_facade,
+                )
+                add_messages(
+                    chat_history=chat_history,
+                    user_input=body.input,
+                    ai_content=ai_content,
+                )
+
         chat_history = LangchainChatMessageHistory(
             conversation_id=request_id,
             org_id=org_id,
@@ -154,7 +159,7 @@ async def conversation(
                     REQUEST_ID_KEY: ar.id,
                 },
                 event_transformer=sse_client_transformer,
-                callback=add_messages,
+                callback=_add_messages,
             ),
             media_type="text/event-stream",
         )

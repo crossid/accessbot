@@ -58,6 +58,10 @@ class UserStore(ABC):
     def get_by_email(self, email: str) -> Optional[User]:
         pass
 
+    @abstractmethod
+    def list_orgs_for_user(self, user_id: str) -> list[Org]:
+        pass
+
 
 class RequestFacade(ABC):
     @property
@@ -69,6 +73,16 @@ class RequestFacade(ABC):
         self,
         org_id: str,
         request_id: str,
+        tx_context: TransactionContext,
+        links: Optional[list[str]] = None,
+    ):
+        pass
+
+    @abstractmethod
+    def get_by_external_id(
+        self,
+        org_id: str,
+        external_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ):

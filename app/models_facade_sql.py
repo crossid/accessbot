@@ -6,7 +6,7 @@ from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Tab
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import AccessRequest, ChatMessage, Org
+from .models import AccessRequest, ChatMessage, Org, StatusEnum
 from .models_facade import (
     ChatMessageFacade,
     OrgFacade,
@@ -43,7 +43,7 @@ request_table = sqlalchemy.Table(
         # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
         # primary_key=True,
     ),
-    Column("owner_id", String(), nullable=False),
+    Column("requestee_id", String(), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
@@ -162,17 +162,18 @@ class RequestFacadeSQL(RequestFacade):
     def logger(self) -> logging.Logger:
         return self._logger
 
-    def get_by_id(
+    def _get_by(
         self,
         org_id: str,
-        request_id: str,
+        column: str,
+        column_value: any,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ) -> Optional[AccessRequest]:
         query = (
             self.requests.select()
             .where(self.requests.c.org_id == org_id)
-            .where(self.requests.c.id == request_id)
+            .where(column == column_value)
             .limit(1)
         )
         result: object = tx_context.connection.execute(query).first()
@@ -181,19 +182,40 @@ class RequestFacadeSQL(RequestFacade):
             req = AccessRequest(**result._asdict())
         if links and "messages" in links:
             messages = tx_context.connection.execute(
-                self.messages.select().where(
-                    self.messages.c.conversation_id == request_id
-                )
+                self.messages.select().where(self.messages.c.conversation_id == req.id)
             )
             req.messages = [ChatMessage(**m._asdict()) for m in messages]
         return req
+
+    def get_by_id(
+        self,
+        org_id: str,
+        request_id: str,
+        tx_context: TransactionContext,
+        links: Optional[list[str]] = None,
+    ):
+        return self._get_by(org_id, self.requests.c.id, request_id, tx_context, links)
+
+    def get_by_external_id(
+        self,
+        org_id: str,
+        external_id: str,
+        tx_context: TransactionContext,
+        links: Optional[list[str]] = None,
+    ) -> Optional[AccessRequest]:
+        return self._get_by(
+            org_id, self.requests.c.external_id, external_id, tx_context, links
+        )
 
     def insert(
         self, req: AccessRequest, tx_context: TransactionContext
     ) -> AccessRequest:
         if req.id is None:
             req.id = generate()
+        req.status = StatusEnum.active
         o = req.model_dump()
+        # fixes Error binding parameter 4: type 'StatusEnum' is not supported
+        o["status"] = o["status"].value
         tx_context.connection.execute(self.requests.insert(), o)
         return req
 

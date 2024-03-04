@@ -72,7 +72,7 @@ class AccessRequest(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     external_id: Optional[str] = Field(default=None)
     context: dict[str, Any] = Field(description="context of the request")
-    owner_id: str
+    requestee_id: str
     org_id: Optional[str]
     messages: Optional[list[ChatMessage]] = Field(
         default=None, description="Messages related to the request"
