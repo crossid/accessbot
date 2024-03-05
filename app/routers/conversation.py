@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 from starlette import status
 
-from ..auth import get_current_active_user, get_optional_current_org
+from ..auth import get_current_active_user, get_current_org
 from ..llm.conversation import (
     add_messages,
     create_agent_for_access_request_conversation,
@@ -16,11 +16,10 @@ from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, ORGID_KEY, USERNAME_K
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
 from ..models import Conversation, CurrentUser, Org
-from ..models_facade import ChatMessageFacade, OrgFacade
+from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
 from ..services import (
     factory_conversation_db_facade,
     factory_message_db_facade,
-    factory_org_db_facade,
 )
 from ..sql import SQLAlchemyTransactionContext
 
@@ -45,18 +44,12 @@ class ConversationBody(BaseModel):
 def create(
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    conversation_store: OrgFacade = Depends(factory_conversation_db_facade),
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
+    org: Annotated[Org, Depends(get_current_org)],
+    conversation_store: ConversationStore = Depends(factory_conversation_db_facade),
 ):
-    org_id = None
+    org_id = org.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
-            if current_user.org_id is not None:
-                org = org_facade.get_by_id(
-                    org_id=current_user.org_id, tx_context=tx_context
-                )
-                org_id = org.id
-
             ar = Conversation(
                 org_id=org_id, created_by=current_user.id, context={}, messages=None
             )
@@ -110,11 +103,11 @@ async def conversation(
     conversation_id: str,
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    optional_org: Annotated[Org | None, Depends(get_optional_current_org)],
-    conversation_store: OrgFacade = Depends(factory_conversation_db_facade),
+    org: Annotated[Org | None, Depends(get_current_org)],
+    conversation_store: ConversationStore = Depends(factory_conversation_db_facade),
     message_facade: ChatMessageFacade = Depends(factory_message_db_facade),
 ):
-    org_id = optional_org.id if optional_org is not None else None
+    org_id = org.id
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
 

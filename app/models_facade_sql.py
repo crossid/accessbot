@@ -39,9 +39,8 @@ conversation_table = sqlalchemy.Table(
         "org_id",
         String(10),
         ForeignKey(org_table.c.id),
-        nullable=True,
-        # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
-        # primary_key=True,
+        nullable=False,
+        primary_key=True,
     ),
     Column("created_by", String(), nullable=False),
     Column("status", String(32), nullable=False),
@@ -58,9 +57,8 @@ message_table = sqlalchemy.Table(
         "org_id",
         String(10),
         ForeignKey(org_table.c.id),
-        nullable=True,
-        # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
-        # primary_key=True,
+        nullable=False,
+        primary_key=True,
     ),
     Column(
         "conversation_id",

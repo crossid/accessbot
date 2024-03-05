@@ -75,7 +75,7 @@ class ConversationStore(ABC):
         conversation_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
-    ):
+    ) -> Optional[Conversation]:
         pass
 
     @abstractmethod
@@ -85,7 +85,7 @@ class ConversationStore(ABC):
         external_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
-    ):
+    ) -> Optional[Conversation]:
         pass
 
     @abstractmethod
