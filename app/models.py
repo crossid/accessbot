@@ -40,22 +40,6 @@ class Org(BaseModel):
     config: dict[str, Any] = Field(description="Organization configuration")
 
 
-class StatusEnum(enum.Enum):
-    """
-    Enum class representing the status of a request
-
-    - active: an active conversation between the requester and the LLM.
-    - submitted: the request has been submitted and is pending approval.
-    - approval: pending data owner approval.
-    - completed: the request has been completed, whether it was approved or denied.
-    """
-
-    active = "active"
-    submitted = "submitted"
-    approval = "approval"
-    completed = "completed"
-
-
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     conversation_id: str = Field(default=None)
@@ -66,14 +50,28 @@ class ChatMessage(BaseModel):
     # TODO created_by
 
 
-class AccessRequest(BaseModel):
+class ConversationStatuses(enum.Enum):
+    """
+    Enum class representing the status of a conversation
+
+    - active: an active conversation between the requester and the LLM.
+    - submitted: the conversation has been submitted, probably pending approval.
+    - completed: the conversation has been completed, whether fulfilled or denied.
+    """
+
+    active = "active"
+    submitted = "submitted"
+    completed = "completed"
+
+
+class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: generate())
-    status: StatusEnum = Field(default="active")
+    org_id: Optional[str]
+    status: ConversationStatuses = Field(default="active")
     created_at: datetime = Field(default_factory=datetime.now)
     external_id: Optional[str] = Field(default=None)
-    context: dict[str, Any] = Field(description="context of the request")
-    requestee_id: str
-    org_id: Optional[str]
+    context: dict[str, Any] = Field(description="context of the conversation")
+    created_by: str
     messages: Optional[list[ChatMessage]] = Field(
-        default=None, description="Messages related to the request"
+        default=None, description="Messages related to the conversations"
     )

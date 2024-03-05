@@ -3,7 +3,7 @@ from langchain.prompts.prompt import PromptTemplate
 MEMORY_KEY = "chat_history"
 USERNAME_KEY = "username"
 ORGID_KEY = "org_id"
-REQUEST_ID_KEY = "req_id"
+CONVERSATION_ID_KEY = "conversation_id"
 APP_NAMES_KEY = "app_names"
 
 RECOMMENDATION_TEMPLATE = """
@@ -11,7 +11,7 @@ RECOMMENDATION_TEMPLATE = """
     You may recommend more than 1 entitlement (aka: role, grant, group) at a time.
     The current username is: {username}
     The current organization id is: {org_id}
-    The request id is: {req_id}
+    The conversation id is: {conversation_id}
     You should check which entitlements the user already has before recommending any to the user.
     Search for entitlements and access before making a recommendation.
     Give higher weights to entitlements description.
@@ -35,7 +35,7 @@ class PromptsFacade:
                 input_variables=[
                     USERNAME_KEY,
                     ORGID_KEY,
-                    REQUEST_ID_KEY,
+                    CONVERSATION_ID_KEY,
                     APP_NAMES_KEY,
                 ],
             )

@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from .routers import content, internal, org, request
+from .routers import content, conversation, internal, org
 from .slack.store_sql import init_sql
 from .sql import create_tables
 
@@ -26,7 +26,7 @@ app.include_router(internal.router)
 # api routers
 api = APIRouter(prefix="/api")
 api.include_router(org.router)
-api.include_router(request.router)
+api.include_router(conversation.router)
 api.include_router(content.router)
 app.include_router(api)
 

@@ -1,7 +1,7 @@
 import importlib
 
 from .models_facade import OrgFacadeHooks, OrgFacadeProxy
-from .models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
+from .models_facade_sql import ChatMessageFacadeSQL, ConversationStoreSQL, OrgFacadeSQL
 from .settings import settings
 from .user_store_factory import create_user_store
 
@@ -22,13 +22,13 @@ def factory_org_db_facade():
 
 
 org_facade = factory_org_db_facade()
-request_facade = RequestFacadeSQL()
+conversation_store = ConversationStoreSQL()
 user_store = create_user_store()
 message_facade = ChatMessageFacadeSQL()
 
 
-def factory_request_db_facade():
-    return request_facade
+def factory_conversation_db_facade():
+    return conversation_store
 
 
 def factory_message_db_facade():

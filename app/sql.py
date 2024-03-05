@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 
-from .models_facade_sql import ChatMessageFacadeSQL, OrgFacadeSQL, RequestFacadeSQL
+from .models_facade_sql import ChatMessageFacadeSQL, ConversationStoreSQL, OrgFacadeSQL
 from .settings import settings
 from .tx import TransactionContext
 
@@ -17,13 +17,13 @@ sqlalchemy_engine = create_engine(
     # connect_args={"connect_timeout": 10},
 )
 org_facade = OrgFacadeSQL()
-request_facade = RequestFacadeSQL()
+conversation_store = ConversationStoreSQL()
 message_facade = ChatMessageFacadeSQL()
 
 
 def create_tables():
     org_facade.create_tables(sqlalchemy_engine)
-    request_facade.create_tables(sqlalchemy_engine)
+    conversation_store.create_tables(sqlalchemy_engine)
     message_facade.create_tables(sqlalchemy_engine)
     pass
 

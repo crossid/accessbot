@@ -3,15 +3,15 @@
 
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
-from ..models import AccessRequest, StatusEnum, User
+from ..models import Conversation, ConversationStatuses, User
 from ..services import message_facade
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
 from .agents import create_agent
 from .prompts import (
+    CONVERSATION_ID_KEY,
     MEMORY_KEY,
     ORGID_KEY,
-    REQUEST_ID_KEY,
     USERNAME_KEY,
     prompt_facade,
 )
@@ -20,21 +20,21 @@ from .prompts import (
 
 
 def create_agent_for_access_request_conversation(
-    access_request: AccessRequest, streaming=True
+    conversation: Conversation, streaming=True
 ):
     embedding = create_embedding()
-    retriever = create_retriever(org_id=access_request.org_id, embedding=embedding)
+    retriever = create_retriever(org_id=conversation.org_id, embedding=embedding)
 
     prompt = None
-    if access_request.status == StatusEnum.active:
+    if conversation.status == ConversationStatuses.active:
         prompt = prompt_facade.get("generic_recommendation")
     else:
-        raise ValueError("Invalid status for access request")
+        raise ValueError("Invalid conversation status")
 
     data_context = {
         USERNAME_KEY: lambda x: x[USERNAME_KEY],
         ORGID_KEY: lambda x: x[ORGID_KEY],
-        REQUEST_ID_KEY: lambda x: x[REQUEST_ID_KEY],
+        CONVERSATION_ID_KEY: lambda x: x[CONVERSATION_ID_KEY],
     }
 
     agent_executor = create_agent(
@@ -57,25 +57,25 @@ def add_messages(
 
 async def make_conversation(
     current_user: User,
-    request: AccessRequest,
+    conversation: Conversation,
     input: str,
     tx_context: TransactionContext,
 ):
     chat_history = LangchainChatMessageHistory(
-        conversation_id=request.id,
-        org_id=request.org_id,
+        conversation_id=conversation.id,
+        org_id=conversation.org_id,
         tx_context=tx_context,
         facade=message_facade,
     )
 
-    agent_executor = create_agent_for_access_request_conversation(request)
+    agent_executor = create_agent_for_access_request_conversation(conversation)
     result = await agent_executor.ainvoke(
         {
             "input": input,
             MEMORY_KEY: chat_history.messages,
             USERNAME_KEY: current_user.id,
-            ORGID_KEY: request.org_id,
-            REQUEST_ID_KEY: request.id,
+            ORGID_KEY: conversation.org_id,
+            CONVERSATION_ID_KEY: conversation.id,
         },
     )
     add_messages(chat_history, input, result["output"])

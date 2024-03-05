@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from logging import Logger
 from typing import Optional
 
-from .models import AccessRequest, ChatMessage, Org, User
+from .models import ChatMessage, Conversation, Org, User
 from .tx import TransactionContext
 
 
@@ -63,7 +63,7 @@ class UserStore(ABC):
         pass
 
 
-class RequestFacade(ABC):
+class ConversationStore(ABC):
     @property
     def logger(self) -> Logger:
         raise NotImplementedError()
@@ -72,7 +72,7 @@ class RequestFacade(ABC):
     def get_by_id(
         self,
         org_id: str,
-        request_id: str,
+        conversation_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ):
@@ -90,8 +90,8 @@ class RequestFacade(ABC):
 
     @abstractmethod
     def insert(
-        self, request: AccessRequest, tx_context: TransactionContext
-    ) -> AccessRequest:
+        self, conversation: Conversation, tx_context: TransactionContext
+    ) -> Conversation:
         pass
 
     @abstractmethod

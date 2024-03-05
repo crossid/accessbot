@@ -3,8 +3,8 @@ import asyncio
 from slack_sdk import WebClient
 
 from ..llm.conversation import make_conversation
-from ..models import AccessRequest, StatusEnum
-from ..services import request_facade, user_store
+from ..models import Conversation, ConversationStatuses
+from ..services import conversation_store, user_store
 from ..sql import SQLAlchemyTransactionContext
 from .app import app
 
@@ -61,37 +61,39 @@ def answer(client: WebClient, event, logger, say, context):
             return
         # TODO: consider letting the user choose the org to work with in Slack
         org = orgs[0]
-        access_request: AccessRequest = None
+        conversation: Conversation = None
         with SQLAlchemyTransactionContext().manage() as tx_context:
-            access_request = request_facade.get_by_external_id(
+            conversation = conversation_store.get_by_external_id(
                 org_id=org.id, external_id=thread_ts, tx_context=tx_context
             )
 
-        if access_request is None:
-            request_ctx = {}
+        if conversation is None:
+            conversation_ctx = {}
             team_id = context.get("team_id", None)
             if team_id is not None:
-                request_ctx["team_id"] = team_id
+                conversation_ctx["team_id"] = team_id
             enterprise_id = context.get("enterprise_id", None)
             if enterprise_id is not None:
-                request_ctx["enterprise_id"] = enterprise_id
+                conversation_ctx["enterprise_id"] = enterprise_id
 
-            ar = AccessRequest(
-                requestee_id=user.id,
+            conversation = Conversation(
+                created_by=user.id,
                 org_id=org.id,
                 external_id=thread_ts,
-                context=request_ctx,
+                context=conversation_ctx,
             )
             with SQLAlchemyTransactionContext().manage() as tx_context:
-                access_request = request_facade.insert(req=ar, tx_context=tx_context)
-                logger.info("request %s created from slack", access_request.id)
-        elif access_request.status == StatusEnum.submitted:
+                conversation = conversation_store.insert(
+                    conversation=conversation, tx_context=tx_context
+                )
+                logger.info("conversation %s created from slack", conversation.id)
+        elif conversation.status == ConversationStatuses.submitted:
             say(
                 text="This conversation is already submitted, please start a new one.",
                 thread_ts=thread_ts,
             )
             return
-        elif access_request.status == StatusEnum.completed:
+        elif conversation.status == ConversationStatuses.completed:
             say(
                 text="This conversation is ended, please start a new one.",
                 thread_ts=thread_ts,
@@ -101,7 +103,7 @@ def answer(client: WebClient, event, logger, say, context):
         with SQLAlchemyTransactionContext().manage() as tx_context:
             co_routine = make_conversation(
                 current_user=user,
-                request=access_request,
+                conversation=conversation,
                 input=event["text"],
                 tx_context=tx_context,
             )

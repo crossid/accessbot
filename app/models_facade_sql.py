@@ -6,18 +6,18 @@ from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Tab
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import AccessRequest, ChatMessage, Org, StatusEnum
+from .models import ChatMessage, Conversation, ConversationStatuses, Org
 from .models_facade import (
     ChatMessageFacade,
+    ConversationStore,
     OrgFacade,
-    RequestFacade,
     TransactionContext,
 )
 
 metadata = MetaData()
 
 ORG_TABLE_NAME = "org"
-REQUEST_TABLE_NAME = "request"
+CONVERSATION_TABLE_NAME = "conversation"
 MESSAGE_TABLE_NAME = "message"
 
 org_table = sqlalchemy.Table(
@@ -31,8 +31,8 @@ org_table = sqlalchemy.Table(
 )
 
 
-request_table = sqlalchemy.Table(
-    REQUEST_TABLE_NAME,
+conversation_table = sqlalchemy.Table(
+    CONVERSATION_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
     Column(
@@ -43,7 +43,7 @@ request_table = sqlalchemy.Table(
         # This needs to be primary key if we want to distribute the table in cosmosdb. But is also needs to be nullable=False.
         # primary_key=True,
     ),
-    Column("requestee_id", String(), nullable=False),
+    Column("created_by", String(), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
@@ -65,7 +65,7 @@ message_table = sqlalchemy.Table(
     Column(
         "conversation_id",
         String(10),
-        # ForeignKey(request_table.c.id),
+        # ForeignKey(coversation_table.c.id),
         nullable=False,
     ),
     Column("type", String(32), nullable=False),
@@ -76,7 +76,7 @@ message_table = sqlalchemy.Table(
 
 class OrgFacadeSQL(OrgFacade):
     default_table_name: str = ORG_TABLE_NAME
-    default_requests_table_name: str = REQUEST_TABLE_NAME
+    default_conversations_table_name: str = CONVERSATION_TABLE_NAME
     default_messages_table_name = MESSAGE_TABLE_NAME
     metadata: MetaData
     orgs: Table
@@ -125,16 +125,16 @@ class OrgFacadeSQL(OrgFacade):
         return None
 
 
-class RequestFacadeSQL(RequestFacade):
-    default_requests_table_name: str = REQUEST_TABLE_NAME
+class ConversationStoreSQL(ConversationStore):
+    default_conversations_table_name: str = CONVERSATION_TABLE_NAME
     default_messages_table_name = MESSAGE_TABLE_NAME
     metadata: MetaData
-    requests: Table
+    conversations: Table
     messages: Table
 
     @classmethod
-    def build_request_table(cls, metadata: MetaData, table_name: str) -> Table:
-        return request_table
+    def build_conversation_table(cls, metadata: MetaData, table_name: str) -> Table:
+        return conversation_table
 
     @classmethod
     def build_message_table(cls, metadata: MetaData, table_name: str) -> Table:
@@ -142,13 +142,13 @@ class RequestFacadeSQL(RequestFacade):
 
     def __init__(
         self,
-        requests_table_name: str = default_requests_table_name,
+        conversations_table_name: str = default_conversations_table_name,
         messages_table_name: str = default_messages_table_name,
         logger: logging.Logger = logging.getLogger(__name__),
     ):
         self.metadata = metadata
-        self.requests = self.build_request_table(
-            metadata=self.metadata, table_name=requests_table_name
+        self.conversations = self.build_conversation_table(
+            metadata=self.metadata, table_name=conversations_table_name
         )
         self.messages = self.build_message_table(
             metadata=self.metadata, table_name=messages_table_name
@@ -169,32 +169,34 @@ class RequestFacadeSQL(RequestFacade):
         column_value: any,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
-    ) -> Optional[AccessRequest]:
+    ) -> Optional[Conversation]:
         query = (
-            self.requests.select()
-            .where(self.requests.c.org_id == org_id)
+            self.conversations.select()
+            .where(self.conversations.c.org_id == org_id)
             .where(column == column_value)
             .limit(1)
         )
         result: object = tx_context.connection.execute(query).first()
-        req: AccessRequest = None
+        conv: Conversation = None
         if result:
-            req = AccessRequest(**result._asdict())
+            conv = Conversation(**result._asdict())
         if links and "messages" in links:
             messages = tx_context.connection.execute(
-                self.messages.select().where(self.messages.c.conversation_id == req.id)
+                self.messages.select().where(self.messages.c.conversation_id == conv.id)
             )
-            req.messages = [ChatMessage(**m._asdict()) for m in messages]
-        return req
+            conv.messages = [ChatMessage(**m._asdict()) for m in messages]
+        return conv
 
     def get_by_id(
         self,
         org_id: str,
-        request_id: str,
+        conversation_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ):
-        return self._get_by(org_id, self.requests.c.id, request_id, tx_context, links)
+        return self._get_by(
+            org_id, self.conversations.c.id, conversation_id, tx_context, links
+        )
 
     def get_by_external_id(
         self,
@@ -202,28 +204,28 @@ class RequestFacadeSQL(RequestFacade):
         external_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
-    ) -> Optional[AccessRequest]:
+    ) -> Optional[Conversation]:
         return self._get_by(
-            org_id, self.requests.c.external_id, external_id, tx_context, links
+            org_id, self.conversations.c.external_id, external_id, tx_context, links
         )
 
     def insert(
-        self, req: AccessRequest, tx_context: TransactionContext
-    ) -> AccessRequest:
-        if req.id is None:
-            req.id = generate()
-        req.status = StatusEnum.active
-        o = req.model_dump()
+        self, conversation: Conversation, tx_context: TransactionContext
+    ) -> Conversation:
+        if conversation.id is None:
+            conversation.id = generate()
+        conversation.status = ConversationStatuses.active
+        o = conversation.model_dump()
         # fixes Error binding parameter 4: type 'StatusEnum' is not supported
         o["status"] = o["status"].value
-        tx_context.connection.execute(self.requests.insert(), o)
-        return req
+        tx_context.connection.execute(self.conversations.insert(), o)
+        return conversation
 
     def delete_for_org(self, org_id: str, tx_context: TransactionContext = None):
         if org_id is None:
             return None
 
-        q = self.requests.delete().where(self.requests.c.org_id == org_id)
+        q = self.conversations.delete().where(self.conversations.c.org_id == org_id)
         tx_context.connection.execute(q)
         return None
 
@@ -235,7 +237,7 @@ class ChatMessageFacadeSQL(ChatMessageFacade):
 
     @classmethod
     def build_table(
-        cls, metadata: MetaData, table_name: str, request_table: Table
+        cls, metadata: MetaData, table_name: str, conversation_table: Table
     ) -> Table:
         return message_table
 
@@ -248,7 +250,7 @@ class ChatMessageFacadeSQL(ChatMessageFacade):
         self.messages = self.build_table(
             metadata=self.metadata,
             table_name=messages_table_name,
-            request_table=request_table,
+            conversation_table=conversation_table,
         )
         self._logger = logger
 

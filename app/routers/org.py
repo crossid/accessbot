@@ -11,11 +11,11 @@ from ..auth import (
     setup_org_vstore,
 )
 from ..models import Org
-from ..models_facade import ChatMessageFacade, OrgFacade, RequestFacade
+from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
 from ..services import (
+    factory_conversation_db_facade,
     factory_message_db_facade,
     factory_org_db_facade,
-    factory_request_db_facade,
 )
 from ..sql import SQLAlchemyTransactionContext
 from ..tx import TransactionContext
@@ -74,7 +74,7 @@ def wipe_org(
     tx_context: TransactionContext,
     org_facade: OrgFacade,
     msg_facade: ChatMessageFacade,
-    req_facade: RequestFacade,
+    req_facade: ConversationStore,
     ovstore,
 ):
     delete_store(ovstore=ovstore)
@@ -89,7 +89,7 @@ async def delete(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_facade: Annotated[OrgFacade, Depends(factory_org_db_facade)],
     msg_facade: Annotated[ChatMessageFacade, Depends(factory_message_db_facade)],
-    req_facade: Annotated[RequestFacade, Depends(factory_request_db_facade)],
+    req_facade: Annotated[ConversationStore, Depends(factory_conversation_db_facade)],
     ovstore=Depends(setup_org_vstore),
 ):
     # TODO: authorization, replace this check with creator_id?
