@@ -1,8 +1,8 @@
 from slack_sdk.oauth.installation_store.sqlalchemy import SQLAlchemyInstallationStore
 from slack_sdk.oauth.state_store.sqlalchemy import SQLAlchemyOAuthStateStore
 
-from app.settings import settings
-from app.sql import sqlalchemy_engine
+from ..settings import settings
+from ..sql import sqlalchemy_engine
 
 sql_installation_store = SQLAlchemyInstallationStore(
     engine=sqlalchemy_engine, client_id=settings.SLACK_CLIENT_ID

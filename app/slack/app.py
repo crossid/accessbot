@@ -1,8 +1,7 @@
 from slack_bolt import App
 from slack_bolt.oauth.oauth_settings import OAuthSettings
 
-from app.settings import settings
-
+from ..settings import settings
 from .store_sql import sql_installation_store, state_store
 
 oauth_settings = OAuthSettings(
