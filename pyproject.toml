@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "@crossid/accessbot"
 version = "0.0.1-alpha"
-description = "Request access via a bot"
+description = "Streamline application access with AI-Powered workflow automation."
 authors = ["Indexia Technologies, ltd."]
 license = "Proprietary"
 readme = "README.md"
