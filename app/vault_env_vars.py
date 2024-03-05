@@ -1,4 +1,6 @@
 import os
+import re
+from typing import List
 
 from .vault import VaultAPI
 
@@ -28,3 +30,12 @@ class EnvVarVault(VaultAPI):
         except Exception as e:
             print(f"Error deleting secret: {e}")
             return False
+
+    def list_secrets(self, org_id: str) -> List[str]:
+        org_keys = []
+        for key in os.environ:
+            if key.startswith(org_id.upper()):
+                secret_name = re.sub(f"^{org_id}_", "", key, flags=re.IGNORECASE)
+                org_keys.append(secret_name.lower())
+
+        return org_keys
