@@ -10,7 +10,7 @@ from fastapi import Depends, HTTPException, Request, status
 from .embeddings import create_embedding
 from .models import CurrentUser, Org
 from .models_facade import OrgFacade
-from .services import factory_org_db_facade
+from .services import get_service
 from .settings import settings
 from .sql import SQLAlchemyTransactionContext
 from .vector_store import create_org_vstore
@@ -125,7 +125,7 @@ def factory_auth_api(request: Request) -> AuthAPI:
 
 async def get_current_org(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
+    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
 ) -> Org:
     org_id = current_user.org_id
     if org_id is None:
@@ -146,7 +146,7 @@ async def get_current_org(
 
 async def get_optional_current_org(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
+    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
 ):
     org_id = current_user.org_id
     if org_id is None:

@@ -1,13 +1,21 @@
 import logging
 from contextlib import asynccontextmanager
 
+import injector
 from fastapi import APIRouter, FastAPI
+
+from app.injector_extensions_module import ExtensionModule
+from app.injector_main_module import MainModule
+from app.services import set_service_registry
 
 from .routers import content, conversation, internal, org
 from .slack.store_sql import init_sql
 from .sql import create_tables
 
 logger = logging.getLogger(__name__)
+
+service_registry = injector.Injector([MainModule(), ExtensionModule()])
+set_service_registry(service_registry)
 
 
 @asynccontextmanager
@@ -34,4 +42,3 @@ app.include_router(api)
 from .slack.router import register as slack_register  # noqa
 
 slack_register(app)
-# api.include_router(slack_router)

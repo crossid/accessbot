@@ -1,10 +1,12 @@
 # from langchain.globals import set_debug
 
 
+from app.models_facade import ChatMessageFacade
+from app.services import service_registry
+
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..models import Conversation, ConversationStatuses, User
-from ..services import message_facade
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
 from .agents import create_agent
@@ -61,6 +63,7 @@ async def make_conversation(
     input: str,
     tx_context: TransactionContext,
 ):
+    message_facade = service_registry().get(ChatMessageFacade)
     chat_history = LangchainChatMessageHistory(
         conversation_id=conversation.id,
         org_id=conversation.org_id,

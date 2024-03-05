@@ -2,9 +2,11 @@ import asyncio
 
 from slack_sdk import WebClient
 
+from app.models_facade import ConversationStore, UserStore
+
 from ..llm.conversation import make_conversation
 from ..models import Conversation, ConversationStatuses
-from ..services import conversation_store, user_store
+from ..services import service_registry
 from ..sql import SQLAlchemyTransactionContext
 from .app import app
 
@@ -45,6 +47,7 @@ def answer(client: WebClient, event, logger, say, context):
         # thread id to reply to the message
         thread_ts = event.get("thread_ts", None) or event["ts"]
 
+        user_store = service_registry().get(UserStore)
         user = user_store.get_by_email(email=slack_user_email)
         if user is None:
             # TODO redirect the user to the app's about tab (see https://api.slack.com/reference/deep-linking)
@@ -62,6 +65,7 @@ def answer(client: WebClient, event, logger, say, context):
         # TODO: consider letting the user choose the org to work with in Slack
         org = orgs[0]
         conversation: Conversation = None
+        conversation_store = service_registry().get(ConversationStore)
         with SQLAlchemyTransactionContext().manage() as tx_context:
             conversation = conversation_store.get_by_external_id(
                 org_id=org.id, external_id=thread_ts, tx_context=tx_context

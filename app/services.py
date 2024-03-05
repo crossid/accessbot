@@ -1,35 +1,46 @@
-import importlib
+import injector
 
-from .models_facade import OrgFacadeHooks, OrgFacadeProxy
-from .models_facade_sql import ChatMessageFacadeSQL, ConversationStoreSQL, OrgFacadeSQL
-from .settings import settings
-from .user_store_factory import create_user_store
+from .models_facade import (
+    ChatMessageFacade,
+    ConversationStore,
+)
 
-
-def factory_org_db_facade():
-    hooks: OrgFacadeHooks = None
-    if settings.ORG_FACADE_HOOKS:
-        sp = settings.ORG_FACADE_HOOKS.split(":")
-        if len(sp) == 2:
-            hook_module_name = sp[0]
-            hook_class_name = sp[1]
-        if hook_module_name and hook_class_name:
-            hook_module = importlib.import_module(hook_module_name)
-            hook_class = getattr(hook_module, hook_class_name)
-            hooks = hook_class()
-
-    return OrgFacadeProxy(facade=OrgFacadeSQL(), hooks=hooks)
+_service_registry: injector.Injector = None
 
 
-org_facade = factory_org_db_facade()
-conversation_store = ConversationStoreSQL()
-user_store = create_user_store()
-message_facade = ChatMessageFacadeSQL()
+def service_registry() -> injector.Injector:
+    global _service_registry
+    return _service_registry
+
+
+def set_service_registry(injector: injector.Injector):
+    global _service_registry
+    _service_registry = injector
+
+
+def get_service(service_class: type) -> callable:
+    """
+    Define a route using the dependency
+    example:
+        @app.get("/")
+        async def list(service: MyService = Depends(get_service(MyService))):
+
+    Args:
+        service_class (type): The class of the service to be resolved.
+
+    Returns:
+        callable: A function that resolves the dependency and returns an instance of the service class.
+    """
+
+    def dependency() -> object:
+        return service_registry().get(service_class)
+
+    return dependency
 
 
 def factory_conversation_db_facade():
-    return conversation_store
+    return service_registry().get(ConversationStore)
 
 
 def factory_message_db_facade():
-    return message_facade
+    return service_registry().get(ChatMessageFacade)

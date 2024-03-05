@@ -12,9 +12,6 @@ class Settings(BaseSettings):
     OAUTH2_AUDIENCE: str = ""
     # llm
     LLM_MODEL: str = "openai://gpt-4-turbo-preview"
-    # extensions
-    ORG_FACADE_HOOKS: str = ""
-    USER_STORE_CLASS: str = "app.user_store_scim.UserStoreSCIM"
     # messaging
     SLACK_CLIENT_ID: str = ""
     SLACK_CLIENT_SECRET: str = ""

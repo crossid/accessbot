@@ -15,7 +15,7 @@ from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
 from ..services import (
     factory_conversation_db_facade,
     factory_message_db_facade,
-    factory_org_db_facade,
+    get_service,
 )
 from ..sql import SQLAlchemyTransactionContext
 from ..tx import TransactionContext
@@ -44,7 +44,7 @@ class CreateOrgRequest(BaseModel):
 def create(
     body: CreateOrgRequest,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
+    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -59,7 +59,7 @@ def create(
 def get(
     org_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(factory_org_db_facade),
+    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         org = org_facade.get_by_id(org_id, tx_context=tx_context)
@@ -87,7 +87,7 @@ def wipe_org(
 async def delete(
     org_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: Annotated[OrgFacade, Depends(factory_org_db_facade)],
+    org_facade: Annotated[OrgFacade, Depends(get_service(OrgFacade))],
     msg_facade: Annotated[ChatMessageFacade, Depends(factory_message_db_facade)],
     req_facade: Annotated[ConversationStore, Depends(factory_conversation_db_facade)],
     ovstore=Depends(setup_org_vstore),

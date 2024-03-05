@@ -34,6 +34,15 @@ class OrgFacadeHooks(ABC):
         pass
 
 
+# This is here just because the injector for some reason is not handling Optional injection
+class OrgFacadeHooksPass(OrgFacadeHooks):
+    def pre_insert(self, org: Org, tx_context: TransactionContext):
+        pass
+
+    def pre_delete(self, org: Org, tx_context: TransactionContext):
+        pass
+
+
 class OrgFacadeProxy:
     def __init__(self, facade: OrgFacade, hooks: OrgFacadeHooks):
         self._facade = facade
