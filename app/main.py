@@ -31,7 +31,7 @@ api.include_router(content.router)
 app.include_router(api)
 
 # extensions
-from app.slack.router import register as slack_register  # noqa
+from .slack.router import register as slack_register  # noqa
 
 slack_register(app)
 # api.include_router(slack_router)
