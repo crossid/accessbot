@@ -12,7 +12,7 @@ class TestEnvVarVault(unittest.TestCase):
         self.secret = "secret_value"
 
     @patch.dict("os.environ", {}, clear=True)
-    def test_set_get_secret(self):
+    def test_set_get_list_secret(self):
         # Test set_secret
         result = self.vault.set_secret(self.org_id, self.path, self.secret)
         self.assertTrue(result)
@@ -20,6 +20,11 @@ class TestEnvVarVault(unittest.TestCase):
         # Test get_secret
         retrieved_secret = self.vault.get_secret(self.org_id, self.path)
         self.assertEqual(retrieved_secret, self.secret)
+
+        self.vault.set_secret("not_acme", self.path, self.secret)
+        all_secrets = self.vault.list_secrets(self.org_id)
+        self.assertEqual(len(all_secrets), 1)
+        self.assertEqual(all_secrets[0], self.path)
 
     @patch.dict("os.environ", {}, clear=True)
     def test_delete_secret(self):

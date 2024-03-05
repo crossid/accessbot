@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List
 
 
 class VaultAPI(ABC):
@@ -12,4 +13,8 @@ class VaultAPI(ABC):
 
     @abstractmethod
     def delete_secret(self, org_id: str, path: str) -> bool:
+        pass
+
+    @abstractmethod
+    def list_secrets(self, org_id: str) -> List[str]:
         pass
