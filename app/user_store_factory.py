@@ -1,6 +1,5 @@
-from app.classes import instantiate_class
-from app.models_facade import UserStore
-
+from .classes import instantiate_class
+from .models_facade import UserStore
 from .settings import settings
 
 
