@@ -2,12 +2,12 @@ import unittest
 
 from sqlalchemy.engine import create_engine
 
-from ..id import generate
-from ..models import Org
-from ..models_facade import OrgFacadeHooks, OrgFacadeProxy
-from ..models_facade_sql import OrgFacadeSQL
-from ..sql import SQLAlchemyTransactionContext
-from ..tx import TransactionContext
+from app.id import generate
+from app.models import Org
+from app.models_facade import OrgFacadeHooks, OrgFacadeProxy
+from app.models_facade_sql import OrgFacadeSQL
+from app.sql import SQLAlchemyTransactionContext
+from app.tx import TransactionContext
 
 
 class TestOrgFacadeSQL(unittest.TestCase):
