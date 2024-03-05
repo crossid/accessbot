@@ -1,7 +1,7 @@
 import unittest
 
 from app.id import generate
-from app.models import User
+from app.models import Org, User
 from app.models_facade import UserStore
 from app.user_store_factory import create_user_store
 
@@ -9,6 +9,9 @@ from app.user_store_factory import create_user_store
 class CustomUserStore(UserStore):
     def get_by_email(self, email: str):
         return User(id=generate(), email=email)
+
+    def list_orgs_for_user(self, user_id: str) -> list[Org]:
+        return []
 
 
 class TestUserStore(unittest.TestCase):
