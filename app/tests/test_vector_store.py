@@ -8,7 +8,7 @@ from app.vector_store import create_org_vstore
 class TestVectorStore(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.db_file = "./tmp/vss.db"
+        cls.db_file = "/tmp/vss.db"
 
     @classmethod
     def tearDownClass(cls):

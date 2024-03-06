@@ -8,10 +8,8 @@ from ..llm.conversation import make_conversation
 from ..models import Conversation, ConversationStatuses
 from ..services import service_registry
 from ..sql import SQLAlchemyTransactionContext
-from .app import app
 
 
-@app.event("message")
 def answer(client: WebClient, event, logger, say, context):
     """
     Handle the 'message' event from Slack and respond to the user.
