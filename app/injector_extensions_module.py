@@ -1,9 +1,9 @@
 import injector
 
-from app.models_facade import OrgFacadeHooks, OrgFacadeHooksPass, UserStore
-from app.user_store_scim import UserStoreSCIM
-from app.vault import VaultAPI
-from app.vault_env_vars import EnvVarVault
+from .models_facade import OrgFacadeHooks, OrgFacadeHooksPass, UserStore
+from .user_store_scim import UserStoreSCIM
+from .vault import VaultAPI
+from .vault_env_vars import EnvVarVault
 
 
 class ExtensionModule(injector.Module):
