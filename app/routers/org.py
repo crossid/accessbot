@@ -15,10 +15,12 @@ from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
 from ..services import (
     factory_conversation_db_facade,
     factory_message_db_facade,
+    factory_vault,
     get_service,
 )
 from ..sql import SQLAlchemyTransactionContext
 from ..tx import TransactionContext
+from ..vault import VaultAPI
 from ..vector_store import delete_store
 
 logger = logging.getLogger(__name__)
@@ -80,6 +82,12 @@ def wipe_org(
     delete_store(ovstore=ovstore)
     msg_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
     req_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
+
+    vault: VaultAPI = factory_vault()
+    org_secrets = vault.list_secrets(org_id=org.id)
+    for name in org_secrets:
+        vault.delete_secret(org_id=org.id, path=name)
+
     org_facade.delete(org=org, tx_context=tx_context)
 
 

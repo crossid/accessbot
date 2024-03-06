@@ -4,6 +4,7 @@ from .models_facade import (
     ChatMessageFacade,
     ConversationStore,
 )
+from .vault import VaultAPI
 
 _service_registry: injector.Injector = None
 
@@ -44,3 +45,7 @@ def factory_conversation_db_facade():
 
 def factory_message_db_facade():
     return service_registry().get(ChatMessageFacade)
+
+
+def factory_vault():
+    return service_registry().get(VaultAPI)
