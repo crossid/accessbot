@@ -1,4 +1,3 @@
-import logging
 from typing import Optional
 
 import sqlalchemy
@@ -86,18 +85,12 @@ class OrgStoreSQL(OrgStore):
     def __init__(
         self,
         table_name: str = default_table_name,
-        logger: logging.Logger = logging.getLogger(__name__),
     ):
         self.metadata = metadata
         self.orgs = self.build_table(metadata=self.metadata, table_name=table_name)
-        self._logger = logger
 
     def create_tables(self, engine: Engine):
         self.metadata.create_all(engine)
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
         query = (
@@ -142,7 +135,6 @@ class ConversationStoreSQL(ConversationStore):
         self,
         conversations_table_name: str = default_conversations_table_name,
         messages_table_name: str = default_messages_table_name,
-        logger: logging.Logger = logging.getLogger(__name__),
     ):
         self.metadata = metadata
         self.conversations = self.build_conversation_table(
@@ -151,14 +143,9 @@ class ConversationStoreSQL(ConversationStore):
         self.messages = self.build_message_table(
             metadata=self.metadata, table_name=messages_table_name
         )
-        self._logger = logger
 
     def create_tables(self, engine: Engine):
         self.metadata.create_all(engine)
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     def _get_by(
         self,
@@ -242,7 +229,6 @@ class ChatMessageStoreSQL(ChatMessageStore):
     def __init__(
         self,
         messages_table_name: str = default_table_name,
-        logger: logging.Logger = logging.getLogger(__name__),
     ):
         self.metadata = metadata
         self.messages = self.build_table(
@@ -250,14 +236,9 @@ class ChatMessageStoreSQL(ChatMessageStore):
             table_name=messages_table_name,
             conversation_table=conversation_table,
         )
-        self._logger = logger
 
     def create_tables(self, engine: Engine):
         self.metadata.create_all(engine)
-
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
 
     def list(
         self, filter: None, offset=0, limit=10, tx_context: TransactionContext = None
