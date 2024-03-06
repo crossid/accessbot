@@ -16,10 +16,10 @@ from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, ORGID_KEY, USERNAME_K
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
 from ..models import Conversation, CurrentUser, Org
-from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
+from ..models_stores import ChatMessageStore, ConversationStore
 from ..services import (
-    factory_conversation_db_facade,
-    factory_message_db_facade,
+    factory_conversation_store,
+    factory_message_store,
 )
 from ..sql import SQLAlchemyTransactionContext
 
@@ -45,7 +45,7 @@ def create(
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org: Annotated[Org, Depends(get_current_org)],
-    conversation_store: ConversationStore = Depends(factory_conversation_db_facade),
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
 ):
     org_id = org.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -66,7 +66,7 @@ def get(
     conversation_id,
     # current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org: Annotated[Org, Depends(get_current_org)],
-    conversation_store: OrgFacade = Depends(factory_conversation_db_facade),
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
     links: List[str] = Query(None),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -102,21 +102,21 @@ async def conversation(
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org: Annotated[Org | None, Depends(get_current_org)],
-    conversation_store: ConversationStore = Depends(factory_conversation_db_facade),
-    message_facade: ChatMessageFacade = Depends(factory_message_db_facade),
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
+    message_store: ChatMessageStore = Depends(factory_message_store),
 ):
     org_id = org.id
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
 
         def _add_messages(ai_content: str):
-            # Open a new TX because the main tx gets closed after the response is sent which is before the cb is invoked.
+            # Open a new TX because the main tx gets closed after the response is sent which is before the cb is invoked
             with SQLAlchemyTransactionContext().manage() as tx_context:
                 chat_history = LangchainChatMessageHistory(
                     conversation_id=conversation_id,
                     org_id=org_id,
                     tx_context=tx_context,
-                    facade=message_facade,
+                    store=message_store,
                 )
                 add_messages(
                     chat_history=chat_history,
@@ -128,7 +128,7 @@ async def conversation(
             conversation_id=conversation_id,
             org_id=org_id,
             tx_context=tx_context,
-            facade=message_facade,
+            store=message_store,
         )
         ar = conversation_store.get_by_id(
             conversation_id=conversation_id, org_id=org_id, tx_context=tx_context

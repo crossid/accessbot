@@ -1,7 +1,7 @@
 import injector
 
-from .models_facade import (
-    ChatMessageFacade,
+from .models_stores import (
+    ChatMessageStore,
     ConversationStore,
 )
 from .vault import VaultAPI
@@ -39,12 +39,12 @@ def get_service(service_class: type) -> callable:
     return dependency
 
 
-def factory_conversation_db_facade():
+def factory_conversation_store():
     return service_registry().get(ConversationStore)
 
 
-def factory_message_db_facade():
-    return service_registry().get(ChatMessageFacade)
+def factory_message_store():
+    return service_registry().get(ChatMessageStore)
 
 
 def factory_vault():

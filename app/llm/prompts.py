@@ -27,7 +27,7 @@ RECOMMENDATION_TEMPLATE = """
 """
 
 
-class PromptsFacade:
+class PromptsStore:
     def get(self, prompt_id: str):
         if prompt_id == "generic_recommendation":
             return PromptTemplate(
@@ -43,4 +43,4 @@ class PromptsFacade:
             raise Exception(f"prompt {prompt_id} is not supported")
 
 
-prompt_facade = PromptsFacade()
+prompt_store = PromptsStore()

@@ -1,7 +1,7 @@
 # from langchain.globals import set_debug
 
 
-from app.models_facade import ChatMessageFacade
+from app.models_stores import ChatMessageStore
 from app.services import service_registry
 
 from ..embeddings import create_embedding
@@ -15,7 +15,7 @@ from .prompts import (
     MEMORY_KEY,
     ORGID_KEY,
     USERNAME_KEY,
-    prompt_facade,
+    prompt_store,
 )
 
 # set_debug(True)
@@ -29,7 +29,7 @@ def create_agent_for_access_request_conversation(
 
     prompt = None
     if conversation.status == ConversationStatuses.active:
-        prompt = prompt_facade.get("generic_recommendation")
+        prompt = prompt_store.get("generic_recommendation")
     else:
         raise ValueError("Invalid conversation status")
 
@@ -63,12 +63,12 @@ async def make_conversation(
     input: str,
     tx_context: TransactionContext,
 ):
-    message_facade = service_registry().get(ChatMessageFacade)
+    message_store = service_registry().get(ChatMessageStore)
     chat_history = LangchainChatMessageHistory(
         conversation_id=conversation.id,
         org_id=conversation.org_id,
         tx_context=tx_context,
-        facade=message_facade,
+        store=message_store,
     )
 
     agent_executor = create_agent_for_access_request_conversation(conversation)

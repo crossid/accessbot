@@ -6,7 +6,7 @@ from .models import ChatMessage, Conversation, Org, User
 from .tx import TransactionContext
 
 
-class OrgFacade(ABC):
+class OrgStore(ABC):
     @property
     def logger(self) -> Logger:
         raise NotImplementedError()
@@ -24,7 +24,7 @@ class OrgFacade(ABC):
         pass
 
 
-class OrgFacadeHooks(ABC):
+class OrgStoreHooks(ABC):
     @abstractmethod
     def pre_insert(self, org: Org, tx_context: TransactionContext):
         pass
@@ -35,7 +35,7 @@ class OrgFacadeHooks(ABC):
 
 
 # This is here just because the injector for some reason is not handling Optional injection
-class OrgFacadeHooksPass(OrgFacadeHooks):
+class OrgStoreHooksPass(OrgStoreHooks):
     def pre_insert(self, org: Org, tx_context: TransactionContext):
         pass
 
@@ -43,23 +43,23 @@ class OrgFacadeHooksPass(OrgFacadeHooks):
         pass
 
 
-class OrgFacadeProxy:
-    def __init__(self, facade: OrgFacade, hooks: OrgFacadeHooks):
-        self._facade = facade
+class OrgStoreProxy:
+    def __init__(self, store: OrgStore, hooks: OrgStoreHooks):
+        self._store = store
         self._hooks = hooks
 
     def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
-        return self._facade.get_by_id(org_id, tx_context)
+        return self._store.get_by_id(org_id, tx_context)
 
     def insert(self, org: Org, tx_context: TransactionContext) -> Org:
         if self._hooks:
             self._hooks.pre_insert(org, tx_context)
-        return self._facade.insert(org, tx_context)
+        return self._store.insert(org, tx_context)
 
     def delete(self, org: Org, tx_context: TransactionContext):
         if self._hooks:
             self._hooks.pre_delete(org, tx_context)
-        return self._facade.delete(org, tx_context)
+        return self._store.delete(org, tx_context)
 
 
 class UserStore(ABC):
@@ -110,7 +110,7 @@ class ConversationStore(ABC):
         pass
 
 
-class ChatMessageFacade(ABC):
+class ChatMessageStore(ABC):
     @property
     def logger(self) -> Logger:
         raise NotImplementedError()

@@ -1,5 +1,5 @@
 from .models import Org
-from .models_facade import UserStore
+from .models_stores import UserStore
 
 
 class UserStoreSCIM(UserStore):

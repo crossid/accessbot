@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from ..health.route import healthCheckRoute
 from ..health.service import HealthCheckFactory
 from ..health.sqlalchemy_service import HealthCheckSQL
-from ..models_facade_sql import ORG_TABLE_NAME
+from ..models_stores_sql import ORG_TABLE_NAME
 from ..sql import sqlalchemy_engine as engine
 
 router = APIRouter(
