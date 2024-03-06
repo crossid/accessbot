@@ -2,6 +2,8 @@ from slack_bolt import App
 from slack_bolt.oauth.oauth_settings import OAuthSettings
 
 from ..settings import settings
+from .event_message import answer
+from .event_app_home_opened import update_home_tab, handle_learn_more
 from .store_sql import sql_installation_store, state_store
 
 oauth_settings = OAuthSettings(
@@ -24,3 +26,6 @@ oauth_settings = OAuthSettings(
 )
 
 app = App(signing_secret=settings.SLACK_SIGNING_SECRET, oauth_settings=oauth_settings)
+app.event("message")(answer)
+app.event("app_home_opened")(update_home_tab)
+app.action("learn_more")(handle_learn_more)
