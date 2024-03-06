@@ -1,13 +1,13 @@
 import injector
 
-from app.models_facade import (
+from .models_facade import (
     ChatMessageFacade,
     ConversationStore,
     OrgFacade,
     OrgFacadeHooks,
     OrgFacadeProxy,
 )
-from app.models_facade_sql import (
+from .models_facade_sql import (
     ChatMessageFacadeSQL,
     ConversationStoreSQL,
     OrgFacadeSQL,
