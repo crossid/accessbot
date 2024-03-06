@@ -7,10 +7,10 @@ from sqlalchemy.engine import Engine
 
 from .id import generate
 from .models import ChatMessage, Conversation, ConversationStatuses, Org
-from .models_facade import (
-    ChatMessageFacade,
+from .models_stores import (
+    ChatMessageStore,
     ConversationStore,
-    OrgFacade,
+    OrgStore,
     TransactionContext,
 )
 
@@ -72,7 +72,7 @@ message_table = sqlalchemy.Table(
 )
 
 
-class OrgFacadeSQL(OrgFacade):
+class OrgStoreSQL(OrgStore):
     default_table_name: str = ORG_TABLE_NAME
     default_conversations_table_name: str = CONVERSATION_TABLE_NAME
     default_messages_table_name = MESSAGE_TABLE_NAME
@@ -228,7 +228,7 @@ class ConversationStoreSQL(ConversationStore):
         return None
 
 
-class ChatMessageFacadeSQL(ChatMessageFacade):
+class ChatMessageStoreSQL(ChatMessageStore):
     default_table_name: str = MESSAGE_TABLE_NAME
     metadata: MetaData
     messages: Table

@@ -9,7 +9,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from .embeddings import create_embedding
 from .models import CurrentUser, Org
-from .models_facade import OrgFacade
+from .models_stores import OrgStore
 from .services import get_service
 from .settings import settings
 from .sql import SQLAlchemyTransactionContext
@@ -125,7 +125,7 @@ def factory_auth_api(request: Request) -> AuthAPI:
 
 async def get_current_org(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
+    org_store: OrgStore = Depends(get_service(OrgStore)),
 ) -> Org:
     org_id = current_user.org_id
     if org_id is None:
@@ -135,7 +135,7 @@ async def get_current_org(
         )
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        org = org_store.get_by_id(org_id, tx_context=tx_context)
         if org is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
@@ -146,14 +146,14 @@ async def get_current_org(
 
 async def get_optional_current_org(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
+    org_store: OrgStore = Depends(get_service(OrgStore)),
 ):
     org_id = current_user.org_id
     if org_id is None:
         return None
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        org = org_store.get_by_id(org_id, tx_context=tx_context)
         if org is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="org not found"

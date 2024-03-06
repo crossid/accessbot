@@ -12,7 +12,7 @@ from langchain_core.messages import (
 )
 
 from ..models import ChatMessage
-from ..models_facade import ChatMessageFacade
+from ..models_stores import ChatMessageStore
 from ..tx import TransactionContext
 
 logger = logging.getLogger(__name__)
@@ -26,12 +26,12 @@ class LangchainChatMessageHistory(BaseChatMessageHistory):
         conversation_id: str,
         org_id: str,
         tx_context: TransactionContext,
-        facade: ChatMessageFacade,
+        store: ChatMessageStore,
     ):
         self.conversation_id = conversation_id
         self.org_id = org_id
         self.tx_context = tx_context
-        self.facade = facade
+        self.store = store
 
     def message_to_dict(self, msg: BaseMessage) -> dict:
         return message_to_dict(msg)
@@ -64,7 +64,7 @@ class LangchainChatMessageHistory(BaseChatMessageHistory):
     @property
     def messages(self) -> List[BaseMessage]:  # type: ignore
         messages = []
-        result = self.facade.list(
+        result = self.store.list(
             filter=self.conversation_id, tx_context=self.tx_context
         )
         for record in result:
@@ -74,9 +74,9 @@ class LangchainChatMessageHistory(BaseChatMessageHistory):
     def add_message(self, message: BaseMessage) -> None:
         """Append the message to the record in db"""
         d = self.to_sql_model(message)
-        self.facade.insert(d, self.tx_context)
+        self.store.insert(d, self.tx_context)
         logger.debug(f"Added message to chat history: {message.content}")
 
     def clear(self) -> None:
         """Clear session memory from db"""
-        self.facade.delete(filter=self.conversation_id, tx_context=self.tx_context)
+        self.store.delete(filter=self.conversation_id, tx_context=self.tx_context)

@@ -4,7 +4,7 @@ from unittest import TestCase
 from sqlalchemy import create_engine
 
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
-from app.models_facade_sql import ChatMessageFacadeSQL
+from app.models_stores_sql import ChatMessageStoreSQL
 from app.sql import SQLAlchemyTransactionContext
 
 
@@ -17,16 +17,16 @@ class TestMessages(TestCase):
 
         # Set up a test engine, possibly an in-memory database
         cls.engine = create_engine("sqlite:///:memory:")
-        cls.test_facade = ChatMessageFacadeSQL()
-        cls.test_facade.create_tables(cls.engine)
+        cls.test_store = ChatMessageStoreSQL()
+        cls.test_store.create_tables(cls.engine)
 
     def test_get_chat_msg_history(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            self.test_facade.list(filter="foo", tx_context=tx_context)
+            self.test_store.list(filter="foo", tx_context=tx_context)
             h = LangchainChatMessageHistory(
                 conversation_id="foo",
                 org_id="bar",
-                facade=self.test_facade,
+                store=self.test_store,
                 tx_context=tx_context,
             )
             self.assertEqual(len(h.messages), 0)
@@ -36,7 +36,7 @@ class TestMessages(TestCase):
             h = LangchainChatMessageHistory(
                 conversation_id="foo",
                 org_id="bar",
-                facade=self.test_facade,
+                store=self.test_store,
                 tx_context=tx_context,
             )
             self.assertEqual(len(h.messages), 1)

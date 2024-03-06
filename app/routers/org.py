@@ -11,10 +11,10 @@ from ..auth import (
     setup_org_vstore,
 )
 from ..models import Org
-from ..models_facade import ChatMessageFacade, ConversationStore, OrgFacade
+from ..models_stores import ChatMessageStore, ConversationStore, OrgStore
 from ..services import (
-    factory_conversation_db_facade,
-    factory_message_db_facade,
+    factory_conversation_store,
+    factory_message_store,
     factory_vault,
     get_service,
 )
@@ -46,12 +46,12 @@ class CreateOrgRequest(BaseModel):
 def create(
     body: CreateOrgRequest,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
+    org_store: OrgStore = Depends(get_service(OrgStore)),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             org = Org(**body.model_dump(exclude_none=True), creator_id=current_user.id)
-            porg = org_facade.insert(org, tx_context=tx_context)
+            porg = org_store.insert(org, tx_context=tx_context)
             return porg
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
@@ -61,10 +61,10 @@ def create(
 def get(
     org_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: OrgFacade = Depends(get_service(OrgFacade)),
+    org_store: OrgStore = Depends(get_service(OrgStore)),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_facade.get_by_id(org_id, tx_context=tx_context)
+        org = org_store.get_by_id(org_id, tx_context=tx_context)
         # TODO check if user is a member of the org, oterhwise return 404
         if not org:
             raise HTTPException(status_code=404, detail="Org not found")
@@ -74,30 +74,32 @@ def get(
 def wipe_org(
     org: Org,
     tx_context: TransactionContext,
-    org_facade: OrgFacade,
-    msg_facade: ChatMessageFacade,
-    req_facade: ConversationStore,
+    org_store: OrgStore,
+    msg_store: ChatMessageStore,
+    conversation_store: ConversationStore,
     ovstore,
 ):
     delete_store(ovstore=ovstore)
-    msg_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
-    req_facade.delete_for_org(org_id=org.id, tx_context=tx_context)
+    msg_store.delete_for_org(org_id=org.id, tx_context=tx_context)
+    conversation_store.delete_for_org(org_id=org.id, tx_context=tx_context)
 
     vault: VaultAPI = factory_vault()
     org_secrets = vault.list_secrets(org_id=org.id)
     for name in org_secrets:
         vault.delete_secret(org_id=org.id, path=name)
 
-    org_facade.delete(org=org, tx_context=tx_context)
+    org_store.delete(org=org, tx_context=tx_context)
 
 
 @router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     org_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_facade: Annotated[OrgFacade, Depends(get_service(OrgFacade))],
-    msg_facade: Annotated[ChatMessageFacade, Depends(factory_message_db_facade)],
-    req_facade: Annotated[ConversationStore, Depends(factory_conversation_db_facade)],
+    org_store: Annotated[OrgStore, Depends(get_service(OrgStore))],
+    msg_store: Annotated[ChatMessageStore, Depends(factory_message_store)],
+    conversation_store: Annotated[
+        ConversationStore, Depends(factory_conversation_store)
+    ],
     ovstore=Depends(setup_org_vstore),
 ):
     # TODO: authorization, replace this check with creator_id?
@@ -109,7 +111,7 @@ async def delete(
         )
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        current_org = org_facade.get_by_id(org_id=org_id, tx_context=tx_context)
+        current_org = org_store.get_by_id(org_id=org_id, tx_context=tx_context)
         if current_org is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -119,8 +121,8 @@ async def delete(
         wipe_org(
             org=current_org,
             tx_context=tx_context,
-            org_facade=org_facade,
-            req_facade=req_facade,
-            msg_facade=msg_facade,
+            org_store=org_store,
+            req_store=conversation_store,
+            msg_store=msg_store,
             ovstore=ovstore,
         )
