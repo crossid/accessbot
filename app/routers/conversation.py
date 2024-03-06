@@ -64,17 +64,15 @@ def create(
 )
 def get(
     conversation_id,
-    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    # current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    org: Annotated[Org, Depends(get_current_org)],
     conversation_store: OrgFacade = Depends(factory_conversation_db_facade),
     links: List[str] = Query(None),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        if current_user.org_id is None:
-            raise HTTPException(status_code=403, detail="current user has no org")
-
         try:
             r = conversation_store.get_by_id(
-                org_id=current_user.org_id,
+                org_id=org.id,
                 conversation_id=conversation_id,
                 links=links,
                 tx_context=tx_context,
