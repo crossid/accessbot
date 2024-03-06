@@ -16,9 +16,9 @@ from .models_facade import (
 
 metadata = MetaData()
 
-ORG_TABLE_NAME = "org"
-CONVERSATION_TABLE_NAME = "conversation"
-MESSAGE_TABLE_NAME = "message"
+ORG_TABLE_NAME = "orgs"
+CONVERSATION_TABLE_NAME = "conversations"
+MESSAGE_TABLE_NAME = "messages"
 
 org_table = sqlalchemy.Table(
     ORG_TABLE_NAME,
