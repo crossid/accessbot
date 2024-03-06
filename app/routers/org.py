@@ -122,7 +122,7 @@ async def delete(
             org=current_org,
             tx_context=tx_context,
             org_store=org_store,
-            req_store=conversation_store,
+            conversation_store=conversation_store,
             msg_store=msg_store,
             ovstore=ovstore,
         )
