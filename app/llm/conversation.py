@@ -1,12 +1,11 @@
 # from langchain.globals import set_debug
 
 
-from app.models_stores import ChatMessageStore
-from app.services import service_registry
-
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..models import Conversation, ConversationStatuses, User
+from ..models_stores import ChatMessageStore
+from ..services import service_registry
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
 from .agents import create_agent

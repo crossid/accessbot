@@ -2,10 +2,9 @@ import asyncio
 
 from slack_sdk import WebClient
 
-from app.models_stores import ConversationStore, UserStore
-
 from ..llm.conversation import make_conversation
 from ..models import Conversation, ConversationStatuses
+from ..models_stores import ConversationStore, UserStore
 from ..services import service_registry
 from ..sql import SQLAlchemyTransactionContext
 

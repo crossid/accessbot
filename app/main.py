@@ -4,9 +4,9 @@ from contextlib import asynccontextmanager
 import injector
 from fastapi import APIRouter, FastAPI
 
-from app.injector_extensions_module import ExtensionModule
-from app.injector_main_module import MainModule
-from app.services import set_service_registry
+from .injector_extensions_module import ExtensionModule
+from .injector_main_module import MainModule
+from .services import set_service_registry
 
 from .routers import content, conversation, internal, org
 from .slack.store_sql import init_sql
