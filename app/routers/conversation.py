@@ -92,7 +92,7 @@ class ConversationBody(BaseModel):
 
 
 @router.post(
-    "/{conversation_id}/conversation/stream",
+    "/{conversation_id}/stream",
     response_model=Conversation,
     response_model_exclude_none=True,
     status_code=status.HTTP_200_OK,
