@@ -55,6 +55,12 @@ def create(
             return porg
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
+        except Exception as e:
+            if hasattr(e, "status_code") and e.status_code is not None:
+                detail = e.detail if hasattr(e, "detail") else e.message
+                raise HTTPException(status_code=e.status_code, detail=detail)
+
+            raise e
 
 
 @router.get("/{org_id}", response_model=Org, response_model_exclude_none=True)
