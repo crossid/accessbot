@@ -1,4 +1,4 @@
-from app.vault import VaultAPI
+from .vault import VaultAPI
 
 VAULT_VAR_URI = "vault://"
 
