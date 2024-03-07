@@ -6,10 +6,7 @@ from ..health.sqlalchemy_service import HealthCheckSQL
 from ..models_stores_sql import ORG_TABLE_NAME
 from ..sql import sqlalchemy_engine as engine
 
-router = APIRouter(
-    prefix="/internal",
-    tags=["internal"],
-)
+router = APIRouter(prefix="/internal", tags=["internal"], include_in_schema=False)
 
 _healthChecks = HealthCheckFactory()
 _healthChecks.add(
