@@ -8,6 +8,7 @@ from starlette import status
 from ..auth import (
     CurrentUser,
     get_current_active_user,
+    get_current_org,
     setup_org_vstore,
 )
 from ..models import Org
@@ -101,6 +102,7 @@ def wipe_org(
 async def delete(
     org_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    org: Annotated[Org, Depends(get_current_org)],
     org_store: Annotated[OrgStore, Depends(get_service(OrgStore))],
     msg_store: Annotated[ChatMessageStore, Depends(factory_message_store)],
     conversation_store: Annotated[
@@ -108,9 +110,7 @@ async def delete(
     ],
     ovstore=Depends(setup_org_vstore),
 ):
-    # TODO: authorization, replace this check with creator_id?
-
-    if org_id != current_user.org_id:
+    if current_user.id != org.creator_id or org_id != org.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authorized to delete this org",
