@@ -31,7 +31,7 @@ router = APIRouter(
 )
 
 
-class ConversationBody(BaseModel):
+class CreateConversationBody(BaseModel):
     pass
 
 
@@ -42,7 +42,7 @@ class ConversationBody(BaseModel):
     status_code=status.HTTP_201_CREATED,
 )
 def create(
-    body: ConversationBody,
+    body: CreateConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org: Annotated[Org, Depends(get_current_org)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),

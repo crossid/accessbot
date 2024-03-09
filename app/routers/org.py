@@ -32,7 +32,7 @@ router = APIRouter(
 )
 
 
-class CreateOrgRequest(BaseModel):
+class CreateOrgBody(BaseModel):
     external_id: Optional[str] = None
     display_name: str
     config: dict[str, Any] = Field(description="Organization configuration")
@@ -45,7 +45,7 @@ class CreateOrgRequest(BaseModel):
     status_code=status.HTTP_201_CREATED,
 )
 def create(
-    body: CreateOrgRequest,
+    body: CreateOrgBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org_store: OrgStore = Depends(get_service(OrgStore)),
 ):
