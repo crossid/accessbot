@@ -116,7 +116,9 @@ def get_current_active_user(request: Request) -> Optional[CurrentUser]:
         decoded_token = auth_api.authenticate(request)
         return auth_api.get_current_user(request, decoded_token)
     except Exception:
-        raise Exception("Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Athenticated"
+        )
 
 
 def factory_auth_api(request: Request) -> AuthAPI:
