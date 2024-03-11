@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "@crossid/accessbot"
+name = "accessbot"
 version = "0.0.1-alpha"
 description = "Streamline application access with AI-Powered workflow automation."
 authors = ["Indexia Technologies, ltd."]
 license = "Proprietary"
 readme = "README.md"
-packages = [{include = "@crossid"}]
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
