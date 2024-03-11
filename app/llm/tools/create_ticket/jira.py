@@ -1,0 +1,42 @@
+from atlassian import Jira
+
+from app.models import User
+
+from .iface import TicketInterface
+
+
+class JiraTicketImpl(TicketInterface):
+    project: str
+    issuetype: str
+    tenant: str
+    username: str
+    password: str
+    client: Jira
+
+    def __init__(self, project, issuetype, tenant, username, password) -> None:
+        self.project = project
+        self.issuetype = issuetype
+        self.client = Jira(
+            url=f"https://{tenant}.atlassian.net", username=username, password=password
+        )
+
+    def create_ticket(
+        self,
+        content: str,
+        owner: User,
+        requester: User,
+        role_name: str,
+        access: str,
+        conv_summary: str,
+        conversation_id: str,
+        workspace_id: str,
+    ):
+        # JIRA Tickets can't have \n in them.
+        fields = dict(
+            summary=content,
+            project=dict(key=self.project),
+            issuetype=dict(name=self.issuetype),
+        )
+
+        result = self.client.create_issue(fields)
+        return result

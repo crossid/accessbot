@@ -1,9 +1,6 @@
 import injector
 
-from .models_stores import (
-    ChatMessageStore,
-    ConversationStore,
-)
+from .models_stores import ChatMessageStore, ConversationStore, UserStore
 from .vault import VaultAPI
 
 _service_registry: injector.Injector = None
@@ -37,6 +34,10 @@ def get_service(service_class: type) -> callable:
         return service_registry().get(service_class)
 
     return dependency
+
+
+def factory_user_store():
+    return service_registry().get(UserStore)
 
 
 def factory_conversation_store():
