@@ -86,12 +86,6 @@ def answer(client: WebClient, event, logger, say, context):
                     conversation=conversation, tx_context=tx_context
                 )
                 logger.info("conversation %s created from slack", conversation.id)
-        elif conversation.status == ConversationStatuses.submitted:
-            say(
-                text="This conversation is already submitted, please start a new one.",
-                thread_ts=thread_ts,
-            )
-            return
         elif conversation.status == ConversationStatuses.completed:
             say(
                 text="This conversation is ended, please start a new one.",

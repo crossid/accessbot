@@ -4,7 +4,9 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 
 from .models_stores_sql import (
+    ApplicationStoreSQL,
     ChatMessageStoreSQL,
+    CheckpointStoreSQL,
     ConversationStoreSQL,
     WorkspaceStoreSQL,
 )
@@ -23,12 +25,16 @@ sqlalchemy_engine = create_engine(
 workspace_store = WorkspaceStoreSQL()
 conversation_store = ConversationStoreSQL()
 message_store = ChatMessageStoreSQL()
+application_store = ApplicationStoreSQL()
+checkpoint_store = CheckpointStoreSQL(engine=sqlalchemy_engine)
 
 
 def create_tables():
     workspace_store.create_tables(sqlalchemy_engine)
     conversation_store.create_tables(sqlalchemy_engine)
     message_store.create_tables(sqlalchemy_engine)
+    application_store.create_tables(sqlalchemy_engine)
+    checkpoint_store.create_tables(sqlalchemy_engine)
     pass
 
 

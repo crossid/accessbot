@@ -1,11 +1,10 @@
 from urllib.parse import urlparse
 
-from langchain.retrievers import EnsembleRetriever
-from langchain_community.vectorstores import VectorStore
 from langchain_community.vectorstores.pgvector import PGVector
 from langchain_community.vectorstores.sqlitevss import SQLiteVSS
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import VectorStore
 
 from .settings import settings
 
@@ -89,15 +88,18 @@ def delete_ids(ovstore: VectorStore, ids: list[str], uri=settings.VSTORE_URI) ->
 
 # NOTE: this crashed if the workspace's vectorstore has no documents
 def create_retriever(workspace_id: str, embedding: Embeddings) -> BaseRetriever:
-    retrievers = []
-    weights = [1]
-    if workspace_id is not None:
-        retrievers.append(
-            create_workspace_vstore(
-                workspace_id=workspace_id, embedding=embedding
-            ).as_retriever()
-        )
-        weights = [1]
+    ws_ret = create_workspace_vstore(
+        workspace_id=workspace_id, embedding=embedding
+    ).as_retriever()
+    return ws_ret
 
-    ensemble_retriever = EnsembleRetriever(retrievers=retrievers, weights=weights)
-    return ensemble_retriever
+    # retrievers = []
+    # weights = [1]
+    # if workspace_id is not None:
+    #     retrievers.append(
+
+    #     )
+    #     weights = [1]
+
+    # ensemble_retriever = EnsembleRetriever(retrievers=retrievers, weights=weights)
+    # return ensemble_retriever
