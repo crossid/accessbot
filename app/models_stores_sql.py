@@ -182,6 +182,8 @@ class ConversationStoreSQL(ConversationStore):
         conv: Conversation = None
         if result:
             conv = Conversation(**result._asdict())
+        if result is None:
+            return None
         if links and "messages" in links:
             messages = tx_context.connection.execute(
                 self.messages.select().where(self.messages.c.conversation_id == conv.id)
