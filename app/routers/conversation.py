@@ -32,7 +32,7 @@ router = APIRouter(
 
 
 class CreateConversationBody(BaseModel):
-    pass
+    external_id: Optional[str] = None
 
 
 @router.post(
@@ -51,7 +51,11 @@ def create(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             ar = Conversation(
-                org_id=org_id, created_by=current_user.id, context={}, messages=None
+                org_id=org_id,
+                created_by=current_user.id,
+                context={},
+                external_id=body.external_id,
+                messages=None,
             )
             par = conversation_store.insert(ar, tx_context=tx_context)
             return par
