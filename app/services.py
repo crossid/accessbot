@@ -3,6 +3,8 @@ import injector
 from .models_stores import (
     ChatMessageStore,
     ConversationStore,
+    UserStore,
+    WorkspaceStore,
 )
 from .vault import VaultAPI
 
@@ -37,6 +39,14 @@ def get_service(service_class: type) -> callable:
         return service_registry().get(service_class)
 
     return dependency
+
+
+def factory_ws_store():
+    return service_registry().get(WorkspaceStore)
+
+
+def factory_user_store():
+    return service_registry().get(UserStore)
 
 
 def factory_conversation_store():

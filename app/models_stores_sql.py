@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     MetaData,
     String,
@@ -15,7 +16,13 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import ChatMessage, Conversation, ConversationStatuses, Workspace
+from .models import (
+    ChatMessage,
+    Conversation,
+    ConversationStatuses,
+    ConversationTypes,
+    Workspace,
+)
 from .models_stores import (
     ChatMessageStore,
     ConversationStore,
@@ -52,6 +59,7 @@ conversation_table = sqlalchemy.Table(
         primary_key=True,
     ),
     Column("created_by", String(), nullable=False),
+    Column("type", Enum(ConversationTypes), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
@@ -131,6 +139,24 @@ class WorkspaceStoreSQL(WorkspaceStore):
         tx_context.connection.execute(q)
 
         return None
+
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        q = (
+            self.workspaces.update()
+            .where(self.workspaces.c.id == workspace_id)
+            .values(updates)
+        )
+
+        tx_context.connection.execute(q)
+        return self.get_by_id(
+            workspace_id=workspace_id,
+            tx_context=tx_context,
+        )
 
 
 class ConversationStoreSQL(ConversationStore):
@@ -283,6 +309,27 @@ class ConversationStoreSQL(ConversationStore):
         o["status"] = o["status"].value
         tx_context.connection.execute(self.conversations.insert(), o)
         return conversation
+
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Conversation:
+        q = (
+            self.conversations.update()
+            .where(self.conversations.c.id == conversation_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
+            .values(updates)
+        )
+
+        tx_context.connection.execute(q)
+        return self.get_by_id(
+            workspace_id=workspace_id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+        )
 
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
