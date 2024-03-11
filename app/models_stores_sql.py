@@ -52,6 +52,7 @@ conversation_table = sqlalchemy.Table(
         primary_key=True,
     ),
     Column("created_by", String(), nullable=False),
+    Column("type", String(), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),

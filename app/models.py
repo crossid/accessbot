@@ -64,9 +64,15 @@ class ConversationStatuses(enum.Enum):
     completed = "completed"
 
 
+class ConversationType(enum.Enum):
+    recommendation = "recommendation"
+    data_owner = "dataowner"
+
+
 class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: generate())
-    workspace_id: Optional[str]
+    workspace_id: str
+    type: ConversationType = Field(default=ConversationType.recommendation)
     status: ConversationStatuses = Field(default="active")
     created_at: datetime = Field(default_factory=datetime.now)
     external_id: Optional[str] = Field(default=None)
