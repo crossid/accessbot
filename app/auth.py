@@ -140,7 +140,7 @@ async def get_current_org(
         org = org_store.get_by_id(org_id, tx_context=tx_context)
         if org is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="org not found"
             )
 
         return org
