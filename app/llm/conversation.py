@@ -1,6 +1,8 @@
 # from langchain.globals import set_debug
 
 
+import json
+
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..models import Conversation, ConversationStatuses, User
@@ -85,5 +87,6 @@ async def make_conversation(
 
 
 def sse_client_transformer(output: str) -> str:
-    event_str = f"event: chat-message\ndata: {output}\n\n"
+    event_data = {"content": output}
+    event_str = f"event: chat-message\ndata: {json.dumps(event_data)}\n\n"
     return event_str

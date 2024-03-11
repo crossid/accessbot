@@ -3,11 +3,6 @@ from typing import Callable, Dict
 from langchain.schema.runnable import Runnable
 
 
-def sse_client_transformer(output: str) -> str:
-    event_str = f"event: chat-message\ndata: {output}\n\n"
-    return event_str
-
-
 async def streaming(
     runnable: Runnable,
     ctx: Dict,
