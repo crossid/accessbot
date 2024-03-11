@@ -20,8 +20,8 @@ def get_protocol(uri: str):
 
 
 # TODO embedding function should be generalized
-def create_org_vstore(
-    org_id: str, embedding: Embeddings, uri=settings.VSTORE_URI
+def create_workspace_vstore(
+    workspace_id: str, embedding: Embeddings, uri=settings.VSTORE_URI
 ) -> VectorStore:
     parsed_url = urlparse(uri)
     protocol = parsed_url.scheme
@@ -30,8 +30,8 @@ def create_org_vstore(
         return PGVector(
             embedding_function=embedding,
             connection_string=uri,
-            collection_name=org_id,
-            collection_metadata={"org_id": org_id},
+            collection_name=workspace_id,
+            collection_metadata={"workspace_id": workspace_id},
         )
     elif protocol == "sqlite":
         import sqlite3
@@ -51,7 +51,7 @@ def create_org_vstore(
         sqlite_vss.load(connection)
         connection.enable_load_extension(False)
 
-        table = f"{org_id.translate(ID_TRANS_TABLE)}_data"
+        table = f"{workspace_id.translate(ID_TRANS_TABLE)}_data"
         return SQLiteVSS(
             connection=connection,
             table=table,
@@ -87,13 +87,15 @@ def delete_ids(ovstore: VectorStore, ids: list[str], uri=settings.VSTORE_URI) ->
     return True
 
 
-# NOTE: this crashed if the org's vectorstore has no documents
-def create_retriever(org_id: str, embedding: Embeddings) -> BaseRetriever:
+# NOTE: this crashed if the workspace's vectorstore has no documents
+def create_retriever(workspace_id: str, embedding: Embeddings) -> BaseRetriever:
     retrievers = []
     weights = [1]
-    if org_id is not None:
+    if workspace_id is not None:
         retrievers.append(
-            create_org_vstore(org_id=org_id, embedding=embedding).as_retriever()
+            create_workspace_vstore(
+                workspace_id=workspace_id, embedding=embedding
+            ).as_retriever()
         )
         weights = [1]
 

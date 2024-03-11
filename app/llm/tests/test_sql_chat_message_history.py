@@ -1,11 +1,10 @@
 import unittest
 from unittest import TestCase
 
-from sqlalchemy import create_engine
-
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.models_stores_sql import ChatMessageStoreSQL
 from app.sql import SQLAlchemyTransactionContext
+from sqlalchemy import create_engine
 
 
 class TestMessages(TestCase):
@@ -25,7 +24,7 @@ class TestMessages(TestCase):
             self.test_store.list(filter="foo", tx_context=tx_context)
             h = LangchainChatMessageHistory(
                 conversation_id="foo",
-                org_id="bar",
+                workspace_id="bar",
                 store=self.test_store,
                 tx_context=tx_context,
             )
@@ -35,7 +34,7 @@ class TestMessages(TestCase):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             h = LangchainChatMessageHistory(
                 conversation_id="foo",
-                org_id="bar",
+                workspace_id="bar",
                 store=self.test_store,
                 tx_context=tx_context,
             )

@@ -2,7 +2,7 @@ import os
 from unittest import TestCase
 
 from app.embeddings import create_embedding
-from app.vector_store import create_org_vstore
+from app.vector_store import create_workspace_vstore
 
 
 class TestVectorStore(TestCase):
@@ -14,10 +14,10 @@ class TestVectorStore(TestCase):
     def tearDownClass(cls):
         os.remove(cls.db_file)
 
-    def test_create_org_vstore(self):
-        org_id = "acme"
-        vs = create_org_vstore(
-            org_id,
+    def test_create_workspace_vstore(self):
+        workspace_id = "acme"
+        vs = create_workspace_vstore(
+            workspace_id,
             uri=f"sqlite://{self.db_file}",
             embedding=create_embedding("sentence_transformer"),
         )

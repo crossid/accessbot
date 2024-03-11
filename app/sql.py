@@ -3,7 +3,11 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 
-from .models_stores_sql import ChatMessageStoreSQL, ConversationStoreSQL, OrgStoreSQL
+from .models_stores_sql import (
+    ChatMessageStoreSQL,
+    ConversationStoreSQL,
+    WorkspaceStoreSQL,
+)
 from .settings import settings
 from .tx import TransactionContext
 
@@ -16,13 +20,13 @@ sqlalchemy_engine = create_engine(
     echo=True,
     # connect_args={"connect_timeout": 10},
 )
-org_store = OrgStoreSQL()
+workspace_store = WorkspaceStoreSQL()
 conversation_store = ConversationStoreSQL()
 message_store = ChatMessageStoreSQL()
 
 
 def create_tables():
-    org_store.create_tables(sqlalchemy_engine)
+    workspace_store.create_tables(sqlalchemy_engine)
     conversation_store.create_tables(sqlalchemy_engine)
     message_store.create_tables(sqlalchemy_engine)
     pass

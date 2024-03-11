@@ -1,65 +1,64 @@
 from abc import ABC, abstractmethod
-from logging import Logger
 from typing import Any, Optional
 
-from .models import ChatMessage, Conversation, Org, User
+from .models import ChatMessage, Conversation, User, Workspace
 from .tx import TransactionContext
 
 
-class OrgStore(ABC):
-    @property
-    def logger(self) -> Logger:
-        raise NotImplementedError()
-
+class WorkspaceStore(ABC):
     @abstractmethod
-    def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
+    def get_by_id(
+        self, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Workspace]:
         pass
 
     @abstractmethod
-    def insert(self, org: Org, tx_context: TransactionContext) -> Org:
+    def insert(self, workspace: Workspace, tx_context: TransactionContext) -> Workspace:
         pass
 
     @abstractmethod
-    def delete(self, org: Org, tx_context: TransactionContext):
+    def delete(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
 
-class OrgStoreHooks(ABC):
+class WorkspaceStoreHooks(ABC):
     @abstractmethod
-    def pre_insert(self, org: Org, tx_context: TransactionContext):
+    def pre_insert(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
     @abstractmethod
-    def pre_delete(self, org: Org, tx_context: TransactionContext):
+    def pre_delete(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
 
 # This is here just because the injector for some reason is not handling Optional injection
-class OrgStoreHooksPass(OrgStoreHooks):
-    def pre_insert(self, org: Org, tx_context: TransactionContext):
+class WorkspaceStoreHooksPass(WorkspaceStoreHooks):
+    def pre_insert(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
-    def pre_delete(self, org: Org, tx_context: TransactionContext):
+    def pre_delete(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
 
-class OrgStoreProxy:
-    def __init__(self, store: OrgStore, hooks: OrgStoreHooks):
+class WorkspaceStoreProxy:
+    def __init__(self, store: WorkspaceStore, hooks: WorkspaceStoreHooks):
         self._store = store
         self._hooks = hooks
 
-    def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
-        return self._store.get_by_id(org_id, tx_context)
+    def get_by_id(
+        self, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Workspace]:
+        return self._store.get_by_id(workspace_id, tx_context)
 
-    def insert(self, org: Org, tx_context: TransactionContext) -> Org:
+    def insert(self, workspace: Workspace, tx_context: TransactionContext) -> Workspace:
         if self._hooks:
-            self._hooks.pre_insert(org, tx_context)
-        return self._store.insert(org, tx_context)
+            self._hooks.pre_insert(workspace, tx_context)
+        return self._store.insert(workspace, tx_context)
 
-    def delete(self, org: Org, tx_context: TransactionContext):
+    def delete(self, workspace: Workspace, tx_context: TransactionContext):
         if self._hooks:
-            self._hooks.pre_delete(org, tx_context)
-        return self._store.delete(org, tx_context)
+            self._hooks.pre_delete(workspace, tx_context)
+        return self._store.delete(workspace, tx_context)
 
 
 class UserStore(ABC):
@@ -68,19 +67,15 @@ class UserStore(ABC):
         pass
 
     @abstractmethod
-    def list_orgs_for_user(self, user_id: str) -> list[Org]:
+    def list_workspaces_for_user(self, user_id: str) -> list[Workspace]:
         pass
 
 
 class ConversationStore(ABC):
-    @property
-    def logger(self) -> Logger:
-        raise NotImplementedError()
-
     @abstractmethod
     def get_by_id(
         self,
-        org_id: str,
+        workspace_id: str,
         conversation_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
@@ -90,7 +85,7 @@ class ConversationStore(ABC):
     @abstractmethod
     def get_by_external_id(
         self,
-        org_id: str,
+        workspace_id: str,
         external_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
@@ -100,7 +95,7 @@ class ConversationStore(ABC):
     @abstractmethod
     def list(
         self,
-        org_id: str,
+        workspace_id: str,
         tx_context: TransactionContext,
         limit: int = 10,
         offset: int = 0,
@@ -116,17 +111,13 @@ class ConversationStore(ABC):
         pass
 
     @abstractmethod
-    def delete_for_org(
-        self, org_id: str, tx_context: TransactionContext = None
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
     ) -> None:
         pass
 
 
 class ChatMessageStore(ABC):
-    @property
-    def logger(self) -> Logger:
-        raise NotImplementedError()
-
     @abstractmethod
     def list(
         self, filter=None, offset=0, limit=10, tx_context: TransactionContext = None
@@ -148,7 +139,7 @@ class ChatMessageStore(ABC):
         pass
 
     @abstractmethod
-    def delete_for_org(
-        self, org_id: str, tx_context: TransactionContext = None
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
     ) -> None:
         pass

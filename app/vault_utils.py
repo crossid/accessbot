@@ -22,16 +22,16 @@ def resolve_secrets(config, secret_resolver):
     return config
 
 
-class OrgVaultSecretResolver:
-    def __init__(self, vault: VaultAPI, org_id: str):
+class WorkspaceVaultSecretResolver:
+    def __init__(self, vault: VaultAPI, workspace_id: str):
         """
-        Initializes the SecretResolver with a vault instance and organization id.
+        Initializes the SecretResolver with a vault instance and workspace id.
 
         :param vault: An instance of a class that implements the VaultInterface.
-        :param org_id: The organization id to use with the vault.
+        :param workspace_id: The workspace id to use with the vault.
         """
         self.vault = vault
-        self.org_id = org_id
+        self.workspace_id = workspace_id
 
     def get_secret(self, path: str) -> str:
         """
@@ -40,4 +40,4 @@ class OrgVaultSecretResolver:
         :param path: The path of the secret to retrieve.
         :return: The secret value.
         """
-        return self.vault.get_secret(self.org_id, path)
+        return self.vault.get_secret(self.workspace_id, path)

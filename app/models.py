@@ -15,7 +15,7 @@ class User(BaseModel):
 
 
 class CurrentUser(User):
-    org_id: Optional[str] = None
+    workspace_id: Optional[str] = None
 
     def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
         self = CurrentUser(
@@ -23,7 +23,7 @@ class CurrentUser(User):
             email=userinfo["email"],
             full_name=userinfo["name"],
             disabled=userinfo.get("blocked", False),
-            org_id=decoded_access_token.get("org_id")
+            workspace_id=decoded_access_token.get("org_id")
             or decoded_access_token.get("ext", {}).get("org_id")
             or None,
         )
@@ -31,19 +31,19 @@ class CurrentUser(User):
         return self
 
 
-class Org(BaseModel):
+class Workspace(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
     display_name: str
     # TODO rename to created_by
     creator_id: str
-    config: dict[str, Any] = Field(description="Organization configuration")
+    config: dict[str, Any] = Field(description="Workspace configuration")
 
 
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     conversation_id: str = Field(default=None)
-    org_id: Optional[str] = Field(default=None)
+    workspace_id: Optional[str] = Field(default=None)
     type: str
     content: str
     created_at: datetime = Field(default_factory=datetime.now)
@@ -66,7 +66,7 @@ class ConversationStatuses(enum.Enum):
 
 class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: generate())
-    org_id: Optional[str]
+    workspace_id: Optional[str]
     status: ConversationStatuses = Field(default="active")
     created_at: datetime = Field(default_factory=datetime.now)
     external_id: Optional[str] = Field(default=None)

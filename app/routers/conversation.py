@@ -7,16 +7,16 @@ from pydantic import BaseModel, ValidationError
 from starlette import status
 from zmq import Enum
 
-from ..auth import get_current_active_user, get_current_org
+from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
     add_messages,
     create_agent_for_access_request_conversation,
     sse_client_transformer,
 )
-from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, ORGID_KEY, USERNAME_KEY
+from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, USERNAME_KEY, WS_ID_KEY
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
-from ..models import Conversation, CurrentUser, Org, PaginatedListBase
+from ..models import Conversation, CurrentUser, PaginatedListBase, Workspace
 from ..models_stores import ChatMessageStore, ConversationStore
 from ..services import (
     factory_conversation_store,
@@ -46,14 +46,14 @@ class CreateConversationBody(BaseModel):
 def create(
     body: CreateConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org: Annotated[Org, Depends(get_current_org)],
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
 ):
-    org_id = org.id
+    workspace_id = workspace.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             ar = Conversation(
-                org_id=org_id,
+                workspace_id=workspace_id,
                 created_by=current_user.id,
                 context={},
                 external_id=body.external_id,
@@ -76,7 +76,7 @@ class IDType(str, Enum):
 def get(
     conversation_id,
     # current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org: Annotated[Org, Depends(get_current_org)],
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
     id_type: IDType = IDType.internal,
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     links: List[str] = Query(None),
@@ -86,14 +86,14 @@ def get(
             conv: Conversation
             if id_type == IDType.internal:
                 conv = conversation_store.get_by_id(
-                    org_id=org.id,
+                    workspace_id=workspace.id,
                     conversation_id=conversation_id,
                     links=links,
                     tx_context=tx_context,
                 )
             else:
                 conv = conversation_store.get_by_external_id(
-                    org_id=org.id,
+                    workspace_id=workspace.id,
                     external_id=conversation_id,
                     links=links,
                     tx_context=tx_context,
@@ -114,7 +114,7 @@ class ConversationList(PaginatedListBase):
 
 @router.get("", response_model=ConversationList, response_model_exclude_none=True)
 def list(
-    org: Annotated[Org, Depends(get_current_org)],
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     list_params: dict = Depends(pagination_params),
     conversation_store: ConversationStore = Depends(factory_conversation_store),
@@ -123,7 +123,7 @@ def list(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             items, count = conversation_store.list(
-                org_id=org.id,
+                workspace_id=workspace.id,
                 tx_context=tx_context,
                 links=links,
                 limit=list_params["limit"],
@@ -149,11 +149,11 @@ async def conversation(
     conversation_id: str,
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org: Annotated[Org | None, Depends(get_current_org)],
+    workspace: Annotated[Workspace | None, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     message_store: ChatMessageStore = Depends(factory_message_store),
 ):
-    org_id = org.id
+    workspace_id = workspace.id
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
 
@@ -162,7 +162,7 @@ async def conversation(
             with SQLAlchemyTransactionContext().manage() as tx_context:
                 chat_history = LangchainChatMessageHistory(
                     conversation_id=conversation_id,
-                    org_id=org_id,
+                    workspace_id=workspace_id,
                     tx_context=tx_context,
                     store=message_store,
                 )
@@ -174,12 +174,14 @@ async def conversation(
 
         chat_history = LangchainChatMessageHistory(
             conversation_id=conversation_id,
-            org_id=org_id,
+            workspace_id=workspace_id,
             tx_context=tx_context,
             store=message_store,
         )
         ar = conversation_store.get_by_id(
-            conversation_id=conversation_id, org_id=org_id, tx_context=tx_context
+            conversation_id=conversation_id,
+            workspace_id=workspace_id,
+            tx_context=tx_context,
         )
         if ar is None:
             raise HTTPException(
@@ -195,7 +197,7 @@ async def conversation(
                     "input": body.input,
                     MEMORY_KEY: chat_history.messages,
                     USERNAME_KEY: current_user.id,
-                    ORGID_KEY: ar.org_id,
+                    WS_ID_KEY: ar.workspace_id,
                     CONVERSATION_ID_KEY: ar.id,
                 },
                 event_transformer=sse_client_transformer,

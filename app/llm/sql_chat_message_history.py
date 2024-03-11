@@ -24,12 +24,12 @@ class LangchainChatMessageHistory(BaseChatMessageHistory):
     def __init__(
         self,
         conversation_id: str,
-        org_id: str,
+        workspace_id: str,
         tx_context: TransactionContext,
         store: ChatMessageStore,
     ):
         self.conversation_id = conversation_id
-        self.org_id = org_id
+        self.workspace_id = workspace_id
         self.tx_context = tx_context
         self.store = store
 
@@ -55,7 +55,7 @@ class LangchainChatMessageHistory(BaseChatMessageHistory):
     def to_sql_model(self, msg: BaseMessage) -> ChatMessage:
         return ChatMessage(
             conversation_id=self.conversation_id,
-            org_id=self.org_id,
+            workspace_id=self.workspace_id,
             type=msg.type,
             content=msg.content,
             created_at=datetime.now(),
