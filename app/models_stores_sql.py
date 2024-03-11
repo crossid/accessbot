@@ -15,22 +15,22 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import ChatMessage, Conversation, ConversationStatuses, Org
+from .models import ChatMessage, Conversation, ConversationStatuses, Workspace
 from .models_stores import (
     ChatMessageStore,
     ConversationStore,
-    OrgStore,
     TransactionContext,
+    WorkspaceStore,
 )
 
 metadata = MetaData()
 
-ORG_TABLE_NAME = "orgs"
+WORKSPACE_TABLE_NAME = "workspaces"
 CONVERSATION_TABLE_NAME = "conversations"
 MESSAGE_TABLE_NAME = "messages"
 
-org_table = sqlalchemy.Table(
-    ORG_TABLE_NAME,
+workspace_table = sqlalchemy.Table(
+    WORKSPACE_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
     Column("display_name", String(32), nullable=False),
@@ -45,9 +45,9 @@ conversation_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column(
-        "org_id",
+        "workspace_id",
         String(10),
-        ForeignKey(org_table.c.id),
+        ForeignKey(workspace_table.c.id),
         nullable=False,
         primary_key=True,
     ),
@@ -63,9 +63,9 @@ message_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column(
-        "org_id",
+        "workspace_id",
         String(10),
-        ForeignKey(org_table.c.id),
+        ForeignKey(workspace_table.c.id),
         nullable=False,
         primary_key=True,
     ),
@@ -81,46 +81,53 @@ message_table = sqlalchemy.Table(
 )
 
 
-class OrgStoreSQL(OrgStore):
-    default_table_name: str = ORG_TABLE_NAME
+class WorkspaceStoreSQL(WorkspaceStore):
+    default_table_name: str = WORKSPACE_TABLE_NAME
     default_conversations_table_name: str = CONVERSATION_TABLE_NAME
     default_messages_table_name = MESSAGE_TABLE_NAME
     metadata: MetaData
-    orgs: Table
+    workspaces: Table
 
     @classmethod
     def build_table(cls, metadata: MetaData, table_name: str) -> Table:
-        return org_table
+        return workspace_table
 
     def __init__(
         self,
         table_name: str = default_table_name,
     ):
         self.metadata = metadata
-        self.orgs = self.build_table(metadata=self.metadata, table_name=table_name)
+        self.workspaces = self.build_table(
+            metadata=self.metadata, table_name=table_name
+        )
 
     def create_tables(self, engine: Engine):
         self.metadata.create_all(engine)
 
-    def get_by_id(self, org_id: str, tx_context: TransactionContext) -> Optional[Org]:
+    def get_by_id(
+        self, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Workspace]:
         query = (
-            self.orgs.select()
-            .where((self.orgs.c.id == org_id) | (self.orgs.c.external_id == org_id))
+            self.workspaces.select()
+            .where(
+                (self.workspaces.c.id == workspace_id)
+                | (self.workspaces.c.external_id == workspace_id)
+            )
             .limit(1)
         )
         result: object = tx_context.connection.execute(query).first()
         if result:
-            return Org(**result._asdict())
+            return Workspace(**result._asdict())
 
-    def insert(self, org: Org, tx_context: TransactionContext) -> Org:
-        if org.id is None:
-            org.id = generate()
-        o = org.model_dump()
-        tx_context.connection.execute(self.orgs.insert(), o)
-        return org
+    def insert(self, workspace: Workspace, tx_context: TransactionContext) -> Workspace:
+        if workspace.id is None:
+            workspace.id = generate()
+        o = workspace.model_dump()
+        tx_context.connection.execute(self.workspaces.insert(), o)
+        return workspace
 
-    def delete(self, org: Org, tx_context: TransactionContext):
-        q = self.orgs.delete().where(self.orgs.c.id == org.id)
+    def delete(self, workspace: Workspace, tx_context: TransactionContext):
+        q = self.workspaces.delete().where(self.workspaces.c.id == workspace.id)
         tx_context.connection.execute(q)
 
         return None
@@ -159,7 +166,7 @@ class ConversationStoreSQL(ConversationStore):
 
     def _get_by(
         self,
-        org_id: str,
+        workspace_id: str,
         column: str,
         column_value: any,
         tx_context: TransactionContext,
@@ -167,7 +174,7 @@ class ConversationStoreSQL(ConversationStore):
     ) -> Optional[Conversation]:
         query = (
             self.conversations.select()
-            .where(self.conversations.c.org_id == org_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
             .where(column == column_value)
             .limit(1)
         )
@@ -184,29 +191,33 @@ class ConversationStoreSQL(ConversationStore):
 
     def get_by_id(
         self,
-        org_id: str,
+        workspace_id: str,
         conversation_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ):
         return self._get_by(
-            org_id, self.conversations.c.id, conversation_id, tx_context, links
+            workspace_id, self.conversations.c.id, conversation_id, tx_context, links
         )
 
     def get_by_external_id(
         self,
-        org_id: str,
+        workspace_id: str,
         external_id: str,
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ) -> Optional[Conversation]:
         return self._get_by(
-            org_id, self.conversations.c.external_id, external_id, tx_context, links
+            workspace_id,
+            self.conversations.c.external_id,
+            external_id,
+            tx_context,
+            links,
         )
 
     def list(
         self,
-        org_id: str,
+        workspace_id: str,
         tx_context: TransactionContext,
         limit: int = 10,
         offset: int = 0,
@@ -218,7 +229,7 @@ class ConversationStoreSQL(ConversationStore):
         base_count_query = (
             select(func.count())
             .select_from(self.conversations)
-            .where(self.conversations.c.org_id == org_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
         )
 
         # Applying filters to the count query
@@ -234,7 +245,7 @@ class ConversationStoreSQL(ConversationStore):
         # Query for retrieving conversations
         query = (
             select(self.conversations)
-            .where(self.conversations.c.org_id == org_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
             .order_by(self.conversations.c.created_at.desc())
             .offset(offset)
             .limit(limit)
@@ -271,11 +282,15 @@ class ConversationStoreSQL(ConversationStore):
         tx_context.connection.execute(self.conversations.insert(), o)
         return conversation
 
-    def delete_for_org(self, org_id: str, tx_context: TransactionContext = None):
-        if org_id is None:
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ):
+        if workspace_id is None:
             return None
 
-        q = self.conversations.delete().where(self.conversations.c.org_id == org_id)
+        q = self.conversations.delete().where(
+            self.conversations.c.workspace_id == workspace_id
+        )
         tx_context.connection.execute(q)
         return None
 
@@ -343,10 +358,12 @@ class ChatMessageStoreSQL(ChatMessageStore):
         tx_context.connection.execute(q)
         return None
 
-    def delete_for_org(self, org_id: str, tx_context: TransactionContext = None):
-        if org_id is None:
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ):
+        if workspace_id is None:
             return None
 
-        q = self.messages.delete().where(self.messages.c.org_id == org_id)
+        q = self.messages.delete().where(self.messages.c.workspace_id == workspace_id)
         tx_context.connection.execute(q)
         return None

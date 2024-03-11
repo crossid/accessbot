@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from ..auth import setup_org_vstore
+from ..auth import setup_workspace_vstore
 from ..id import generate
 from ..settings import settings
 from ..vector_store import delete_ids, get_protocol
@@ -46,7 +46,7 @@ def prepare_metadata_ids_content(docs: List[Doc]):
 
 
 @router.post("", response_model=AddContentResponse)
-async def add(body: AddContentBody, ovstore=Depends(setup_org_vstore)):
+async def add(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
     inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
     # convert ids to strings (SQLite returns int)
@@ -59,7 +59,7 @@ class RemoveContentBody(BaseModel):
 
 
 @router.post("/.delete", status_code=status.HTTP_204_NO_CONTENT)
-async def remove(body: RemoveContentBody, ovstore=Depends(setup_org_vstore)):
+async def remove(body: RemoveContentBody, ovstore=Depends(setup_workspace_vstore)):
     try:
         delete_ids(ovstore=ovstore, ids=body.ids)
     except NotImplementedError:

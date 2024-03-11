@@ -8,7 +8,7 @@ from .injector_extensions_module import ExtensionModule
 from .injector_main_module import MainModule
 from .services import set_service_registry
 
-from .routers import content, conversation, internal, org
+from .routers import content, conversation, internal, workspace
 from .slack.store_sql import init_sql
 from .sql import create_tables
 
@@ -33,7 +33,7 @@ app.include_router(internal.router)
 
 # api routers
 api = APIRouter(prefix="/api")
-api.include_router(org.router)
+api.include_router(workspace.router)
 api.include_router(conversation.router)
 api.include_router(content.router)
 app.include_router(api)

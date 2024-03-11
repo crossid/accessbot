@@ -53,19 +53,17 @@ def answer(client: WebClient, event, logger, say, context):
             )
             return
 
-        orgs = user_store.list_orgs_for_user(user_id=user.id)
-        if len(orgs) == 0:
-            say(
-                text=f"Hi {slack_user_email}, you are not part of any organization yet."
-            )
+        workspaces = user_store.list_workspaces_for_user(user_id=user.id)
+        if len(workspaces) == 0:
+            say(text=f"Hi {slack_user_email}, you are not part of any workspace yet.")
             return
-        # TODO: consider letting the user choose the org to work with in Slack
-        org = orgs[0]
+        # TODO: consider letting the user choose the ws to work with in Slack
+        ws = workspaces[0]
         conversation: Conversation = None
         conversation_store = service_registry().get(ConversationStore)
         with SQLAlchemyTransactionContext().manage() as tx_context:
             conversation = conversation_store.get_by_external_id(
-                org_id=org.id, external_id=thread_ts, tx_context=tx_context
+                workspace_id=ws.id, external_id=thread_ts, tx_context=tx_context
             )
 
         if conversation is None:
@@ -79,7 +77,7 @@ def answer(client: WebClient, event, logger, say, context):
 
             conversation = Conversation(
                 created_by=user.id,
-                org_id=org.id,
+                workspace_id=ws.id,
                 external_id=thread_ts,
                 context=conversation_ctx,
             )

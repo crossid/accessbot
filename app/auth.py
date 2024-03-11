@@ -8,12 +8,12 @@ from cachetools import TTLCache, cached
 from fastapi import Depends, HTTPException, Request, status
 
 from .embeddings import create_embedding
-from .models import CurrentUser, Org
-from .models_stores import OrgStore
+from .models import CurrentUser, Workspace
+from .models_stores import WorkspaceStore
 from .services import get_service
 from .settings import settings
 from .sql import SQLAlchemyTransactionContext
-from .vector_store import create_org_vstore
+from .vector_store import create_workspace_vstore
 
 log = logging.getLogger(__name__)
 
@@ -125,45 +125,49 @@ def factory_auth_api(request: Request) -> AuthAPI:
     return auth_api
 
 
-async def get_current_org(
+async def get_current_workspace(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_store: OrgStore = Depends(get_service(OrgStore)),
-) -> Org:
-    org_id = current_user.org_id
-    if org_id is None:
+    workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
+) -> Workspace:
+    workspace_id = current_user.workspace_id
+    if workspace_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="current user is not a member of an org",
+            detail="current user is not a member of a workspace",
         )
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_store.get_by_id(org_id, tx_context=tx_context)
-        if org is None:
+        workspace = workspace_store.get_by_id(workspace_id, tx_context=tx_context)
+        if workspace is None:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="org not found"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="workspace not found"
             )
 
-        return org
+        return workspace
 
 
-async def get_optional_current_org(
+async def get_optional_current_workspace(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
-    org_store: OrgStore = Depends(get_service(OrgStore)),
+    workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
 ):
-    org_id = current_user.org_id
-    if org_id is None:
+    workspace_id = current_user.workspace_id
+    if workspace_id is None:
         return None
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        org = org_store.get_by_id(org_id, tx_context=tx_context)
-        if org is None:
+        ws = workspace_store.get_by_id(workspace_id, tx_context=tx_context)
+        if ws is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="org not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="workspace not found"
             )
 
-        return org
+        return ws
 
 
-async def setup_org_vstore(org: Annotated[Org, Depends(get_current_org)]):
-    ovstore = create_org_vstore(org.id, create_embedding(settings.VSTORE_EMBEDDING))
-    return ovstore
+async def setup_workspace_vstore(
+    ws: Annotated[Workspace, Depends(get_current_workspace)],
+):
+    wvstore = create_workspace_vstore(
+        ws.id, create_embedding(settings.VSTORE_EMBEDDING)
+    )
+    return wvstore

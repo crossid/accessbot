@@ -2,7 +2,7 @@ from langchain.prompts.prompt import PromptTemplate
 
 MEMORY_KEY = "chat_history"
 USERNAME_KEY = "username"
-ORGID_KEY = "org_id"
+WS_ID_KEY = "workspace_id"
 CONVERSATION_ID_KEY = "conversation_id"
 APP_NAMES_KEY = "app_names"
 
@@ -10,7 +10,7 @@ RECOMMENDATION_TEMPLATE = """
     Your only goal is to help users get the correct access.
     You may recommend more than 1 entitlement (aka: role, grant, group) at a time.
     The current username is: {username}
-    The current organization id is: {org_id}
+    The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
     Answer the questions only with the provided context.
     Entitlement name is in the format `directory_name/entitlements/entitlement_name`, put the **entitlement name** in brackets.\
@@ -28,7 +28,7 @@ class PromptsStore:
                 template=RECOMMENDATION_TEMPLATE,
                 input_variables=[
                     USERNAME_KEY,
-                    ORGID_KEY,
+                    WS_ID_KEY,
                     CONVERSATION_ID_KEY,
                     APP_NAMES_KEY,
                 ],
