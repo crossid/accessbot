@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from logging import Logger
-from typing import Optional
+from typing import Any, Optional
 
 from .models import ChatMessage, Conversation, Org, User
 from .tx import TransactionContext
@@ -95,6 +95,18 @@ class ConversationStore(ABC):
         tx_context: TransactionContext,
         links: Optional[list[str]] = None,
     ) -> Optional[Conversation]:
+        pass
+
+    @abstractmethod
+    def list(
+        self,
+        org_id: str,
+        tx_context: TransactionContext,
+        limit: int = 10,
+        offset: int = 0,
+        filters: dict[str, Any] = None,
+        links: Optional[list[str]] = None,
+    ) -> list[Conversation]:
         pass
 
     @abstractmethod

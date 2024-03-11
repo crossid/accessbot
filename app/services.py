@@ -49,3 +49,7 @@ def factory_message_store():
 
 def factory_vault():
     return service_registry().get(VaultAPI)
+
+
+async def pagination_params(q: str | None = None, offset: int = 0, limit: int = 10):
+    return {"q": q, "offset": offset, "limit": limit}

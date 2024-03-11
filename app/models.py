@@ -75,3 +75,11 @@ class Conversation(BaseModel):
     messages: Optional[list[ChatMessage]] = Field(
         default=None, description="Messages related to the conversations"
     )
+
+
+# Payloads
+#
+
+
+class PaginatedListBase(BaseModel):
+    total: int

@@ -1,7 +1,17 @@
-from typing import Optional
+from typing import Any, Optional
 
 import sqlalchemy
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, MetaData, String, Table
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    ForeignKey,
+    MetaData,
+    String,
+    Table,
+    func,
+    select,
+)
 from sqlalchemy.engine import Engine
 
 from .id import generate
@@ -193,6 +203,61 @@ class ConversationStoreSQL(ConversationStore):
         return self._get_by(
             org_id, self.conversations.c.external_id, external_id, tx_context, links
         )
+
+    def list(
+        self,
+        org_id: str,
+        tx_context: TransactionContext,
+        limit: int = 10,
+        offset: int = 0,
+        filters: dict[str, Any] = None,
+        links: Optional[list[str]] = None,
+    ) -> tuple[list[Conversation], int]:
+        # Query to count total documents
+        # Base query for counting
+        base_count_query = (
+            select(func.count())
+            .select_from(self.conversations)
+            .where(self.conversations.c.org_id == org_id)
+        )
+
+        # Applying filters to the count query
+        if filters:
+            for field, value in filters.items():
+                base_count_query = base_count_query.where(
+                    self.conversations.c[field] == value
+                )
+
+        # Execute count query
+        total_count = tx_context.connection.execute(base_count_query).scalar_one()
+
+        # Query for retrieving conversations
+        query = (
+            select(self.conversations)
+            .where(self.conversations.c.org_id == org_id)
+            .order_by(self.conversations.c.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if filters:
+            for field, value in filters.items():
+                query = query.where(self.conversations.c[field] == value)
+
+        result = tx_context.connection.execute(query)
+        conversations = []
+        for record in result:
+            conversation = Conversation(**record._asdict())
+            conversations.append(conversation)
+            if links and "messages" in links:
+                messages_query = select(self.messages).where(
+                    self.messages.c.conversation_id == conversation.id
+                )
+                messages = tx_context.connection.execute(messages_query)
+                conversation.messages = [ChatMessage(**m._asdict()) for m in messages]
+
+        # Return both the list of conversations and the total count
+        return conversations, total_count
 
     def insert(
         self, conversation: Conversation, tx_context: TransactionContext
