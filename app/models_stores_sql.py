@@ -21,6 +21,7 @@ from .models import (
     ChatMessage,
     Conversation,
     ConversationStatuses,
+    ConversationTypes,
     CurrentUser,
     Workspace,
     WorkspaceStatuses,
@@ -63,6 +64,7 @@ conversation_table = sqlalchemy.Table(
         primary_key=True,
     ),
     Column("created_by", String(), nullable=False),
+    Column("type", Enum(ConversationTypes), nullable=False),
     Column("status", Enum(ConversationStatuses), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),
@@ -319,6 +321,27 @@ class ConversationStoreSQL(ConversationStore):
         o["status"] = o["status"].value
         tx_context.connection.execute(self.conversations.insert(), o)
         return conversation
+
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Conversation:
+        q = (
+            self.conversations.update()
+            .where(self.conversations.c.id == conversation_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
+            .values(updates)
+        )
+
+        tx_context.connection.execute(q)
+        return self.get_by_id(
+            workspace_id=workspace_id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+        )
 
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None

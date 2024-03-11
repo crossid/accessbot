@@ -13,7 +13,7 @@ from ..llm.conversation import (
     create_agent_for_access_request_conversation,
     sse_client_transformer,
 )
-from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, USERNAME_KEY, WS_ID_KEY
+from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, USER_EMAIL_KEY, WS_ID_KEY
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
 from ..models import Conversation, CurrentUser, PaginatedListBase, Workspace
@@ -188,7 +188,9 @@ async def conversation(
                 status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
             )
 
-        agent_executor = create_agent_for_access_request_conversation(ar)
+        agent_executor = create_agent_for_access_request_conversation(
+            conversation=ar, ws=workspace
+        )
 
         return StreamingResponse(
             streaming(
@@ -196,7 +198,7 @@ async def conversation(
                 {
                     "input": body.input,
                     MEMORY_KEY: chat_history.messages,
-                    USERNAME_KEY: current_user.id,
+                    USER_EMAIL_KEY: current_user.email,
                     WS_ID_KEY: ar.workspace_id,
                     CONVERSATION_ID_KEY: ar.id,
                 },

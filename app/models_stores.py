@@ -49,6 +49,15 @@ class WorkspaceStore(ABC):
     ):
         pass
 
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        pass
+
 
 class WorkspaceStoreHooks(ABC):
     @abstractmethod
@@ -152,6 +161,15 @@ class WorkspaceStoreProxy:
             tx_context=tx_context,
         )
 
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        return self._store.update(workspace_id, updates, tx_context)
+
 
 class UserStore(ABC):
     @abstractmethod
@@ -199,6 +217,16 @@ class ConversationStore(ABC):
     @abstractmethod
     def insert(
         self, conversation: Conversation, tx_context: TransactionContext
+    ) -> Conversation:
+        pass
+
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
     ) -> Conversation:
         pass
 

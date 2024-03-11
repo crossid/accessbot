@@ -1,20 +1,22 @@
 # from langchain.globals import set_debug
 
-
 import json
+from typing import Optional
+
+from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
-from ..models import Conversation, ConversationStatuses, User
+from ..models import Conversation, ConversationTypes, User, Workspace
 from ..models_stores import ChatMessageStore
-from ..services import service_registry
+from ..services import factory_ws_store, service_registry
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
 from .agents import create_agent
 from .prompts import (
     CONVERSATION_ID_KEY,
     MEMORY_KEY,
-    USERNAME_KEY,
+    USER_EMAIL_KEY,
     WS_ID_KEY,
     prompt_store,
 )
@@ -23,7 +25,7 @@ from .prompts import (
 
 
 def create_agent_for_access_request_conversation(
-    conversation: Conversation, streaming=True
+    conversation: Conversation, ws: Optional[Workspace], streaming=True
 ):
     embedding = create_embedding()
     retriever = create_retriever(
@@ -31,13 +33,15 @@ def create_agent_for_access_request_conversation(
     )
 
     prompt = None
-    if conversation.status == ConversationStatuses.active:
+    if conversation.type == ConversationTypes.recommendation:
         prompt = prompt_store.get("generic_recommendation")
+    elif conversation.type == ConversationTypes.data_owner:
+        prompt = prompt_store.get("data_owner")
     else:
         raise ValueError("Invalid conversation status")
 
     data_context = {
-        USERNAME_KEY: lambda x: x[USERNAME_KEY],
+        USER_EMAIL_KEY: lambda x: x[USER_EMAIL_KEY],
         WS_ID_KEY: lambda x: x[WS_ID_KEY],
         CONVERSATION_ID_KEY: lambda x: x[CONVERSATION_ID_KEY],
     }
@@ -46,7 +50,7 @@ def create_agent_for_access_request_conversation(
         retriever=retriever,
         prompt=prompt,
         data_context=data_context,
-        tools=[],
+        tools=get_tools_for_workspace_and_conversation(conv=conversation, ws=ws),
         streaming=streaming,
     )
 
@@ -74,12 +78,20 @@ async def make_conversation(
         store=message_store,
     )
 
-    agent_executor = create_agent_for_access_request_conversation(conversation)
+    ws_store = factory_ws_store()
+    ws = ws_store.get_by_id(
+        workspace_id=conversation.workspace_id, tx_context=tx_context
+    )
+
+    agent_executor = create_agent_for_access_request_conversation(
+        conversation=conversation, ws=ws
+    )
+
     result = await agent_executor.ainvoke(
         {
             "input": input,
             MEMORY_KEY: chat_history.messages,
-            USERNAME_KEY: current_user.id,
+            USER_EMAIL_KEY: current_user.email,
             WS_ID_KEY: conversation.workspace_id,
             CONVERSATION_ID_KEY: conversation.id,
         },
