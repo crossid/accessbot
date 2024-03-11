@@ -62,26 +62,40 @@ class ConversationStatuses(enum.Enum):
     Enum class representing the status of a conversation
 
     - active: an active conversation between the requester and the LLM.
-    - submitted: the conversation has been submitted, probably pending approval.
-    - completed: the conversation has been completed, whether fulfilled or denied.
+    - completed: the conversation has been reached it's end.
     """
 
     active = "active"
-    submitted = "submitted"
     completed = "completed"
+
+
+class ConversationTypes(enum.Enum):
+    recommendation = "recommendation"
+    data_owner = "dataowner"
 
 
 class Conversation(BaseModel):
     id: str = Field(default_factory=lambda: generate())
-    workspace_id: Optional[str]
+    workspace_id: str
+    type: ConversationTypes = Field(default=ConversationTypes.recommendation)
     status: ConversationStatuses = Field(default="active")
     created_at: datetime = Field(default_factory=datetime.now)
     external_id: Optional[str] = Field(default=None)
+    previous_conversation: Optional[str] = Field(default=None)
     context: dict[str, Any] = Field(description="context of the conversation")
     created_by: str
     messages: Optional[list[ChatMessage]] = Field(
         default=None, description="Messages related to the conversations"
     )
+
+
+class Application(BaseModel):
+    id: str = Field(default_factory=lambda: generate())
+    workspace_id: str
+    display_name: str
+    aliases: list[str]
+    extra_instructions: Optional[str]
+    provision_schema: Optional[dict]
 
 
 # Payloads

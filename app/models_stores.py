@@ -4,6 +4,7 @@ from typing import Any, Optional
 from fastapi import BackgroundTasks
 
 from .models import (
+    Application,
     ChatMessage,
     Conversation,
     CurrentUser,
@@ -203,6 +204,16 @@ class ConversationStore(ABC):
         pass
 
     @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Conversation:
+        pass
+
+    @abstractmethod
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
     ) -> None:
@@ -228,6 +239,58 @@ class ChatMessageStore(ABC):
 
     @abstractmethod
     def delete(self, filter=None, tx_context: TransactionContext = None):
+        pass
+
+    @abstractmethod
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        pass
+
+
+class ApplicationStore(ABC):
+    @abstractmethod
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        tx_context: TransactionContext = None,
+    ) -> list[Application]:
+        pass
+
+    @abstractmethod
+    def get_by_id(
+        self, app_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Application]:
+        pass
+
+    @abstractmethod
+    def get_by_name(
+        self, app_name: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Application]:
+        pass
+
+    @abstractmethod
+    def update(
+        self,
+        application: Application,
+        tx_context: TransactionContext,
+    ) -> Application:
+        pass
+
+    @abstractmethod
+    def insert(self, app: Application, tx_context: TransactionContext) -> Application:
+        pass
+
+    @abstractmethod
+    def delete(
+        self,
+        workspace_id: str,
+        app_id: str,
+        tx_context: TransactionContext = None,
+    ):
         pass
 
     @abstractmethod

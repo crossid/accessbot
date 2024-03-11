@@ -3,6 +3,7 @@ from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ValidationError
 from starlette import status
 from zmq import Enum
@@ -11,14 +12,23 @@ from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
     add_messages,
     create_agent_for_access_request_conversation,
+    prepare_known_apps_str,
     sse_client_transformer,
 )
-from ..llm.prompts import CONVERSATION_ID_KEY, MEMORY_KEY, USERNAME_KEY, WS_ID_KEY
+from ..llm.graph import CONVERSATION_TYPE_KEY
+from ..llm.prompts import (
+    CONVERSATION_ID_KEY,
+    KNOWN_APPS_KEY,
+    MEMORY_KEY,
+    USER_EMAIL_KEY,
+    WS_ID_KEY,
+)
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
 from ..models import Conversation, CurrentUser, PaginatedListBase, Workspace
 from ..models_stores import ChatMessageStore, ConversationStore
 from ..services import (
+    factory_app_store,
     factory_conversation_store,
     factory_message_store,
     pagination_params,
@@ -172,12 +182,6 @@ async def conversation(
                     ai_content=ai_content,
                 )
 
-        chat_history = LangchainChatMessageHistory(
-            conversation_id=conversation_id,
-            workspace_id=workspace_id,
-            tx_context=tx_context,
-            store=message_store,
-        )
         ar = conversation_store.get_by_id(
             conversation_id=conversation_id,
             workspace_id=workspace_id,
@@ -188,18 +192,39 @@ async def conversation(
                 status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
             )
 
-        agent_executor = create_agent_for_access_request_conversation(ar)
+        app_store = factory_app_store()
+        apps = app_store.list(
+            workspace_id=workspace_id, limit=1000, tx_context=tx_context
+        )
+
+        dc = {
+            USER_EMAIL_KEY: current_user.email,
+            WS_ID_KEY: ar.workspace_id,
+            CONVERSATION_ID_KEY: ar.id,
+            KNOWN_APPS_KEY: prepare_known_apps_str(apps=apps),
+        }
+
+        agent_executor = create_agent_for_access_request_conversation(
+            conversation=ar, ws=workspace, data_context=dc
+        )
+
+        config = {
+            "configurable": {
+                "thread_id": ar.id,
+                "workspace_id": ar.workspace_id,
+            }
+        }
+
+        input = {
+            MEMORY_KEY: [HumanMessage(content=body.input)],
+            CONVERSATION_TYPE_KEY: ar.type.value,
+        }
 
         return StreamingResponse(
             streaming(
-                agent_executor,
-                {
-                    "input": body.input,
-                    MEMORY_KEY: chat_history.messages,
-                    USERNAME_KEY: current_user.id,
-                    WS_ID_KEY: ar.workspace_id,
-                    CONVERSATION_ID_KEY: ar.id,
-                },
+                runnable=agent_executor,
+                config=config,
+                ctx=input,
                 event_transformer=sse_client_transformer,
                 callback=_add_messages,
             ),

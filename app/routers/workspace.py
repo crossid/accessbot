@@ -2,9 +2,8 @@ import logging
 from typing import Annotated, Optional
 
 import jsonpatch
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl, ValidationError
-from starlette import status
 
 from ..auth import (
     CurrentUser,
@@ -13,8 +12,14 @@ from ..auth import (
     setup_workspace_vstore,
 )
 from ..models import JsonPatchDocument, PatchOperation, Workspace
-from ..models_stores import ChatMessageStore, ConversationStore, WorkspaceStore
+from ..models_stores import (
+    ApplicationStore,
+    ChatMessageStore,
+    ConversationStore,
+    WorkspaceStore,
+)
 from ..services import (
+    factory_app_store,
     factory_conversation_store,
     factory_message_store,
     factory_vault,
@@ -101,6 +106,7 @@ def wipe_workspace(
     workspace_store: WorkspaceStore,
     msg_store: ChatMessageStore,
     conversation_store: ConversationStore,
+    app_store: ApplicationStore,
     background_tasks: BackgroundTasks,
     ovstore,
 ):
@@ -109,6 +115,7 @@ def wipe_workspace(
     conversation_store.delete_for_workspace(
         workspace_id=workspace.id, tx_context=tx_context
     )
+    app_store.delete_for_workspace(workspace_id=workspace.id, tx_context=tx_context)
 
     vault: VaultAPI = factory_vault()
     ws_secrets = vault.list_secrets(workspace_id=workspace.id)
@@ -134,6 +141,7 @@ async def delete(
     conversation_store: Annotated[
         ConversationStore, Depends(factory_conversation_store)
     ],
+    app_store: Annotated[ApplicationStore, Depends(factory_app_store)],
     ovstore=Depends(setup_workspace_vstore),
 ):
     if current_user.id != workspace.created_by or workspace_id != workspace.id:
@@ -160,6 +168,7 @@ async def delete(
             conversation_store=conversation_store,
             background_tasks=background_tasks,
             msg_store=msg_store,
+            app_store=app_store,
             ovstore=ovstore,
         )
 

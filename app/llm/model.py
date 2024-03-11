@@ -9,7 +9,7 @@ from ..settings import settings
 from .fake_model import FakeChatOpenAI
 
 LLM_ALLOWED_ARGS = {
-    "openai": ["temperature", "streaming"],
+    "openai": ["model", "temperature", "streaming", "name"],
     "fake": ["responses", "sleep"],
 }
 
@@ -41,6 +41,7 @@ def create_model(**args) -> BaseChatModel:
             for key, value in args.items()
             if key in LLM_ALLOWED_ARGS["openai"]
         }
+
         return ChatOpenAI(**filtered_args)
     else:
         raise ValueError(f"LLM_MODEL env var with type '{type}' is not supported")

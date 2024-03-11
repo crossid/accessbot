@@ -1,8 +1,12 @@
 import injector
+from langgraph.checkpoint import BaseCheckpointSaver
 
 from .models_stores import (
+    ApplicationStore,
     ChatMessageStore,
     ConversationStore,
+    UserStore,
+    WorkspaceStore,
 )
 from .vault import VaultAPI
 
@@ -39,12 +43,28 @@ def get_service(service_class: type) -> callable:
     return dependency
 
 
+def factory_ws_store():
+    return service_registry().get(WorkspaceStore)
+
+
+def factory_user_store():
+    return service_registry().get(UserStore)
+
+
 def factory_conversation_store():
     return service_registry().get(ConversationStore)
 
 
 def factory_message_store():
     return service_registry().get(ChatMessageStore)
+
+
+def factory_checkpointer():
+    return service_registry().get(BaseCheckpointSaver)
+
+
+def factory_app_store():
+    return service_registry().get(ApplicationStore)
 
 
 def factory_vault():
