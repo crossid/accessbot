@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ValidationError
 from starlette import status
+from zmq import Enum
 
 from ..auth import get_current_active_user, get_current_org
 from ..llm.conversation import (
@@ -64,6 +65,11 @@ def create(
             raise HTTPException(status_code=422, detail=e.errors())
 
 
+class IDType(str, Enum):
+    internal = "internal"
+    external = "external"
+
+
 @router.get(
     "/{conversation_id}", response_model=Conversation, response_model_exclude_none=True
 )
@@ -71,23 +77,33 @@ def get(
     conversation_id,
     # current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     org: Annotated[Org, Depends(get_current_org)],
+    id_type: IDType = IDType.internal,
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     links: List[str] = Query(None),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
-            r = conversation_store.get_by_id(
-                org_id=org.id,
-                conversation_id=conversation_id,
-                links=links,
-                tx_context=tx_context,
-            )
-            if r is None:
+            conv: Conversation
+            if id_type == IDType.internal:
+                conv = conversation_store.get_by_id(
+                    org_id=org.id,
+                    conversation_id=conversation_id,
+                    links=links,
+                    tx_context=tx_context,
+                )
+            else:
+                conv = conversation_store.get_by_external_id(
+                    org_id=org.id,
+                    external_id=conversation_id,
+                    links=links,
+                    tx_context=tx_context,
+                )
+            if conv is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="conversation not found",
                 )
-            return r
+            return conv
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 
