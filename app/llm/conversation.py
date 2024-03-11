@@ -79,7 +79,7 @@ async def make_conversation(
         {
             "input": input,
             MEMORY_KEY: chat_history.messages,
-            USERNAME_KEY: current_user.id,
+            USERNAME_KEY: current_user.email,
             WS_ID_KEY: conversation.workspace_id,
             CONVERSATION_ID_KEY: conversation.id,
         },

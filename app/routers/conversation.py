@@ -196,7 +196,7 @@ async def conversation(
                 {
                     "input": body.input,
                     MEMORY_KEY: chat_history.messages,
-                    USERNAME_KEY: current_user.id,
+                    USERNAME_KEY: current_user.email,
                     WS_ID_KEY: ar.workspace_id,
                     CONVERSATION_ID_KEY: ar.id,
                 },

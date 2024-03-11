@@ -28,7 +28,7 @@ async def get_data_owner(ws: Workspace, role_name: str) -> User:
     resolved_config = resolve_ws_config_secrets(workspace_id=ws.id, config=config)
 
     doFactory = DataOwnerFactory(
-        type=ws.config.dataOwnerConfig[directory]["type"],
+        type=ws.config["data_owner_config"][directory]["type"],
         config=resolved_config,
     )
     owner = await doFactory.get_data_owner(rolename=role_name)
