@@ -11,10 +11,9 @@ class TestCreateTicketTool(unittest.TestCase):
         import injector
 
         from app.injector_extensions_module import ExtensionModule
-        from app.injector_main_module import MainModule
         from app.services import set_service_registry
 
-        service_registry = injector.Injector([MainModule(), ExtensionModule()])
+        service_registry = injector.Injector([ExtensionModule()])
         set_service_registry(service_registry)
 
     def test_make_request(self):

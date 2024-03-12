@@ -90,6 +90,7 @@ class SlackImpl(TicketInterface):
                 "requester_id": requester.id,
                 "requester_email": requester.email,
                 "conversation_id": conversation_id,
+                "workspace_id": workspace_id,
                 "requester_channel": requester_channel,
             },
         }
