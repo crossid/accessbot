@@ -188,7 +188,9 @@ async def conversation(
                 status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
             )
 
-        agent_executor = create_agent_for_access_request_conversation(ar)
+        agent_executor = create_agent_for_access_request_conversation(
+            conversation=ar, ws=workspace
+        )
 
         return StreamingResponse(
             streaming(

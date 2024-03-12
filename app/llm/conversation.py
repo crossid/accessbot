@@ -1,13 +1,15 @@
 # from langchain.globals import set_debug
 
-
 import json
+from typing import Optional
+
+from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
-from ..models import Conversation, ConversationStatuses, User
+from ..models import Conversation, ConversationTypes, User, Workspace
 from ..models_stores import ChatMessageStore
-from ..services import service_registry
+from ..services import factory_ws_store, service_registry
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
 from .agents import create_agent
@@ -23,7 +25,7 @@ from .prompts import (
 
 
 def create_agent_for_access_request_conversation(
-    conversation: Conversation, streaming=True
+    conversation: Conversation, ws: Optional[Workspace], streaming=True
 ):
     embedding = create_embedding()
     retriever = create_retriever(
@@ -31,7 +33,7 @@ def create_agent_for_access_request_conversation(
     )
 
     prompt = None
-    if conversation.status == ConversationStatuses.active:
+    if conversation.status == ConversationTypes.recommendation:
         prompt = prompt_store.get("generic_recommendation")
     else:
         raise ValueError("Invalid conversation status")
@@ -46,7 +48,7 @@ def create_agent_for_access_request_conversation(
         retriever=retriever,
         prompt=prompt,
         data_context=data_context,
-        tools=[],
+        tools=get_tools_for_workspace_and_conversation(conv=Conversation, ws=ws),
         streaming=streaming,
     )
 
@@ -74,7 +76,15 @@ async def make_conversation(
         store=message_store,
     )
 
-    agent_executor = create_agent_for_access_request_conversation(conversation)
+    ws_store = factory_ws_store()
+    ws = ws_store.get_by_id(
+        workspace_id=conversation.workspace_id, tx_context=tx_context
+    )
+
+    agent_executor = create_agent_for_access_request_conversation(
+        conversation=conversation, ws=ws
+    )
+
     result = await agent_executor.ainvoke(
         {
             "input": input,

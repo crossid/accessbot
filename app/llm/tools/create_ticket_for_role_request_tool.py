@@ -6,7 +6,7 @@ from pydantic.v1 import BaseModel, Field
 from app.models import (
     Conversation,
     ConversationStatuses,
-    ConversationType,
+    ConversationTypes,
     User,
     Workspace,
 )
@@ -106,7 +106,7 @@ async def _request_roles(
         do_conv = Conversation(
             workspace_id=workspace_id,
             external_id=conversation_id,
-            type=ConversationType.data_owner,
+            type=ConversationTypes.data_owner,
             created_by=do_id,
         )
         conv_store.insert(conversation=do_conv, tx_context=tx_context)
