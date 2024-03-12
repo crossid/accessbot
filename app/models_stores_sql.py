@@ -139,7 +139,11 @@ class WorkspaceStoreSQL(WorkspaceStore):
         updates: dict[str, Any],
         tx_context: TransactionContext,
     ) -> Workspace:
-        q = self.workspaces.update().where(self.id == workspace_id).values(updates)
+        q = (
+            self.workspaces.update()
+            .where(self.workspaces.c.id == workspace_id)
+            .values(updates)
+        )
 
         tx_context.connection.execute(q)
         return self.get_by_id(
@@ -308,7 +312,7 @@ class ConversationStoreSQL(ConversationStore):
     ) -> Conversation:
         q = (
             self.conversations.update()
-            .where(self.conversations.id == conversation_id)
+            .where(self.conversations.c.id == conversation_id)
             .where(self.conversations.c.workspace_id == workspace_id)
             .values(updates)
         )

@@ -143,8 +143,10 @@ async def delete(
 
 
 class UpdateWorkspaceBody(BaseModel):
-    display_name: Optional[str]
-    config: Optional[dict[str, Any]] = Field(description="Workspace configuration")
+    display_name: Optional[str] = Field(default=None)
+    config: Optional[dict[str, Any]] = Field(
+        description="Workspace configuration", default=None
+    )
 
 
 @router.patch(
@@ -162,7 +164,7 @@ async def update_org(
     if current_user.id != workspace.creator_id or workspace_id != workspace.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authorized to delete this workspace",
+            detail="Not authorized to patch this workspace",
         )
 
     updates: dict[str, Any] = {}
