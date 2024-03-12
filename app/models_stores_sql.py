@@ -133,6 +133,20 @@ class WorkspaceStoreSQL(WorkspaceStore):
 
         return None
 
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        q = self.workspaces.update().where(self.id == workspace_id).values(updates)
+
+        tx_context.connection.execute(q)
+        return self.get_by_id(
+            workspace_id=workspace_id,
+            tx_context=tx_context,
+        )
+
 
 class ConversationStoreSQL(ConversationStore):
     default_conversations_table_name: str = CONVERSATION_TABLE_NAME
@@ -295,6 +309,7 @@ class ConversationStoreSQL(ConversationStore):
         q = (
             self.conversations.update()
             .where(self.conversations.id == conversation_id)
+            .where(self.conversations.c.workspace_id == workspace_id)
             .values(updates)
         )
 
