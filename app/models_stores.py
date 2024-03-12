@@ -111,6 +111,16 @@ class ConversationStore(ABC):
         pass
 
     @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Conversation:
+        pass
+
+    @abstractmethod
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
     ) -> None:

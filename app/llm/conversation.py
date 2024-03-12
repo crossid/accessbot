@@ -14,7 +14,7 @@ from .agents import create_agent
 from .prompts import (
     CONVERSATION_ID_KEY,
     MEMORY_KEY,
-    USERNAME_KEY,
+    USER_EMAIL_KEY,
     WS_ID_KEY,
     prompt_store,
 )
@@ -37,7 +37,7 @@ def create_agent_for_access_request_conversation(
         raise ValueError("Invalid conversation status")
 
     data_context = {
-        USERNAME_KEY: lambda x: x[USERNAME_KEY],
+        USER_EMAIL_KEY: lambda x: x[USER_EMAIL_KEY],
         WS_ID_KEY: lambda x: x[WS_ID_KEY],
         CONVERSATION_ID_KEY: lambda x: x[CONVERSATION_ID_KEY],
     }
@@ -79,7 +79,7 @@ async def make_conversation(
         {
             "input": input,
             MEMORY_KEY: chat_history.messages,
-            USERNAME_KEY: current_user.email,
+            USER_EMAIL_KEY: current_user.email,
             WS_ID_KEY: conversation.workspace_id,
             CONVERSATION_ID_KEY: conversation.id,
         },

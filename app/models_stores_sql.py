@@ -285,6 +285,26 @@ class ConversationStoreSQL(ConversationStore):
         tx_context.connection.execute(self.conversations.insert(), o)
         return conversation
 
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Conversation:
+        q = (
+            self.conversations.update()
+            .where(self.conversations.id == conversation_id)
+            .values(updates)
+        )
+
+        tx_context.connection.execute(q)
+        return self.get_by_id(
+            workspace_id=workspace_id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+        )
+
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
     ):
