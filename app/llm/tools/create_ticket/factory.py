@@ -5,6 +5,7 @@ from app.vault_utils import resolve_ws_config_secrets
 from .email import EmailTicketImpl
 from .iface import TicketInterface
 from .jira import JiraTicketImpl
+from .mock import MockImpl
 from .slack import SlackImpl
 
 
@@ -22,5 +23,7 @@ def TicketSystemFactory(
             return JiraTicketImpl(**resolved_config)
         case "slack":
             return SlackImpl(**resolved_config)
+        case "_mock_":
+            return MockImpl(**resolved_config)
 
     return None

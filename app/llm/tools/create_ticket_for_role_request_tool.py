@@ -3,6 +3,7 @@ from typing import Any, Optional
 from langchain_core.tools import StructuredTool, ToolException
 from pydantic.v1 import BaseModel, Field
 
+from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.models import (
     Conversation,
     ConversationStatuses,
@@ -12,6 +13,7 @@ from app.models import (
 )
 from app.services import (
     factory_conversation_store,
+    factory_message_store,
     factory_user_store,
     factory_ws_store,
 )
@@ -30,7 +32,7 @@ async def make_request(
     requester: User,
     access: str,
     conv_summary: str,
-    request_id: str,
+    conversation_id: str,
 ):
     ts = TicketSystemFactory(
         workspace_id=ws.id,
@@ -45,7 +47,8 @@ async def make_request(
         access=access,
         conv_summary=conv_summary,
         role_name=role_name,
-        request_id=request_id,
+        conversation_id=conversation_id,
+        workspace_id=ws.id,
     )
 
 
@@ -91,16 +94,20 @@ async def _request_roles(
                     output=output,
                     role_name=role_name,
                     requester=current_user,
-                    request_id=conversation_id,
+                    conversation_id=conversation_id,
                     access=access,
                     conv_summary=conv_summary,
                 )
             except Exception as err:
                 raise ToolException(f"failed to open a ticket: {err}")
 
-        do_id = ws.config[TICKET_SYSTEM_CONFIG_KEY]["default_data_owner"]
+        do_id = ""
         if owner is not None:
             do_id = owner.id
+        else:
+            do_email = ws.config[TICKET_SYSTEM_CONFIG_KEY]["default_data_owner_email"]
+            data_owner = user_store.get_by_email(email=do_email)
+            do_id = data_owner.id
 
         # create new conversation for data owner
         do_conv = Conversation(
@@ -110,6 +117,17 @@ async def _request_roles(
             created_by=do_id,
         )
         conv_store.insert(conversation=do_conv, tx_context=tx_context)
+
+        message_store = factory_message_store()
+        chat_history = LangchainChatMessageHistory(
+            conversation_id=do_conv.id,
+            workspace_id=do_conv.workspace_id,
+            tx_context=tx_context,
+            store=message_store,
+        )
+        chat_history.add_ai_message(
+            message=f"hello, there's a new request waiting for you:\n {output}.\n Would you like to approve it?"
+        )
 
         # update conversation to submitted
         updates: dict[str, Any] = {"status": ConversationStatuses.submitted.value}
