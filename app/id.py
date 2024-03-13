@@ -10,5 +10,5 @@ def is_valid_nanoid(id_str):
     return all(char in alphabet for char in id_str)
 
 
-def generate():
-    return _generate(alphabet=alphabet, size=SIZE)
+def generate(size=SIZE):
+    return _generate(alphabet=alphabet, size=size)
