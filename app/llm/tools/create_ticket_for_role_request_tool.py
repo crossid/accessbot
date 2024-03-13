@@ -107,6 +107,9 @@ async def _request_roles(
             external_id=conversation_id,
             type=ConversationTypes.data_owner,
             created_by=owner.id,
+            context={
+                "communication_channel": ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"]
+            },
         )
         conv_store.insert(conversation=do_conv, tx_context=tx_context)
 
