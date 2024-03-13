@@ -1,5 +1,3 @@
-from okta.client import Client as OktaClient
-
 from app.models import User
 from app.services import factory_user_store
 
@@ -7,10 +5,17 @@ from .iface import DataOwnerInterface
 
 
 class OktaImpl(DataOwnerInterface):
-    client: OktaClient
     attribute_name: str
 
     def __init__(self, tenant, password, attribute_name="dataOwner") -> None:
+        try:
+            from okta.client import Client as OktaClient
+        except ImportError:
+            raise ImportError(
+                "Could not import atlassian package. "
+                "Please install it with `pip install okta`."
+            )
+
         config = {"orgUrl": f"https://{tenant}", "token": password}
         self.client = OktaClient(config)
         self.attribute_name = attribute_name

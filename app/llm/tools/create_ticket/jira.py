@@ -1,5 +1,3 @@
-from atlassian import Jira
-
 from app.models import User
 
 from .iface import TicketInterface
@@ -11,9 +9,16 @@ class JiraTicketImpl(TicketInterface):
     tenant: str
     username: str
     password: str
-    client: Jira
 
     def __init__(self, project, issuetype, tenant, username, password) -> None:
+        try:
+            from atlassian import Jira
+        except ImportError:
+            raise ImportError(
+                "Could not import atlassian package. "
+                "Please install it with `pip install atlassian-python-api`."
+            )
+
         self.project = project
         self.issuetype = issuetype
         self.client = Jira(
