@@ -41,6 +41,7 @@ class Workspace(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
     display_name: str
+    logo_url: Optional[str] = None
     status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
     created_by: str
     config: dict[str, Any] = Field(description="Workspace configuration")

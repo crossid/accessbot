@@ -1,8 +1,8 @@
 import logging
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, HttpUrl, ValidationError
 from starlette import status
 
 from ..auth import (
@@ -34,8 +34,8 @@ router = APIRouter(
 
 class CreateWorkspaceBody(BaseModel):
     external_id: Optional[str] = None
+    logo_url: Optional[HttpUrl] = None
     display_name: str
-    config: dict[str, Any] = Field(description="Workspace configuration")
 
 
 @router.post(
@@ -53,7 +53,11 @@ def create(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             ws = Workspace(
-                **body.model_dump(exclude_none=True), created_by=current_user.id
+                external_id=body.external_id,
+                display_name=body.display_name,
+                logo_url=body.logo_url.unicode_string(),
+                created_by=current_user.id,
+                config={},
             )
             # note: this is required for the hooks to work
             current_user.workspace_id = ws.id

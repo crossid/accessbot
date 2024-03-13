@@ -43,6 +43,7 @@ workspace_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column("display_name", String(32), nullable=False),
+    Column("logo_url", String(), nullable=True),
     Column("status", Enum(WorkspaceStatuses)),
     Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
