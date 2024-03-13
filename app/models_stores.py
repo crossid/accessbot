@@ -117,7 +117,12 @@ class WorkspaceStoreProxy:
                 background_tasks=background_tasks,
                 tx_context=tx_context,
             )
-        return self._store.insert(workspace, tx_context)
+        return self._store.insert(
+            workspace=workspace,
+            current_user=current_user,
+            background_tasks=background_tasks,
+            tx_context=tx_context,
+        )
 
     def update(
         self,

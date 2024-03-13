@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 import sqlalchemy
+from fastapi import BackgroundTasks
 from sqlalchemy import (
     JSON,
     Column,
@@ -20,6 +21,7 @@ from .models import (
     ChatMessage,
     Conversation,
     ConversationStatuses,
+    CurrentUser,
     Workspace,
     WorkspaceStatuses,
 )
@@ -127,7 +129,13 @@ class WorkspaceStoreSQL(WorkspaceStore):
         if result:
             return Workspace(**result._asdict())
 
-    def insert(self, workspace: Workspace, tx_context: TransactionContext) -> Workspace:
+    def insert(
+        self,
+        workspace: Workspace,
+        current_user: CurrentUser,
+        background_tasks: BackgroundTasks,
+        tx_context: TransactionContext,
+    ) -> Workspace:
         if workspace.id is None:
             workspace.id = generate()
         o = workspace.model_dump()
@@ -147,7 +155,13 @@ class WorkspaceStoreSQL(WorkspaceStore):
         tx_context.connection.execute(q)
         return workspace
 
-    def delete(self, workspace: Workspace, tx_context: TransactionContext):
+    def delete(
+        self,
+        workspace: Workspace,
+        current_user: CurrentUser,
+        background_tasks: BackgroundTasks,
+        tx_context: TransactionContext,
+    ):
         q = self.workspaces.delete().where(self.workspaces.c.id == workspace.id)
         tx_context.connection.execute(q)
 
