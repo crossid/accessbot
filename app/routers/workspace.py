@@ -153,6 +153,7 @@ async def delete(
 
         wipe_workspace(
             workspace=current_ws,
+            current_user=current_user,
             tx_context=tx_context,
             workspace_store=workspace_store,
             conversation_store=conversation_store,

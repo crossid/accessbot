@@ -145,7 +145,12 @@ class WorkspaceStoreProxy:
                 background_tasks=background_tasks,
                 tx_context=tx_context,
             )
-        return self._store.delete(workspace, tx_context)
+        return self._store.delete(
+            workspace=workspace,
+            current_user=current_user,
+            background_tasks=background_tasks,
+            tx_context=tx_context,
+        )
 
 
 class UserStore(ABC):
