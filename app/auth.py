@@ -75,7 +75,7 @@ class OAuth2Impl(AuthAPI):
                     "verify_iss": True,
                 },
             )
-            log.debug("decoded token: ", data)
+            log.debug("decoded token: %s", data)
             return data
         except jwt.exceptions.PyJWTError as e:
             log.info("Token is invalid: %s", e)
@@ -93,6 +93,7 @@ class OAuth2Impl(AuthAPI):
             return data.json()
 
         except Exception as err:
+            log.debug("Failed to fetch userinfo: %s", err)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}"
             )
@@ -115,7 +116,8 @@ def get_current_active_user(request: Request) -> Optional[CurrentUser]:
     try:
         decoded_token = auth_api.authenticate(request)
         return auth_api.get_current_user(request, decoded_token)
-    except Exception:
+    except Exception as e:
+        log.info("Failed to authenticate: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Athenticated"
         )
