@@ -41,8 +41,7 @@ class Workspace(BaseModel):
     external_id: Optional[str] = None
     display_name: str
     status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
-    # TODO rename to created_by
-    creator_id: str
+    created_by: str
     config: dict[str, Any] = Field(description="Workspace configuration")
 
 

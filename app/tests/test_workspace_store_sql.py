@@ -1,12 +1,13 @@
 import unittest
 
+from sqlalchemy.engine import create_engine
+
 from app.id import generate
 from app.models import Workspace
 from app.models_stores import WorkspaceStoreHooks, WorkspaceStoreProxy
 from app.models_stores_sql import WorkspaceStoreSQL
 from app.sql import SQLAlchemyTransactionContext
 from app.tx import TransactionContext
-from sqlalchemy.engine import create_engine
 
 
 class TestWorkspaceStoreSQL(unittest.TestCase):
@@ -23,7 +24,7 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_insert_workspace(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme, Inc.", creator_id=generate(), config={})
+            ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
             pws = self.test_store.insert(ws, tx_context=tx_context)
             self.assertIsNotNone(pws)
             self.assertIsNotNone(pws.id)
@@ -44,7 +45,7 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
         f = WorkspaceStoreProxy(store=self.test_store, hooks=WorkspaceHooks())
 
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme, Inc.", creator_id=generate(), config={})
+            ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
             f.insert(ws, tx_context=tx_context)
             lws = self.test_store.get_by_id(ws.id, tx_context=tx_context)
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
@@ -58,7 +59,7 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_tx(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme, Inc.", creator_id=generate(), config={})
+            ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
             self.test_store.insert(ws, tx_context=tx_context)
             tx_context.rollback()
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:

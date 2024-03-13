@@ -53,7 +53,7 @@ def create(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             ws = Workspace(
-                **body.model_dump(exclude_none=True), creator_id=current_user.id
+                **body.model_dump(exclude_none=True), created_by=current_user.id
             )
             # note: this is required for the hooks to work
             current_user.workspace_id = ws.id
@@ -131,7 +131,7 @@ async def delete(
     ],
     ovstore=Depends(setup_workspace_vstore),
 ):
-    if current_user.id != workspace.creator_id or workspace_id != workspace.id:
+    if current_user.id != workspace.created_by or workspace_id != workspace.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authorized to delete this workspace",

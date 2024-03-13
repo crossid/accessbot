@@ -44,7 +44,7 @@ workspace_table = sqlalchemy.Table(
     Column("status", Enum(WorkspaceStatuses)),
     Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
-    Column("creator_id", String(), nullable=False),
+    Column("created_by", String(), nullable=False),
 )
 
 
