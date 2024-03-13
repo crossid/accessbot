@@ -33,8 +33,10 @@ def create_agent_for_access_request_conversation(
     )
 
     prompt = None
-    if conversation.status == ConversationTypes.recommendation:
+    if conversation.type == ConversationTypes.recommendation:
         prompt = prompt_store.get("generic_recommendation")
+    elif conversation.type == ConversationTypes.data_owner:
+        prompt = prompt_store.get("data_owner")
     else:
         raise ValueError("Invalid conversation status")
 
@@ -48,7 +50,7 @@ def create_agent_for_access_request_conversation(
         retriever=retriever,
         prompt=prompt,
         data_context=data_context,
-        tools=get_tools_for_workspace_and_conversation(conv=Conversation, ws=ws),
+        tools=get_tools_for_workspace_and_conversation(conv=conversation, ws=ws),
         streaming=streaming,
     )
 

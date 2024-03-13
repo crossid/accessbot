@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     MetaData,
     String,
@@ -15,7 +16,13 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import ChatMessage, Conversation, ConversationStatuses, Workspace
+from .models import (
+    ChatMessage,
+    Conversation,
+    ConversationStatuses,
+    ConversationTypes,
+    Workspace,
+)
 from .models_stores import (
     ChatMessageStore,
     ConversationStore,
@@ -52,7 +59,7 @@ conversation_table = sqlalchemy.Table(
         primary_key=True,
     ),
     Column("created_by", String(), nullable=False),
-    Column("type", String(), nullable=False),
+    Column("type", Enum(ConversationTypes), nullable=False),
     Column("status", String(32), nullable=False),
     Column("external_id", String(), nullable=True),
     Column("context", JSON(), nullable=False),

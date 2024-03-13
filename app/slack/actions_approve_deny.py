@@ -37,7 +37,7 @@ def approve_or_deny(
         )
 
         # get current user
-        slack_user = client.users_info(user=action["user"])
+        slack_user = client.users_info(user=body["user"]["id"])
         slack_user_email = slack_user.data["user"]["profile"]["email"]
         user_store = factory_user_store()
         user = user_store.get_by_email(email=slack_user_email)
