@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field, ValidationError
 from starlette import status
 
@@ -46,6 +46,7 @@ class CreateWorkspaceBody(BaseModel):
 )
 def create(
     body: CreateWorkspaceBody,
+    background_tasks: BackgroundTasks,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
 ):
@@ -54,7 +55,14 @@ def create(
             ws = Workspace(
                 **body.model_dump(exclude_none=True), creator_id=current_user.id
             )
-            pws = workspace_store.insert(ws, tx_context=tx_context)
+            # note: this is required for the hooks to work
+            current_user.workspace_id = ws.id
+            pws = workspace_store.insert(
+                workspace=ws,
+                current_user=current_user,
+                background_tasks=background_tasks,
+                tx_context=tx_context,
+            )
             return pws
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
@@ -71,7 +79,6 @@ def create(
 )
 def get(
     workspace_id: str,
-    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -84,10 +91,12 @@ def get(
 
 def wipe_workspace(
     workspace: Workspace,
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     tx_context: TransactionContext,
     workspace_store: WorkspaceStore,
     msg_store: ChatMessageStore,
     conversation_store: ConversationStore,
+    background_tasks: BackgroundTasks,
     ovstore,
 ):
     delete_store(ovstore=ovstore)
@@ -101,7 +110,12 @@ def wipe_workspace(
     for name in ws_secrets:
         vault.delete_secret(workspace_id=workspace.id, path=name)
 
-    workspace_store.delete(workspace=workspace, tx_context=tx_context)
+    workspace_store.delete(
+        workspace=workspace,
+        current_user=current_user,
+        background_tasks=background_tasks,
+        tx_context=tx_context,
+    )
 
 
 @router.delete("/{workspace_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -109,6 +123,7 @@ async def delete(
     workspace_id: str,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    background_tasks: BackgroundTasks,
     workspace_store: Annotated[WorkspaceStore, Depends(get_service(WorkspaceStore))],
     msg_store: Annotated[ChatMessageStore, Depends(factory_message_store)],
     conversation_store: Annotated[
@@ -137,6 +152,7 @@ async def delete(
             tx_context=tx_context,
             workspace_store=workspace_store,
             conversation_store=conversation_store,
+            background_tasks=background_tasks,
             msg_store=msg_store,
             ovstore=ovstore,
         )

@@ -31,10 +31,16 @@ class CurrentUser(User):
         return self
 
 
+class WorkspaceStatuses(enum.Enum):
+    creating = "creating"
+    active = "active"
+
+
 class Workspace(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
     display_name: str
+    status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
     # TODO rename to created_by
     creator_id: str
     config: dict[str, Any] = Field(description="Workspace configuration")

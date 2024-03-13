@@ -5,6 +5,7 @@ from sqlalchemy import (
     JSON,
     Column,
     DateTime,
+    Enum,
     ForeignKey,
     MetaData,
     String,
@@ -15,7 +16,13 @@ from sqlalchemy import (
 from sqlalchemy.engine import Engine
 
 from .id import generate
-from .models import ChatMessage, Conversation, ConversationStatuses, Workspace
+from .models import (
+    ChatMessage,
+    Conversation,
+    ConversationStatuses,
+    Workspace,
+    WorkspaceStatuses,
+)
 from .models_stores import (
     ChatMessageStore,
     ConversationStore,
@@ -34,6 +41,7 @@ workspace_table = sqlalchemy.Table(
     metadata,
     Column("id", String(10), primary_key=True),
     Column("display_name", String(32), nullable=False),
+    Column("status", Enum(WorkspaceStatuses)),
     Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
     Column("creator_id", String(), nullable=False),
@@ -124,6 +132,19 @@ class WorkspaceStoreSQL(WorkspaceStore):
             workspace.id = generate()
         o = workspace.model_dump()
         tx_context.connection.execute(self.workspaces.insert(), o)
+        return workspace
+
+    def update(
+        self,
+        workspace: Workspace,
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        q = (
+            self.workspaces.update()
+            .where(self.workspaces.c.id == workspace.id)
+            .values({k: v for k, v in workspace.model_dump().items() if k != "id"})
+        )
+        tx_context.connection.execute(q)
         return workspace
 
     def delete(self, workspace: Workspace, tx_context: TransactionContext):
