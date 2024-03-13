@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
+    ENV: str = "production"
     DB_URI: str = ""
     VSTORE_URI: str = ""
     VSTORE_EMBEDDING: str = "openai"
