@@ -140,3 +140,48 @@ async def delete(
             msg_store=msg_store,
             ovstore=ovstore,
         )
+
+
+class UpdateWorkspaceBody(BaseModel):
+    display_name: Optional[str] = Field(default=None)
+    config: Optional[dict[str, Any]] = Field(
+        description="Workspace configuration", default=None
+    )
+
+
+@router.patch(
+    "/{workspace_id}",
+    response_model=Workspace,
+    response_model_exclude_none=True,
+)
+async def update_org(
+    body: UpdateWorkspaceBody,
+    workspace_id: str,
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    workspace_store: Annotated[WorkspaceStore, Depends(get_service(WorkspaceStore))],
+):
+    if current_user.id != workspace.creator_id or workspace_id != workspace.id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authorized to patch this workspace",
+        )
+
+    updates: dict[str, Any] = {}
+    if body.display_name is not None:
+        updates["display_name"] = body.display_name
+
+    if body.config is not None:
+        updates["config"] = workspace.config | body.config
+
+    if len(updates) == 0:
+        return workspace
+
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        try:
+            uworkspace = workspace_store.update(
+                workspace_id=workspace_id, updates=updates, tx_context=tx_context
+            )
+            return uworkspace
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())

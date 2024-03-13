@@ -20,6 +20,15 @@ class WorkspaceStore(ABC):
     def delete(self, workspace: Workspace, tx_context: TransactionContext):
         pass
 
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        pass
+
 
 class WorkspaceStoreHooks(ABC):
     @abstractmethod
@@ -59,6 +68,15 @@ class WorkspaceStoreProxy:
         if self._hooks:
             self._hooks.pre_delete(workspace, tx_context)
         return self._store.delete(workspace, tx_context)
+
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        return self._store.update(workspace_id, updates, tx_context)
 
 
 class UserStore(ABC):
@@ -107,6 +125,16 @@ class ConversationStore(ABC):
     @abstractmethod
     def insert(
         self, conversation: Conversation, tx_context: TransactionContext
+    ) -> Conversation:
+        pass
+
+    @abstractmethod
+    def update(
+        self,
+        workspace_id: str,
+        conversation_id: str,
+        updates: dict[str, Any],
+        tx_context: TransactionContext,
     ) -> Conversation:
         pass
 
