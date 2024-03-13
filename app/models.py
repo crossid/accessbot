@@ -17,7 +17,8 @@ class User(BaseModel):
 class CurrentUser(User):
     workspace_id: Optional[str] = None
 
-    def from_oauth2(self, userinfo, decoded_access_token: dict[str, Any]):
+    @staticmethod
+    def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
         self = CurrentUser(
             id=decoded_access_token["sub"],
             email=userinfo["email"],
