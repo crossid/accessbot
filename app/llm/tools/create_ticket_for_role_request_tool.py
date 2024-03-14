@@ -1,5 +1,8 @@
 from typing import Any, Optional
 
+from langchain_core.tools import StructuredTool, ToolException
+from pydantic.v1 import BaseModel, Field
+
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.models import (
     Conversation,
@@ -15,8 +18,6 @@ from app.services import (
     factory_ws_store,
 )
 from app.sql import SQLAlchemyTransactionContext
-from langchain_core.tools import StructuredTool, ToolException
-from pydantic.v1 import BaseModel, Field
 
 from .consts import TICKET_SYSTEM_CONFIG_KEY
 from .create_ticket.factory import TicketSystemFactory
@@ -66,6 +67,7 @@ class RequestRolesInput(BaseModel):
         description="the email of the current user in the conversation"
     )
     workspace_id: str = Field(description="workspace id of the current request")
+    directory: str = Field(description="directory related to the role")
 
 
 async def _request_roles(
@@ -75,8 +77,10 @@ async def _request_roles(
     conversation_id: str,
     user_email: str,
     workspace_id: str,
+    directory: str,
 ) -> str:
-    output = f"by:{user_email}; role_name: {role_name}; access: {access}; summary: {conv_summary}"
+    directory = directory.lower()
+    output = f"by:{user_email}; directory: {directory}; role_name: {role_name}; access: {access}; summary: {conv_summary}"
 
     user_store = factory_user_store()
     current_user = user_store.get_by_email(email=user_email)
@@ -85,8 +89,10 @@ async def _request_roles(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
-            owner = await get_data_owner(ws=ws, role_name=role_name)
             try:
+                owner = await get_data_owner(
+                    ws=ws, role_name=role_name, directory=directory
+                )
                 await make_request(
                     ws=ws,
                     owner=owner,

@@ -17,13 +17,7 @@ def DataOwnerFactory(type: str, config: dict[str, Any]) -> DataOwnerInterface:
     raise ValueError(type)
 
 
-async def get_data_owner(ws: Workspace, role_name: str) -> User:
-    directory_role_name = role_name.split("/")
-    if len(directory_role_name) < 3:
-        raise ValueError("No directory provided")
-    directory = directory_role_name[0]
-    role_name = directory_role_name.pop()
-
+async def get_data_owner(ws: Workspace, role_name: str, directory: str) -> User:
     do_config = ws.config[DATAOWNER_CONFIG_KEY]
     if directory in do_config and "type" in do_config[directory]:
         do_config = do_config[directory]

@@ -1,13 +1,14 @@
 from typing import Any
 
+from langchain_core.tools import StructuredTool, ToolException
+from pydantic.v1 import BaseModel, Field
+
 from app.models import ConversationStatuses, Workspace
 from app.services import (
     factory_conversation_store,
     factory_ws_store,
 )
 from app.sql import SQLAlchemyTransactionContext
-from langchain_core.tools import StructuredTool, ToolException
-from pydantic.v1 import BaseModel, Field
 
 from .consts import PROVISION_CONFIG_KEY
 from .provision.factory import ProvisionerFactory
@@ -23,14 +24,12 @@ class ApproveRolesInput(BaseModel):
         description="the email of the current user in the conversation"
     )
     workspace_id: str = Field(description="workspace id of the current request")
+    directory: str = Field(description="directory related to the role")
 
 
-async def provision_role(ws: Workspace, role_name: str, requester_email: str) -> bool:
-    directory_role_name = role_name.split("/")
-    if len(directory_role_name) < 3:
-        raise ValueError("No directory provided")
-    directory = directory_role_name[0]
-    role_name = directory_role_name.pop()
+async def provision_role(
+    ws: Workspace, role_name: str, requester_email: str, directory: str
+) -> bool:
     config = ws.config[PROVISION_CONFIG_KEY][directory]["config"]
 
     prov_fact = ProvisionerFactory(
@@ -51,7 +50,9 @@ async def _provision_role(
     user_email: str,
     requester_email: str,
     workspace_id: str,
+    directory: str,
 ) -> str:
+    directory = directory.lower()
     ws_store = factory_ws_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -60,7 +61,10 @@ async def _provision_role(
         if ws is not None:
             try:
                 success = await provision_role(
-                    ws=ws, role_name=role_name, requester_email=requester_email
+                    ws=ws,
+                    role_name=role_name,
+                    requester_email=requester_email,
+                    directory=directory,
                 )
                 if success is False:
                     raise ToolException("unknown error")

@@ -11,6 +11,7 @@ from langchain.tools import Tool
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.utils.function_calling import convert_to_openai_function
 
+# from ..llm.tools.retriever_tool import create_retriever_tool
 from ..settings import settings
 from .model import create_model, get_model_from_uri
 from .prompts import MEMORY_KEY
@@ -38,9 +39,12 @@ def create_agent(
     streaming=True,
 ) -> AgentExecutor:
     ret_tool = create_retriever_tool(
-        retriever,
-        "recommend_and_grant_access",
-        "Searches and returns documents, recommends and grant access to the user.",
+        retriever=retriever,
+        name="recommend_access",
+        description="Searches and returns documents in order to recommend access to the user.",
+        document_prompt=PromptTemplate.from_template(
+            "{page_content}\n**directory**: {directory}"
+        ),
     )
 
     tools.append(ret_tool)
