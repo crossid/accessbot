@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Optional
 
+import jsonpatch
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, HttpUrl, ValidationError
 from starlette import status
@@ -11,7 +12,7 @@ from ..auth import (
     get_current_workspace,
     setup_workspace_vstore,
 )
-from ..models import Workspace
+from ..models import JsonPatchDocument, PatchOperation, Workspace
 from ..models_stores import ChatMessageStore, ConversationStore, WorkspaceStore
 from ..services import (
     factory_conversation_store,
@@ -55,7 +56,7 @@ def create(
             ws = Workspace(
                 external_id=body.external_id,
                 display_name=body.display_name,
-                logo_url=body.logo_url.unicode_string(),
+                logo_url=body.logo_url.unicode_string() if body.logo_url else None,
                 created_by=current_user.id,
                 config={},
             )
@@ -161,3 +162,37 @@ async def delete(
             msg_store=msg_store,
             ovstore=ovstore,
         )
+
+
+class WorkspacePatchOperation(PatchOperation):
+    mutable_fields = ["display_name", "logo_url", "config"]
+
+
+WorkspaceJsonPatchDocument = JsonPatchDocument[WorkspacePatchOperation]
+
+
+@router.patch(
+    "/{workspace_id}",
+    response_model=Workspace,
+    response_model_exclude_none=True,
+)
+async def update_org(
+    body: WorkspaceJsonPatchDocument,
+    workspace_id: str,
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    workspace_store: Annotated[WorkspaceStore, Depends(get_service(WorkspaceStore))],
+):
+    try:
+        with SQLAlchemyTransactionContext().manage() as tx_context:
+            ws_dict = workspace.model_dump()
+            body_dict = body.model_dump()
+            patch = jsonpatch.JsonPatch(body_dict["patch"])
+            ws_updated_dict = patch.apply(ws_dict)
+            ws_updated = Workspace(**ws_updated_dict)
+            workspace = workspace_store.update(
+                workspace=ws_updated, tx_context=tx_context
+            )
+            return workspace
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())

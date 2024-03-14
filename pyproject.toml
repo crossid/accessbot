@@ -23,6 +23,7 @@ psycopg2-binary = "^2.9.9"
 langchain-openai = "0.0.5"
 injector = "^0.21.0"
 pgvector = "^0.2.5"
+jsonpatch = "^1.33"
 
 [tool.poetry.group.test.dependencies]
 ruff = "^0.2.2"

@@ -1,8 +1,8 @@
 import enum
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, ClassVar, Generic, List, Optional, Set, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from .id import generate
 
@@ -90,3 +90,36 @@ class Conversation(BaseModel):
 
 class PaginatedListBase(BaseModel):
     total: int
+
+
+class PatchOperation(BaseModel):
+    op: str = Field(..., description="Operation type")
+    path: str = Field(
+        ..., description="JSON Pointer path to the element to be operated on"
+    )
+    value: Optional[Any] = Field(None, description="Value to be used by the operation")
+    from_: Optional[str] = Field(
+        None, alias="from", description="Source path for move/copy operations"
+    )
+
+    immutable_fields: ClassVar[Set[str]] = set(
+        ["id", "created_at", "updated_at", "created_by"]
+    )
+    # can overridden in subclasses for more restcitive behavior
+    mutable_fields: ClassVar[Set[str]] = None  # None = all fields are allowed
+
+    @validator("path")
+    def validate_path(cls, v):
+        field_name = v.lstrip("/")  # Remove the leading '/' from the path
+        if field_name in cls.immutable_fields:
+            raise ValueError(f"Modification of '{field_name}' is not allowed")
+        if cls.mutable_fields and field_name not in cls.mutable_fields:
+            raise ValueError(f"Modification of '{field_name}' is not permitted")
+        return v
+
+
+PatchOperationType = TypeVar("PatchOperationType", bound=PatchOperation)
+
+
+class JsonPatchDocument(BaseModel, Generic[PatchOperationType]):
+    patch: List[PatchOperationType]
