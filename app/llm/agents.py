@@ -38,9 +38,12 @@ def create_agent(
     streaming=True,
 ) -> AgentExecutor:
     ret_tool = create_retriever_tool(
-        retriever,
-        "recommend_and_grant_access",
-        "Searches and returns documents, recommends and grant access to the user.",
+        retriever=retriever,
+        name="recommend_access",
+        description="Searches and returns documents in order to recommend access to the user.",
+        document_prompt=PromptTemplate.from_template(
+            "{page_content}\n**platform**: {platform}"
+        ),
     )
 
     tools.append(ret_tool)

@@ -12,6 +12,7 @@ RECOMMENDATION_TEMPLATE = """
     The current username is: {username}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+    Always check the document store before making a recommendation.
     Answer the questions only with the provided context.
     Entitlement name is in the format `directory_name/entitlements/entitlement_name`, put the **entitlement name** in brackets.\
     DO NOT add URLs to the entitlement name.
