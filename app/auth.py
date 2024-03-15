@@ -141,6 +141,7 @@ async def get_current_workspace(
     with SQLAlchemyTransactionContext().manage() as tx_context:
         workspace = workspace_store.get_by_id(workspace_id, tx_context=tx_context)
         if workspace is None:
+            log.debug("workspace not found: %s", workspace_id)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="workspace not found"
             )
