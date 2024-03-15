@@ -1,3 +1,7 @@
+from typing import Any
+
+from app.services import factory_vault
+
 from .vault import VaultAPI
 
 VAULT_VAR_URI = "vault://"
@@ -17,7 +21,7 @@ def resolve_secrets(config, secret_resolver):
     elif isinstance(config, list):
         return [resolve_secrets(item, secret_resolver) for item in config]
     elif isinstance(config, str) and config.startswith(VAULT_VAR_URI):
-        secret_path = config[8:]
+        secret_path = config.removeprefix(VAULT_VAR_URI)
         return secret_resolver.get_secret(secret_path)
     return config
 
@@ -41,3 +45,13 @@ class WorkspaceVaultSecretResolver:
         :return: The secret value.
         """
         return self.vault.get_secret(self.workspace_id, path)
+
+
+def resolve_ws_config_secrets(
+    workspace_id: str, config: dict[str, Any]
+) -> dict[str, Any]:
+    vault = factory_vault()
+    secret_resolver = WorkspaceVaultSecretResolver(
+        vault=vault, workspace_id=workspace_id
+    )
+    return resolve_secrets(config=config, secret_resolver=secret_resolver)
