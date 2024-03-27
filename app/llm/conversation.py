@@ -7,38 +7,29 @@ from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 
 from ..embeddings import create_embedding
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
-from ..models import Conversation, ConversationTypes, User, Workspace
+from ..models import Conversation, User, Workspace
 from ..models_stores import ChatMessageStore
 from ..services import factory_ws_store, service_registry
 from ..tx import TransactionContext
 from ..vector_store import create_retriever
-from .agents import create_agent
+from .graph import create_graph
 from .prompts import (
     CONVERSATION_ID_KEY,
     MEMORY_KEY,
     USER_EMAIL_KEY,
     WS_ID_KEY,
-    prompt_store,
 )
 
 # set_debug(True)
 
 
 def create_agent_for_access_request_conversation(
-    conversation: Conversation, ws: Optional[Workspace], streaming=True
+    conversation: Conversation, ws: Optional[Workspace]
 ):
     embedding = create_embedding()
     retriever = create_retriever(
         workspace_id=conversation.workspace_id, embedding=embedding
     )
-
-    prompt = None
-    if conversation.type == ConversationTypes.recommendation:
-        prompt = prompt_store.get("generic_recommendation")
-    elif conversation.type == ConversationTypes.data_owner:
-        prompt = prompt_store.get("data_owner")
-    else:
-        raise ValueError("Invalid conversation status")
 
     data_context = {
         USER_EMAIL_KEY: lambda x: x[USER_EMAIL_KEY],
@@ -46,15 +37,12 @@ def create_agent_for_access_request_conversation(
         CONVERSATION_ID_KEY: lambda x: x[CONVERSATION_ID_KEY],
     }
 
-    agent_executor = create_agent(
-        retriever=retriever,
-        prompt=prompt,
-        data_context=data_context,
+    graph = create_graph(
         tools=get_tools_for_workspace_and_conversation(conv=conversation, ws=ws),
-        streaming=streaming,
+        data_context=data_context,
     )
 
-    return agent_executor
+    return graph
 
 
 def add_messages(

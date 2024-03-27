@@ -24,6 +24,7 @@ langchain-openai = "^0.0.8"
 injector = "^0.21.0"
 pgvector = "^0.2.5"
 jsonpatch = "^1.33"
+langgraph = "^0.0.30"
 
 [tool.poetry.group.test.dependencies]
 ruff = "^0.2.2"

@@ -1,6 +1,6 @@
 from langchain.prompts.prompt import PromptTemplate
 
-MEMORY_KEY = "chat_history"
+MEMORY_KEY = "messages"
 USER_EMAIL_KEY = "email"
 WS_ID_KEY = "workspace_id"
 CONVERSATION_ID_KEY = "conversation_id"
