@@ -82,7 +82,7 @@ conversation_table = sqlalchemy.Table(
         nullable=False,
         primary_key=True,
     ),
-    Column("created_by", String(), nullable=False),
+    Column("assignee", String(), nullable=False),
     Column("type", Enum(ConversationTypes), nullable=False),
     Column("status", Enum(ConversationStatuses), nullable=False),
     Column("external_id", String(), nullable=True),

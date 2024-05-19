@@ -100,7 +100,7 @@ async def _request_roles(
             workspace_id=workspace_id,
             external_id=ticket_id,
             type=ConversationTypes.data_owner.value,
-            created_by=owner.id,
+            assignee=owner.id,
             previous_conversation=conversation_id,
             context={
                 "communication_channel": ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"]

@@ -76,7 +76,7 @@ def answer(client: WebClient, event, logger, say, context):
                 conversation_ctx["enterprise_id"] = enterprise_id
 
             conversation = Conversation(
-                created_by=user.id,
+                assignee=user.id,
                 workspace_id=ws.id,
                 external_id=thread_ts,
                 context=conversation_ctx,

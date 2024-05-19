@@ -43,7 +43,7 @@ class TestGraph(unittest.TestCase):
         conversation = Conversation(
             id="1",
             workspace_id="IDro10K0ux",
-            created_by="bar",
+            assignee="bar",
             context={},
             type=ConversationTypes.recommendation,
         )
