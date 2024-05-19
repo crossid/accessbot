@@ -101,6 +101,14 @@ class Application(BaseModel):
     provision_schema: Optional[dict]
 
 
+class Document(BaseModel):
+    uuid: str
+    custom_id: Optional[str]
+    cmetadata: dict
+    document: str
+    collection_id: str
+
+
 # Payloads
 #
 

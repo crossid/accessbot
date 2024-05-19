@@ -1,10 +1,14 @@
 import logging
-from typing import Any, List, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from ..auth import setup_workspace_vstore
+from app.models import Document, PaginatedListBase, Workspace
+from app.services import pagination_params
+from app.sql import SQLAlchemyTransactionContext
+
+from ..auth import get_current_workspace, setup_workspace_vstore
 from ..id import generate
 from ..settings import settings
 from ..vector_store import delete_ids, get_protocol
@@ -19,8 +23,10 @@ router = APIRouter(
 
 class Doc(BaseModel):
     id: Optional[str]
-    metadata: Optional[dict[str, Any]]
+    apps: list[str]
+    directory: str
     content: str
+    external_id: Optional[str]
 
 
 class AddContentBody(BaseModel):
@@ -72,3 +78,42 @@ async def remove(body: RemoveContentBody, ovstore=Depends(setup_workspace_vstore
             detail=f"error while deleting ids: [{e}]",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class DocumentList(PaginatedListBase):
+    items: List[Doc]
+
+
+def store_doc_to_api_doc(doc: Document) -> Doc:
+    return Doc(
+        id=str(doc.uuid),
+        external_id=doc.custom_id,
+        content=doc.document,
+        apps=doc.cmetadata.get("app", []),
+        directory=doc.cmetadata.get("directory", ""),
+    )
+
+
+@router.get("", response_model=DocumentList, response_model_exclude_none=True)
+async def list(
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    list_params: dict = Depends(pagination_params),
+    ovstore=Depends(setup_workspace_vstore),
+):
+    limit = list_params.get("limit", 10)
+    offset = list_params.get("offset", 0)
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        try:
+            docs, total = ovstore.__list_docs__(
+                workspace_id=workspace.id,
+                offset=offset,
+                limit=limit,
+                tx_context=tx_context,
+            )
+            return DocumentList(
+                items=[store_doc_to_api_doc(doc) for doc in docs],
+                offset=offset,
+                total=total,
+            )
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
