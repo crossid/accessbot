@@ -6,6 +6,8 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
+from app.ext_vector_store import list_documents
+
 from .settings import settings
 
 ID_TRANS_TABLE = str.maketrans("-", "_")
@@ -18,6 +20,10 @@ def get_protocol(uri: str):
     return protocol
 
 
+def list_docs_sqlite(**kwargs):
+    raise NotImplementedError("This function has not been implemented yet.")
+
+
 # TODO embedding function should be generalized
 def create_workspace_vstore(
     workspace_id: str, embedding: Embeddings, uri=settings.VSTORE_URI
@@ -26,12 +32,16 @@ def create_workspace_vstore(
     protocol = parsed_url.scheme
 
     if protocol.startswith("postgresql"):
-        return PGVector(
+        pgvetor = PGVector(
             embedding_function=embedding,
             connection_string=uri,
             collection_name=workspace_id,
             collection_metadata={"workspace_id": workspace_id},
         )
+
+        pgvetor.__list_docs__ = list_documents
+
+        return pgvetor
     elif protocol == "sqlite":
         import sqlite3
 
@@ -51,11 +61,15 @@ def create_workspace_vstore(
         connection.enable_load_extension(False)
 
         table = f"{workspace_id.translate(ID_TRANS_TABLE)}_data"
-        return SQLiteVSS(
+        slv = SQLiteVSS(
             connection=connection,
             table=table,
             embedding=embedding,
         )
+
+        slv.__list_docs__ = list_docs_sqlite
+
+        return slv
     else:
         raise ValueError(f"{uri} vector store URI is not supported")
 
