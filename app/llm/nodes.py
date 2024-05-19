@@ -2,7 +2,7 @@ import asyncio
 import functools
 import json
 
-from langchain_core.messages import FunctionMessage, HumanMessage, SystemMessage
+from langchain_core.messages import FunctionMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from app.models import ConversationTypes
@@ -10,8 +10,10 @@ from app.models import ConversationTypes
 from .agents import create_agent
 from .prompts import (
     APP_ID_KEY,
+    APP_NAME_KEY,
     DATA_OWNER_TEMPLATE,
     ENTRY_POINT,
+    EXTRA_INSTRUCTIONS_KEY,
     INFO_AGENT_TEMPLATE,
     MEMORY_KEY,
     RECOMMENDATION_TEMPLATE,
@@ -40,7 +42,6 @@ def agent_node(state, agent_creator, name):
 
     return {
         MEMORY_KEY: [result],
-        "conv_type": state["conv_type"],
         "sender": name if name != RECOMMENDER_AGENT_NAME else state["sender"],
     }
 
@@ -72,8 +73,10 @@ def create_info_gatherer_node(data_context):
         rrt = create_request_roles_tool(
             app_id=app_id, ws_id=data_context.get(WS_ID_KEY)
         )
+        _dctx = data_context.copy()
+        _dctx[EXTRA_INSTRUCTIONS_KEY] = state[EXTRA_INSTRUCTIONS_KEY]
         info_agent = create_agent(
-            prompt=get_prompt(prompt_id=INFO_AGENT_TEMPLATE, data_context=data_context),
+            prompt=get_prompt(prompt_id=INFO_AGENT_TEMPLATE, data_context=_dctx),
             tools=[rrt],
             name=INFORMATION_AGENT_NAME,
         )
@@ -90,7 +93,8 @@ def create_info_gatherer_node(data_context):
 def create_recommend_agent(data_context, ret_tool):
     def agent_creator(state):
         _dctx = data_context.copy()
-        _dctx["app_name"] = state["app_name"]
+        _dctx[APP_NAME_KEY] = state[APP_NAME_KEY]
+        _dctx[EXTRA_INSTRUCTIONS_KEY] = state[EXTRA_INSTRUCTIONS_KEY]
         agent = create_agent(
             prompt=get_prompt(
                 prompt_id=RECOMMENDATION_TEMPLATE, data_context=data_context
@@ -132,15 +136,16 @@ def entry_point_node(data_context):
         output = result["output"]
         json_string = output.strip("```json\n")
         json_output = json.loads(json_string)
-        extra_ins = json_output["extra_instructions"]
-        if json_output.get(APP_ID_KEY) != state.get(APP_ID_KEY) and extra_ins != "None":
-            msgs.append(SystemMessage(content=extra_ins))
+        # extra_ins = json_output[EXTRA_INSTRUCTIONS_KEY]
+        # if json_output.get(APP_ID_KEY) != state.get(APP_ID_KEY) and extra_ins != "None":
+        #     msgs.append(SystemMessage(content=extra_ins))
 
         return {
             MEMORY_KEY: msgs,
             "sender": "entry_point",
             APP_ID_KEY: json_output[APP_ID_KEY],
-            "app_name": json_output["app_name"],
+            APP_NAME_KEY: json_output[APP_NAME_KEY],
+            EXTRA_INSTRUCTIONS_KEY: json_output[EXTRA_INSTRUCTIONS_KEY],
         }
 
     return _epn

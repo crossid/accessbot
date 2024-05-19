@@ -4,6 +4,8 @@ from langchain.prompts.prompt import PromptTemplate
 
 MEMORY_KEY = "messages"
 APP_ID_KEY = "app_id"
+APP_NAME_KEY = "app_name"
+EXTRA_INSTRUCTIONS_KEY = "extra_instructions"
 USER_EMAIL_KEY = "email"
 WS_ID_KEY = "workspace_id"
 CONVERSATION_ID_KEY = "conversation_id"
@@ -41,6 +43,9 @@ TEMPLATES = {
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
     The app name is: {app_name}
+    <extra instructions>
+        {extra_instructions}
+    </extra instructions>
 """,
     INFO_AGENT_TEMPLATE: """
     You are a helpful information gathering assistant.
@@ -60,6 +65,9 @@ TEMPLATES = {
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+    <extra instructions>
+        {extra_instructions}
+    </extra instructions>
 """,
     DATA_OWNER_TEMPLATE: """
     You are a helpful access assistant.

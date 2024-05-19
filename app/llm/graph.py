@@ -41,6 +41,7 @@ class GraphState(TypedDict):
     conv_type: str
     app_id: str
     app_name: str
+    extra_instructions: str
 
 
 def create_tool_node(tools, ws_id):
