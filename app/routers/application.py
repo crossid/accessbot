@@ -102,7 +102,7 @@ async def delete(
 
 
 class ApplicationPatchOperation(PatchOperation):
-    mutable_fields = ["display_name", "aliases", "extra_instructions"]
+    mutable_fields = ["aliases", "extra_instructions"]
 
 
 ApplicationJsonPatchDocument = JsonPatchDocument[ApplicationPatchOperation]
