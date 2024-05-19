@@ -3,7 +3,7 @@ from typing import Optional
 from langchain_core.tools import StructuredTool
 from pydantic.v1 import BaseModel, Field
 
-from app.llm.prompts import APP_ID_KEY
+from app.llm.prompts import APP_ID_KEY, APP_NAME_KEY, EXTRA_INSTRUCTIONS_KEY
 from app.services import (
     factory_app_store,
 )
@@ -19,8 +19,8 @@ def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
     app_store = factory_app_store()
     empty_res = {
         APP_ID_KEY: None,
-        "app_name": None,
-        "extra_instructions": "app does not exist",
+        APP_NAME_KEY: None,
+        EXTRA_INSTRUCTIONS_KEY: "app does not exist",
     }
     if app_name is None or app_name == "":
         return empty_res
@@ -36,9 +36,9 @@ def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
         ei = "None" if app.extra_instructions is None else app.extra_instructions
 
         return {
-            "app_name": app.display_name,
+            APP_NAME_KEY: app.display_name,
             APP_ID_KEY: app.id,
-            "app_extra_instructions": ei,
+            EXTRA_INSTRUCTIONS_KEY: ei,
         }
 
 
