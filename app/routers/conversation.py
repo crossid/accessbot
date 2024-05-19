@@ -64,7 +64,7 @@ def create(
         try:
             ar = Conversation(
                 workspace_id=workspace_id,
-                created_by=current_user.id,
+                assignee=current_user.id,
                 context={},
                 external_id=body.external_id,
                 messages=None,
@@ -138,7 +138,7 @@ def list(
                 links=links,
                 limit=list_params["limit"],
                 offset=list_params["offset"],
-                filters={"created_by": current_user.id},
+                filters={"assignee": current_user.id},
             )
             return ConversationList(items=items, offset=0, total=count)
         except ValidationError as e:

@@ -83,7 +83,7 @@ class Conversation(BaseModel):
     external_id: Optional[str] = Field(default=None)
     previous_conversation: Optional[str] = Field(default=None)
     context: dict[str, Any] = Field(description="context of the conversation")
-    created_by: str
+    assignee: str
     messages: Optional[list[ChatMessage]] = Field(
         default=None, description="Messages related to the conversations"
     )
