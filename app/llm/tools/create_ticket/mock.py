@@ -1,3 +1,4 @@
+from app.id import generate
 from app.models import User
 
 from .iface import TicketInterface
@@ -20,4 +21,4 @@ class MockImpl(TicketInterface):
     ):
         print(f"__mock impl__ \ncontent: {content}\n kwargs: {kwargs}")
         owner.full_name = content
-        return content
+        return f"mock_{generate()}"
