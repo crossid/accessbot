@@ -16,6 +16,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.prebuilt.tool_executor import ToolExecutor, ToolInvocation
 
 from app.llm.tools.create_ticket_for_role_request_tool import create_request_roles_tool
+from app.llm.tools.deny_access_tool import create_deny_provision_tool
 from app.llm.tools.provision_role_tool import create_provision_role_tool
 from app.llm.tools.retriever_tool import create_retriever_tool
 
@@ -51,6 +52,10 @@ def create_tool_node(tools, ws_id):
             prt = create_provision_role_tool(app_id=app_id, ws_id=ws_id)
             if prt is not None:
                 tools.append(prt)
+
+            dpt = create_deny_provision_tool(app_id=app_id, ws_id=ws_id)
+            if dpt is not None:
+                tools.append(dpt)
 
             crrt = create_request_roles_tool(app_id=app_id, ws_id=ws_id)
             if crrt is not None:

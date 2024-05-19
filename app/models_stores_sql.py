@@ -86,6 +86,7 @@ conversation_table = sqlalchemy.Table(
     Column("type", Enum(ConversationTypes), nullable=False),
     Column("status", Enum(ConversationStatuses), nullable=False),
     Column("external_id", String(), nullable=True),
+    Column("previous_conversation", String(), nullable=True),
     Column("context", JSON(), nullable=False),
     Column("created_at", DateTime(), nullable=False),
 )
