@@ -522,7 +522,21 @@ class ApplicationStoreSQL(ApplicationStore):
         offset=0,
         limit=10,
         tx_context: TransactionContext = None,
-    ) -> list[Application]:
+    ) -> tuple[list[Application], int]:
+        base_count_query = (
+            select(func.count())
+            .select_from(self.apps)
+            .where(self.apps.c.workspace_id == workspace_id)
+        )
+
+        # Applying filters to the count query
+        if filters:
+            for field, value in filters.items():
+                base_count_query = base_count_query.where(self.apps.c[field] == value)
+
+        # Execute count query
+        total_count = tx_context.connection.execute(base_count_query).scalar_one()
+
         query = (
             select(self.apps)
             .where(self.apps.c.workspace_id == workspace_id)
@@ -541,7 +555,7 @@ class ApplicationStoreSQL(ApplicationStore):
             app = Application(**record._asdict())
             apps.append(app)
 
-        return apps
+        return apps, total_count
 
     def get_by_id(
         self, app_id: str, workspace_id: str, tx_context: TransactionContext

@@ -1,14 +1,20 @@
 import logging
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 
 import jsonpatch
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 
 from ..auth import get_current_workspace
-from ..models import Application, JsonPatchDocument, PatchOperation, Workspace
+from ..models import (
+    Application,
+    JsonPatchDocument,
+    PaginatedListBase,
+    PatchOperation,
+    Workspace,
+)
 from ..models_stores import ApplicationStore
-from ..services import get_service
+from ..services import factory_app_store, get_service, pagination_params
 from ..sql import SQLAlchemyTransactionContext
 
 logger = logging.getLogger(__name__)
@@ -140,3 +146,28 @@ async def update_application(
             return application
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=e.errors())
+
+
+class ApplicationList(PaginatedListBase):
+    items: List[Application]
+
+
+@router.get("", response_model=ApplicationList, response_model_exclude_none=True)
+async def list(
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    list_params: dict = Depends(pagination_params),
+    app_store: ApplicationStore = Depends(factory_app_store),
+):
+    limit = list_params.get("limit", 10)
+    offset = list_params.get("offset", 0)
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        try:
+            items, count = app_store.list(
+                workspace_id=workspace.id,
+                tx_context=tx_context,
+                limit=limit,
+                offset=offset,
+            )
+            return ApplicationList(items=items, offset=offset, total=count)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())

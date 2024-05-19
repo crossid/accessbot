@@ -194,7 +194,7 @@ class ConversationStore(ABC):
         offset: int = 0,
         filters: dict[str, Any] = None,
         links: Optional[list[str]] = None,
-    ) -> list[Conversation]:
+    ) -> tuple[list[Conversation], int]:
         pass
 
     @abstractmethod
@@ -257,7 +257,7 @@ class ApplicationStore(ABC):
         offset=0,
         limit=10,
         tx_context: TransactionContext = None,
-    ) -> list[Application]:
+    ) -> tuple[list[Application], int]:
         pass
 
     @abstractmethod
