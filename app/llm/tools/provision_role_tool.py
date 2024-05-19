@@ -53,8 +53,8 @@ async def _provision_role(
             except Exception as err:
                 raise ToolException(f"failed to request role: {err}")
 
-            # update current request to completed
-            updates: dict[str, Any] = {"status": ConversationStatuses.completed.value}
+            # update current request to approved
+            updates: dict[str, Any] = {"status": ConversationStatuses.approved.value}
             conv_store.update(
                 workspace_id=workspace_id,
                 conversation_id=conversation_id,

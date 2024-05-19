@@ -5,6 +5,7 @@ import json
 from langchain_core.messages import FunctionMessage, HumanMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
+from app.llm.tools.deny_access_tool import create_deny_provision_tool
 from app.models import ConversationTypes
 
 from .agents import create_agent
@@ -52,9 +53,12 @@ def create_data_owner_node(data_context):
         prt = create_provision_role_tool(
             app_id=app_id, ws_id=data_context.get(WS_ID_KEY)
         )
+        dpt = create_deny_provision_tool(
+            app_id=app_id, ws_id=data_context.get(WS_ID_KEY)
+        )
         do_agent = create_agent(
             prompt=get_prompt(prompt_id=DATA_OWNER_TEMPLATE, data_context=data_context),
-            tools=[prt],
+            tools=[prt, dpt],
             name=DATA_OWNER_AGENT_NODE,
         )
 
@@ -124,6 +128,11 @@ class IGNOutput(BaseModel):
 
 def entry_point_node(data_context):
     def _epn(state):
+        if state.get("conv_type") == CONV_TYPE_DATA_OWNER:
+            return {
+                "sender": "entry_point",
+            }
+
         msgs = []
         agent = create_agent(
             prompt=get_prompt(prompt_id=ENTRY_POINT, data_context=data_context),
