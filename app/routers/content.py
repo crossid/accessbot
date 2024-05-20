@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ValidationError
 
 from app.models import Document, PaginatedListBase, Workspace
@@ -97,6 +97,8 @@ def store_doc_to_api_doc(doc: Document) -> Doc:
 @router.get("", response_model=DocumentList, response_model_exclude_none=True)
 async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    directory: str | None = None,
+    app_names: List[str] | None = Query(None),
     list_params: dict = Depends(pagination_params),
     ovstore=Depends(setup_workspace_vstore),
 ):
@@ -109,6 +111,8 @@ async def list(
                 offset=offset,
                 limit=limit,
                 tx_context=tx_context,
+                directory=directory,
+                app_names=app_names,
             )
             return DocumentList(
                 items=[store_doc_to_api_doc(doc) for doc in docs],
