@@ -22,7 +22,7 @@ router = APIRouter(
 
 
 class Doc(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = None
     apps: list[str]
     directory: str
     content: str
@@ -44,8 +44,9 @@ def prepare_metadata_ids_content(docs: List[Doc]):
     content = []
 
     for doc in docs:
-        metadatas.append(doc.metadata if doc.metadata is not None else {})
-        ids.append(doc.id if doc.id is not None else generate())
+        dmeta = {"directory": doc.directory, "app": doc.apps}
+        metadatas.append(dmeta)
+        ids.append(doc.external_id if doc.external_id is not None else generate())
         content.append(doc.content)
 
     return content, metadatas, ids
