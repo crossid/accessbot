@@ -52,6 +52,23 @@ def prepare_metadata_ids_content(docs: List[Doc]):
     return content, metadatas, ids
 
 
+@router.put("", response_model=AddContentResponse)
+async def update(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
+    texts, metadata, ids = prepare_metadata_ids_content(body.docs)
+    try:
+        delete_ids(ovstore=ovstore, ids=ids)
+    except NotImplementedError:
+        raise HTTPException(
+            detail=f"delete not implemented for type {get_protocol(settings.VSTORE_URI)}",
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        )
+
+    inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
+    # convert ids to strings (SQLite returns int)
+    inserted_ids = [str(i) for i in inserted_ids]
+    return AddContentResponse(ok=True, ids=inserted_ids)
+
+
 @router.post("", response_model=AddContentResponse)
 async def add(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
