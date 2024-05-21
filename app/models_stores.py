@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from fastapi import BackgroundTasks
 
@@ -257,6 +257,7 @@ class ApplicationStore(ABC):
         offset=0,
         limit=10,
         tx_context: TransactionContext = None,
+        projection: List[str] = [],
     ) -> tuple[list[Application], int]:
         pass
 

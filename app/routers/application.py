@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, List, Optional
 
 import jsonpatch
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ValidationError
 
 from ..auth import get_current_workspace
@@ -148,8 +148,28 @@ async def update_application(
         raise HTTPException(status_code=422, detail=e.errors())
 
 
+class PApplication(BaseModel):
+    id: str | None
+    workspace_id: str | None
+    display_name: str | None
+    aliases: list[str] | None
+    extra_instructions: str | None
+    provision_schema: dict | None
+
+    @staticmethod
+    def from_app(app: Application):
+        return PApplication(
+            id=app.id or None,
+            workspace_id=app.workspace_id or None,
+            display_name=app.display_name or None,
+            aliases=app.aliases or None,
+            extra_instructions=app.extra_instructions or None,
+            provision_schema=app.provision_schema or None,
+        )
+
+
 class ApplicationList(PaginatedListBase):
-    items: List[Application]
+    items: List[PApplication]
 
 
 @router.get("", response_model=ApplicationList, response_model_exclude_none=True)
@@ -157,6 +177,7 @@ async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     list_params: dict = Depends(pagination_params),
     app_store: ApplicationStore = Depends(factory_app_store),
+    projection: List[str] = Query([]),
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)
@@ -167,7 +188,12 @@ async def list(
                 tx_context=tx_context,
                 limit=limit,
                 offset=offset,
+                projection=projection,
             )
-            return ApplicationList(items=items, offset=offset, total=count)
+            return ApplicationList(
+                items=[PApplication.from_app(app) for app in items],
+                offset=offset,
+                total=count,
+            )
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
