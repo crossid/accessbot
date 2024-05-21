@@ -96,9 +96,24 @@ class Application(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     workspace_id: str
     display_name: str
-    aliases: list[str]
+    aliases: Optional[list[str]]
     extra_instructions: Optional[str]
     provision_schema: Optional[dict]
+
+    @staticmethod
+    def from_db_record(record: dict):
+        return Application(
+            id=record.id if hasattr(record, "id") else "",
+            workspace_id=record.workspace_id if hasattr(record, "workspace_id") else "",
+            display_name=record.display_name if hasattr(record, "display_name") else "",
+            aliases=record.aliases if hasattr(record, "aliases") else None,
+            extra_instructions=record.extra_instructions
+            if hasattr(record, "extra_instructions")
+            else None,
+            provision_schema=record.provision_schema
+            if hasattr(record, "provision_schema")
+            else None,
+        )
 
 
 class Document(BaseModel):

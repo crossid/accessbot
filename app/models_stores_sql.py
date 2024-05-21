@@ -1,6 +1,6 @@
 import pickle
 from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, List, Optional
 
 import sqlalchemy
 from fastapi import BackgroundTasks
@@ -522,6 +522,7 @@ class ApplicationStoreSQL(ApplicationStore):
         offset=0,
         limit=10,
         tx_context: TransactionContext = None,
+        projection: List[str] = [],
     ) -> tuple[list[Application], int]:
         base_count_query = (
             select(func.count())
@@ -537,8 +538,13 @@ class ApplicationStoreSQL(ApplicationStore):
         # Execute count query
         total_count = tx_context.connection.execute(base_count_query).scalar_one()
 
+        columns = [
+            self.apps.c[column_name]
+            for column_name in projection
+            if column_name in self.apps.c
+        ]
         query = (
-            select(self.apps)
+            select(*columns if len(columns) > 0 else self.apps.c)
             .where(self.apps.c.workspace_id == workspace_id)
             .order_by(self.apps.c.display_name.asc())
             .offset(offset)
@@ -552,7 +558,7 @@ class ApplicationStoreSQL(ApplicationStore):
         result = tx_context.connection.execute(query)
         apps = []
         for record in result:
-            app = Application(**record._asdict())
+            app = Application.from_db_record(record)
             apps.append(app)
 
         return apps, total_count
