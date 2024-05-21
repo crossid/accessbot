@@ -25,7 +25,9 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
     def test_insert_workspace(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
-            pws = self.test_store.insert(ws, tx_context=tx_context)
+            pws = self.test_store.insert(
+                ws, tx_context=tx_context, current_user=None, background_tasks=None
+            )
             self.assertIsNotNone(pws)
             self.assertIsNotNone(pws.id)
             # # Retrieve the ws to verify it was inserted correctly
@@ -36,17 +38,31 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_insert_workspace_with_hook(self):
         class WorkspaceHooks(WorkspaceStoreHooks):
-            def pre_insert(self, workspace: Workspace, tx_context: TransactionContext):
+            def pre_insert(
+                self,
+                workspace: Workspace,
+                tx_context: TransactionContext,
+                current_user,
+                background_tasks,
+            ):
                 workspace.display_name = workspace.display_name.upper()
 
-            def pre_delete(self, workspace: Workspace, tx_context: TransactionContext):
+            def pre_delete(
+                self,
+                workspace: Workspace,
+                tx_context: TransactionContext,
+                current_user,
+                background_tasks,
+            ):
                 pass
 
         f = WorkspaceStoreProxy(store=self.test_store, hooks=WorkspaceHooks())
 
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
-            f.insert(ws, tx_context=tx_context)
+            f.insert(
+                ws, tx_context=tx_context, current_user=None, background_tasks=None
+            )
             lws = self.test_store.get_by_id(ws.id, tx_context=tx_context)
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             lws = self.test_store.get_by_id(ws.id, tx_context=tx_context)
@@ -60,7 +76,9 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
     def test_tx(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             ws = Workspace(display_name="Acme, Inc.", created_by=generate(), config={})
-            self.test_store.insert(ws, tx_context=tx_context)
+            self.test_store.insert(
+                ws, tx_context=tx_context, current_user=None, background_tasks=None
+            )
             tx_context.rollback()
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             rws = self.test_store.get_by_id("non_existing_id", tx_context=tx_context)

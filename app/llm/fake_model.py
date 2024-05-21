@@ -3,8 +3,8 @@ import time
 from typing import Any, AsyncIterator, Iterator, List, Optional, Union
 
 import tiktoken
-from langchain.chat_models.fake import FakeListChatModel
 from langchain.schema import BaseMessage
+from langchain_community.chat_models.fake import FakeListChatModel
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,

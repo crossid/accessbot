@@ -62,6 +62,8 @@ class ApplicationStoreFromJsonFile(ApplicationStore):
             workspace_id=app.get("workspace_id"),
             display_name=app.get("display_name"),
             aliases=app.get("aliases"),
+            extra_instructions=app.get("extra_instructions"),
+            provision_schema=app.get("provision_schema"),
         )
 
     def list(self, workspace_id: str, filter=None, offset=0, limit=10, tx_context=None):
@@ -85,4 +87,10 @@ class ApplicationStoreFromJsonFile(ApplicationStore):
         pass
 
     def delete_for_workspace(self, workspace_id: str, tx_context=None) -> None:
+        pass
+
+    def update(**kwargs):
+        pass
+
+    def get_by_name(**kwargs):
         pass
