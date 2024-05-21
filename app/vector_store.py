@@ -6,7 +6,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
-from app.ext_vector_store import list_documents
+from app.ext_vector_store import get_document, list_documents
 
 from .settings import settings
 
@@ -20,7 +20,7 @@ def get_protocol(uri: str):
     return protocol
 
 
-def list_docs_sqlite(**kwargs):
+def docs_sqlite(**kwargs):
     raise NotImplementedError("This function has not been implemented yet.")
 
 
@@ -32,16 +32,17 @@ def create_workspace_vstore(
     protocol = parsed_url.scheme
 
     if protocol.startswith("postgresql"):
-        pgvetor = PGVector(
+        pgvector = PGVector(
             embedding_function=embedding,
             connection_string=uri,
             collection_name=workspace_id,
             collection_metadata={"workspace_id": workspace_id},
         )
 
-        pgvetor.__list_docs__ = list_documents
+        pgvector.__list_docs__ = list_documents
+        pgvector.__get_doc__ = get_document
 
-        return pgvetor
+        return pgvector
     elif protocol == "sqlite":
         import sqlite3
 
@@ -67,7 +68,8 @@ def create_workspace_vstore(
             embedding=embedding,
         )
 
-        slv.__list_docs__ = list_docs_sqlite
+        slv.__list_docs__ = docs_sqlite
+        slv.__get_doc__ = docs_sqlite
 
         return slv
     else:

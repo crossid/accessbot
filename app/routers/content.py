@@ -23,9 +23,9 @@ router = APIRouter(
 
 class Doc(BaseModel):
     id: Optional[str] = None
-    apps: list[str]
-    directory: str
-    content: str
+    apps: Optional[list[str]]
+    directory: Optional[str]
+    content: Optional[str]
     external_id: Optional[str]
 
 
@@ -87,20 +87,47 @@ class DocumentList(PaginatedListBase):
 
 def store_doc_to_api_doc(doc: Document) -> Doc:
     return Doc(
-        id=str(doc.uuid),
-        external_id=doc.custom_id,
-        content=doc.document,
-        apps=doc.cmetadata.get("app", []),
-        directory=doc.cmetadata.get("directory", ""),
+        id=doc.uuid if doc.uuid != "" else None,
+        external_id=doc.custom_id if doc.custom_id != "" else None,
+        content=doc.document if doc.document != "" else None,
+        apps=doc.cmetadata.get("app", None),
+        directory=doc.cmetadata.get("directory", None),
     )
+
+
+@router.get("/{id}", response_model=Doc, response_model_exclude_none=True)
+async def get(
+    id: str,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    projection: List[str] | None = Query(None),
+    ovstore=Depends(setup_workspace_vstore),
+):
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        try:
+            doc = ovstore.__get_doc__(
+                workspace_id=workspace.id,
+                id=id,
+                external_id=id,
+                tx_context=tx_context,
+                projection=projection,
+            )
+            if doc is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="not found"
+                )
+
+            return store_doc_to_api_doc(doc)
+        except ValidationError as e:
+            raise HTTPException(status_code=422, detail=e.errors())
 
 
 @router.get("", response_model=DocumentList, response_model_exclude_none=True)
 async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
-    directory: str | None = None,
+    directory: str | None = Query(None),
     app_names: List[str] | None = Query(None),
     list_params: dict = Depends(pagination_params),
+    projection: List[str] | None = Query(None),
     ovstore=Depends(setup_workspace_vstore),
 ):
     limit = list_params.get("limit", 10)
@@ -114,6 +141,7 @@ async def list(
                 tx_context=tx_context,
                 directory=directory,
                 app_names=app_names,
+                projection=projection,
             )
             return DocumentList(
                 items=[store_doc_to_api_doc(doc) for doc in docs],
