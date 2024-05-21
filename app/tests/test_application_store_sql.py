@@ -23,6 +23,7 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
                 display_name="FooQuery",
                 aliases=["fquery", "fq"],
                 extra_instructions="dssa",
+                provision_schema=None
             )
             pws = self.test_store.insert(app, tx_context=tx_context)
             self.assertIsNotNone(pws)

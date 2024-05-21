@@ -45,8 +45,6 @@ class TestGetDataOwner(unittest.TestCase):
         set_service_registry(service_registry)
 
     def test_get_data_owner(self):
-        import os
-
         from dotenv import load_dotenv
 
         from app.llm.tools.consts import DATAOWNER_CONFIG_KEY
@@ -54,16 +52,9 @@ class TestGetDataOwner(unittest.TestCase):
 
         load_dotenv()
 
+        expected_email = "jon.doe@foo.com"
         config: dict[str, Any] = {
-            DATAOWNER_CONFIG_KEY: {
-                "okta": {
-                    "type": "okta",
-                    "config": {
-                        "tenant": "dev-664292.okta.com",
-                        "password": os.environ["okta_access_token"],
-                    },
-                }
-            }
+            DATAOWNER_CONFIG_KEY: {"default_data_owner_email": expected_email}
         }
 
         ws = Workspace(
@@ -74,4 +65,4 @@ class TestGetDataOwner(unittest.TestCase):
             get_data_owner(ws=ws, app_name="foo", directory="okta")
         )
 
-        self.assertEqual(owner.email, "jon.doe@foo.com")
+        self.assertEqual(owner.email, expected_email)
