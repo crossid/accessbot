@@ -3,9 +3,9 @@ import asyncio
 from slack_sdk import WebClient
 
 from ..llm.conversation import make_conversation
-from ..models import Conversation, ConversationStatuses
+from ..models import Conversation, ConversationStatuses, Workspace
 from ..models_stores import ConversationStore, UserStore
-from ..services import service_registry
+from ..services import factory_ws_store, service_registry
 from ..sql import SQLAlchemyTransactionContext
 
 
@@ -58,10 +58,17 @@ def answer(client: WebClient, event, logger, say, context):
             say(text=f"Hi {slack_user_email}, you are not part of any workspace yet.")
             return
         # TODO: consider letting the user choose the ws to work with in Slack
-        ws = workspaces[0]
+        ws_ext_id = workspaces[0]
+        ws_store = factory_ws_store()
         conversation: Conversation = None
+        ws: Workspace = None
         conversation_store = service_registry().get(ConversationStore)
         with SQLAlchemyTransactionContext().manage() as tx_context:
+            ws = ws_store.get_by_id(workspace_id=ws_ext_id, tx_context=tx_context)
+            if ws is None:
+                say(text=f"We could not find workspace {ws_ext_id}")
+                return
+
             conversation = conversation_store.get_by_external_id(
                 workspace_id=ws.id, external_id=thread_ts, tx_context=tx_context
             )

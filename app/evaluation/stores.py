@@ -152,6 +152,7 @@ class ApplicationStoreMock(ApplicationStore):
         display_name="fooquery",
         aliases=["fquery", "fq"],
         extra_instructions="bla bla bla",
+        provision_schema={},
     )
 
     def list(
@@ -190,6 +191,9 @@ class ApplicationStoreMock(ApplicationStore):
     ) -> None:
         pass
 
+    def update(self, **kwargs):
+        pass
+
 
 class UserStoreMock(UserStore):
     def get_by_email(self, email: str) -> Optional[User]:
@@ -197,5 +201,5 @@ class UserStoreMock(UserStore):
             id="1", email=SINGLE_USER_EMAIL, full_name="Jon Doe", disabled=False
         )
 
-    def list_workspaces_for_user(self, user_id: str) -> list[Workspace]:
+    def list_workspaces_for_user(self, user_id: str) -> list[str]:
         return []

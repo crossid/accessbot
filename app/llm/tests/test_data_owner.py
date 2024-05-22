@@ -28,7 +28,7 @@ class TestGetDataOwner(unittest.TestCase):
             def get_by_email(self, email: str):
                 return self.users[email]
 
-            def list_workspaces_for_user(self, user_id: str) -> list[Workspace]:
+            def list_workspaces_for_user(self, user_id: str) -> list[str]:
                 pass
 
         class ExtensionModule(injector.Module):
