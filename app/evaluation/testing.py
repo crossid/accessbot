@@ -17,8 +17,6 @@ from app.llm.prompts import (
     USER_EMAIL_KEY,
     WS_ID_KEY,
 )
-from app.llm.tools.create_ticket_for_role_request_tool import request_roles_tool as rrt
-from app.llm.tools.provision_role_tool import provision_roles_tool as prt
 from app.models import Application
 from app.models_stores import (
     ApplicationStore,
@@ -65,6 +63,7 @@ def create_graph_for_test(ws_id, conv_id, retriever):
                     aliases=["fquery", "fq"],
                     workspace_id=ws_id,
                     extra_instructions="bla bla bla",
+                    provision_schema={},
                 )
             ]
         ),
@@ -72,7 +71,7 @@ def create_graph_for_test(ws_id, conv_id, retriever):
 
     memory = SqliteSaver.from_conn_string(":memory:")
     graph = create_graph(
-        tools=[rrt, prt], data_context=dc, retriever=retriever, checkpointer=memory
+        tools=[], data_context=dc, retriever=retriever, checkpointer=memory
     )
     return graph
 
