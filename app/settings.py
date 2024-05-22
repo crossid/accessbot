@@ -18,5 +18,7 @@ class Settings(BaseSettings):
     SLACK_CLIENT_SECRET: str = ""
     SLACK_SIGNING_SECRET: str = ""
 
+    USER_STORE_FILE_PATH: str = "tmp/data.json"
+
 
 settings = Settings()

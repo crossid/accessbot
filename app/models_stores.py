@@ -159,8 +159,9 @@ class UserStore(ABC):
     def get_by_email(self, email: str) -> Optional[User]:
         pass
 
+    # returns a list of external ids
     @abstractmethod
-    def list_workspaces_for_user(self, user_id: str) -> list[Workspace]:
+    def list_workspaces_for_user(self, user_id: str) -> list[str]:
         pass
 
 
