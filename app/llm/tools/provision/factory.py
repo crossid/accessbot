@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.llm.tools.provision.webhook import WebhookImpl
 from app.vault_utils import resolve_ws_config_secrets
 
 from .boundary import BoundaryImpl
@@ -22,5 +23,7 @@ def ProvisionerFactory(
             return OktaImpl(**resolved_config)
         case "boundary":
             return BoundaryImpl(**resolved_config)
+        case "webhook":
+            return WebhookImpl(**resolved_config)
 
     raise ValueError(f"could not instantiate provision factory for type: {type}")
