@@ -91,7 +91,7 @@ async def make_conversation(
     )
 
     app_store = factory_app_store()
-    apps = app_store.list(workspace_id=ws.id, limit=1000, tx_context=tx_context)
+    apps, _ = app_store.list(workspace_id=ws.id, limit=1000, tx_context=tx_context)
 
     dc = {
         USER_EMAIL_KEY: current_user.email,

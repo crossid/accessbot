@@ -193,7 +193,7 @@ async def conversation(
             )
 
         app_store = factory_app_store()
-        apps = app_store.list(
+        apps, _ = app_store.list(
             workspace_id=workspace_id, limit=1000, tx_context=tx_context
         )
 

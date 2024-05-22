@@ -144,10 +144,12 @@ def entry_point_node(data_context):
         result = asyncio.new_event_loop().run_until_complete(agent.ainvoke(state))
         output = result["output"]
         json_string = output.strip("```json\n")
-        json_output = json.loads(json_string)
-        # extra_ins = json_output[EXTRA_INSTRUCTIONS_KEY]
-        # if json_output.get(APP_ID_KEY) != state.get(APP_ID_KEY) and extra_ins != "None":
-        #     msgs.append(SystemMessage(content=extra_ins))
+        try:
+            json_output = json.loads(json_string)
+        except Exception:
+            return {
+                "sender": "entry_point",
+            }
 
         return {
             MEMORY_KEY: msgs,
