@@ -29,6 +29,7 @@ class CreateApplicationBody(BaseModel):
     display_name: str
     aliases: list[str]
     extra_instructions: Optional[str] = None
+    provision_schema: Optional[dict] = None
 
 
 @router.post(
@@ -48,6 +49,7 @@ def create(
                 workspace_id=workspace.id,
                 display_name=body.display_name,
                 aliases=body.aliases,
+                provision_schema=body.provision_schema,
                 extra_instructions=body.extra_instructions,
             )
             papp = application_store.insert(
@@ -108,7 +110,7 @@ async def delete(
 
 
 class ApplicationPatchOperation(PatchOperation):
-    mutable_fields = ["aliases", "extra_instructions"]
+    mutable_fields = ["aliases", "extra_instructions", "provision_schema"]
 
 
 ApplicationJsonPatchDocument = JsonPatchDocument[ApplicationPatchOperation]
