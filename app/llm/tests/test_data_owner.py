@@ -53,9 +53,7 @@ class TestGetDataOwner(unittest.TestCase):
         load_dotenv()
 
         expected_email = "jon.doe@foo.com"
-        config: dict[str, Any] = {
-            DATAOWNER_CONFIG_KEY: {"default_data_owner_email": expected_email}
-        }
+        config: dict[str, Any] = {DATAOWNER_CONFIG_KEY: expected_email}
 
         ws = Workspace(
             display_name="foo", creator_id="bar", config=config, created_by="bar"

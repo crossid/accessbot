@@ -20,7 +20,7 @@ class OktaImpl(DataOwnerInterface):
         self.client = OktaClient(config)
         self.attribute_name = attribute_name
 
-    async def get_data_owner(self, app_name: str) -> User:
+    async def get_data_owner(self, app_name: str, **kwargs) -> User:
         qp = {"search": f'profile.{self.attribute_name} eq "{app_name}"'}
         users, _, err = await self.client.list_users(query_params=qp)
         if err is not None:

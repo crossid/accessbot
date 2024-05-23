@@ -27,7 +27,7 @@ from .tools.provision_role_tool import create_provision_role_tool
 
 INFORMATION_AGENT_NAME = "Information"
 RECOMMENDER_AGENT_NAME = "Recommender"
-DATA_OWNER_AGENT_NODE = "Data Owner"
+DATA_OWNER_AGENT_NODE = "DataOwner"
 CONV_TYPE_DATA_OWNER = ConversationTypes.data_owner.value
 CONV_TYPE_INFO = ConversationTypes.recommendation.value
 

@@ -1,5 +1,5 @@
-from typing import Any
-
+from app.llm.tools.consts import EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
+from app.models import Workspace
 from app.vault_utils import resolve_ws_config_secrets
 
 from .email import EmailTicketImpl
@@ -9,16 +9,14 @@ from .mock import MockImpl
 from .slack import SlackImpl
 
 
-def TicketSystemFactory(
-    workspace_id: str, type: str, config: dict[str, Any]
-) -> TicketInterface:
-    resolved_config = resolve_ws_config_secrets(
-        workspace_id=workspace_id, config=config
-    )
+def TicketSystemFactory(ws: Workspace) -> TicketInterface:
+    type = ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"]
+    config = ws.config[TICKET_SYSTEM_CONFIG_KEY]["config"]
+    resolved_config = resolve_ws_config_secrets(workspace_id=ws.id, config=config)
 
     match type:
         case "email":
-            return EmailTicketImpl(**resolved_config)
+            return EmailTicketImpl(**ws.config[EMAIL_CONFIG_KEY])
         case "jira":
             return JiraTicketImpl(**resolved_config)
         case "slack":

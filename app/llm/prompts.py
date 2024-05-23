@@ -60,8 +60,8 @@ TEMPLATES = {
     When you have all the information you need, tell the user you have recommendations for him.
     REMEMBER:
     - The only applications you can provide access to are the known applications.
-    - Always use the recommender agent to make recommendations. 
-    - Ask the user if he wants to request the roles before opening a ticket.
+    - You **must** use the recommender agent to make recommendations.
+    - Ask the user if he wants to request the access before you open a ticket.
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
