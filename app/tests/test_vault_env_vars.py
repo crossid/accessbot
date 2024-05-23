@@ -42,8 +42,10 @@ class TestEnvVarVault(unittest.TestCase):
     @patch.dict("os.environ", {}, clear=True)
     def test_delete_non_existent_secret(self):
         # Test delete_secret on a non-existent secret
-        delete_result = self.vault.delete_secret(self.workspace_id, self.path)
-        self.assertFalse(delete_result)
+        try:
+            self.vault.delete_secret(self.workspace_id, self.path)
+        except Exception as e:
+            self.assertTrue(self.path in str(e))
 
 
 if __name__ == "__main__":

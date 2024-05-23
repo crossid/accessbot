@@ -12,24 +12,18 @@ class EnvVarVault(VaultAPI):
         return os.environ.get(key)
 
     def set_secret(self, workspace_id: str, path: str, value: str) -> bool:
-        try:
-            key = f"{workspace_id}_{path}".upper()
-            os.environ[key] = value
-            return True
-        except Exception as e:
-            print(f"Error setting secret: {e}")
-            return False
+        key = f"{workspace_id}_{path}".upper()
+        os.environ[key] = value
+        return True
 
     def delete_secret(self, workspace_id: str, path: str) -> bool:
-        try:
-            key = f"{workspace_id}_{path}".upper()
-            if key in os.environ:
-                del os.environ[key]
-                return True
-            return False
-        except Exception as e:
-            print(f"Error deleting secret: {e}")
-            return False
+        key = f"{workspace_id}_{path}".upper()
+        # delete if anything to delete
+        if key in os.environ:
+            del os.environ[key]
+            return True
+
+        raise ValueError(f"could not find path {path}")
 
     def list_secrets(self, workspace_id: str) -> List[str]:
         ws_keys = []
