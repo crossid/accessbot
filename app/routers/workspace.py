@@ -174,7 +174,7 @@ async def delete(
 
 
 class WorkspacePatchOperation(PatchOperation):
-    mutable_fields = ["display_name", "logo_url", "config"]
+    mutable_fields = ["display_name", "logo_url", "config/email", "config/data_owner", "config/ticket_system"]
 
 
 WorkspaceJsonPatchDocument = JsonPatchDocument[WorkspacePatchOperation]
