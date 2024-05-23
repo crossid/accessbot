@@ -5,5 +5,5 @@ from app.models import User
 
 class DataOwnerInterface(ABC):
     @abstractmethod
-    async def get_data_owner(self, app_name: str) -> User:
+    async def get_data_owner(self, app_name: str, **kwargs) -> User:
         pass

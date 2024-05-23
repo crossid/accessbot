@@ -39,11 +39,7 @@ async def make_request(
     app_name: str,
     **kwargs,
 ) -> str:
-    ts = TicketSystemFactory(
-        workspace_id=ws.id,
-        type=ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"],
-        config=ws.config[TICKET_SYSTEM_CONFIG_KEY]["config"],
-    )
+    ts = TicketSystemFactory(ws=ws)
     # Owner might be none, so the ticket creation has to be defensive if it needs an owner
     ticket_id = ts.create_ticket(
         content=output,
@@ -80,7 +76,7 @@ async def _request_roles(
         if ws is not None:
             try:
                 owner = await get_data_owner(
-                    ws=ws, app_name=app_name, directory=directory
+                    ws=ws, app_name=app_name, directory=directory, **kwargs
                 )
                 ticket_id = await make_request(
                     ws=ws,

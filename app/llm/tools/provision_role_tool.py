@@ -7,19 +7,25 @@ from app.models import ConversationStatuses, Workspace
 from app.services import factory_app_store, factory_conversation_store, factory_ws_store
 from app.sql import SQLAlchemyTransactionContext
 
-from .consts import PROVISION_CONFIG_KEY
+from .consts import DIRECTORIES_KEY, PROVISION_CONFIG_KEY
 from .provision.factory import ProvisionerFactory
 
 
 async def provision_role(
     ws: Workspace, requester_email: str, directory: str, **kwargs
 ) -> bool:
-    config = ws.config[PROVISION_CONFIG_KEY][directory]["config"]
+    pconfig = (
+        ws.config.get(DIRECTORIES_KEY, {})
+        .get(directory, {})
+        .get(PROVISION_CONFIG_KEY, None)
+    )
+    if pconfig is None:
+        raise ValueError(f"provisioning config is undefined for directory {directory}")
 
     prov_fact = ProvisionerFactory(
         workspace_id=ws.id,
-        type=ws.config[PROVISION_CONFIG_KEY][directory]["type"],
-        config=config,
+        type=pconfig["type"],
+        config=pconfig["config"],
     )
     success = await prov_fact.approve_request(requester_email=requester_email, **kwargs)
 
@@ -51,7 +57,7 @@ async def _provision_role(
                 if success is False:
                     raise ToolException("unknown error")
             except Exception as err:
-                raise ToolException(f"failed to request role: {err}")
+                raise ToolException(f"failed to provision role: {err}")
 
             # update current request to approved
             updates: dict[str, Any] = {"status": ConversationStatuses.approved.value}
