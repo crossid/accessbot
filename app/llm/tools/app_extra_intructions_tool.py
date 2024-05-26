@@ -36,7 +36,7 @@ def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
         ei = "None" if app.extra_instructions is None else app.extra_instructions
 
         return {
-            APP_NAME_KEY: app.display_name,
+            APP_NAME_KEY: app.unique_name,
             APP_ID_KEY: app.id,
             EXTRA_INSTRUCTIONS_KEY: ei,
         }

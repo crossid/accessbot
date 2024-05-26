@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, AsyncIterator, List, Optional
 
 import sqlalchemy
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, HTTPException
 from langchain_core.runnables import ConfigurableFieldSpec, RunnableConfig
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.checkpoint.base import (
@@ -11,6 +11,7 @@ from langgraph.checkpoint.base import (
     CheckpointThreadTs,
     CheckpointTuple,
 )
+from pydantic_core import ErrorDetails
 from sqlalchemy import (
     JSON,
     TIMESTAMP,
@@ -139,17 +140,16 @@ applications_table = sqlalchemy.Table(
         ForeignKey(workspace_table.c.id),
         nullable=False,
     ),
-    Column("display_name", String(), nullable=False),
+    Column("unique_name", String(), nullable=False),
     Column("aliases", JSON(), nullable=False),
     Column("extra_instructions", String(), nullable=True),
     Column("provision_schema", JSON(), nullable=True),
-    # UniqueConstraint("workspace_id", "display_name", name="uq_ws_dn"),
 )
 
 Index(
-    "ix_ws_dn_lower",
+    "ix_ws_un",
     applications_table.c.workspace_id,
-    func.lower(applications_table.c.display_name),
+    applications_table.c.unique_name,
     unique=True,
 )
 
@@ -546,7 +546,7 @@ class ApplicationStoreSQL(ApplicationStore):
         query = (
             select(*columns if len(columns) > 0 else self.apps.c)
             .where(self.apps.c.workspace_id == workspace_id)
-            .order_by(self.apps.c.display_name.asc())
+            .order_by(self.apps.c.unique_name.asc())
             .offset(offset)
             .limit(limit)
         )
@@ -585,20 +585,34 @@ class ApplicationStoreSQL(ApplicationStore):
             .where(self.apps.c.workspace_id == workspace_id)
             .where(
                 or_(
-                    self.apps.c.display_name.ilike(app_name),
+                    self.apps.c.unique_name.ilike(app_name),
                     cast(self.apps.c.aliases, Text).ilike(f"%{app_name}%"),
                 )
             )
             .limit(1)
         )
 
-        # stmt = str(query)
-        # print(stmt)
         result: object = tx_context.connection.execute(query).first()
         if result:
             return Application(**result._asdict())
 
     def insert(self, app: Application, tx_context: TransactionContext) -> Application:
+        query = (
+            self.apps.select()
+            .where(self.apps.c.workspace_id == app.workspace_id)
+            .where(self.apps.c.unique_name == app.unique_name)
+            .limit(1)
+        )
+
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            error = ErrorDetails(
+                type="uniqueness",
+                loc=("body", "unique_name"),
+                msg=f"unique_name '{app.unique_name}' already exists",
+            )
+            raise HTTPException(status_code=409, detail=[error])
+
         if app.id is None:
             app.id = generate()
         o = app.model_dump()
