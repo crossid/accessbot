@@ -63,6 +63,7 @@ workspace_table = sqlalchemy.Table(
     WORKSPACE_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
+    Column("unique_name", String(32), nullable=False, unique=True),
     Column("display_name", String(32), nullable=False),
     Column("logo_url", String(), nullable=True),
     Column("status", Enum(WorkspaceStatuses)),
@@ -70,7 +71,6 @@ workspace_table = sqlalchemy.Table(
     Column("config", JSON(), nullable=False),
     Column("created_by", String(), nullable=False),
 )
-
 
 conversation_table = sqlalchemy.Table(
     CONVERSATION_TABLE_NAME,
@@ -199,6 +199,21 @@ class WorkspaceStoreSQL(WorkspaceStore):
         background_tasks: BackgroundTasks,
         tx_context: TransactionContext,
     ) -> Workspace:
+        query = (
+            self.workspaces.select()
+            .where(self.workspaces.c.unique_name == workspace.unique_name)
+            .limit(1)
+        )
+
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            error = ErrorDetails(
+                type="uniqueness",
+                loc=("body", "unique_name"),
+                msg=f"unique_name '{workspace.unique_name}' already exists",
+            )
+            raise HTTPException(status_code=409, detail=[error])
+
         if workspace.id is None:
             workspace.id = generate()
         o = workspace.model_dump()

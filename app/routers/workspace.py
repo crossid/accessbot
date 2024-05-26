@@ -41,6 +41,7 @@ router = APIRouter(
 class CreateWorkspaceBody(BaseModel):
     external_id: Optional[str] = None
     logo_url: Optional[HttpUrl] = None
+    unique_name: str
     display_name: str
 
 
@@ -61,6 +62,7 @@ def create(
             ws = Workspace(
                 external_id=body.external_id,
                 display_name=body.display_name,
+                unique_name=body.unique_name,
                 logo_url=body.logo_url.unicode_string() if body.logo_url else None,
                 created_by=current_user.id,
                 config={},
@@ -76,6 +78,8 @@ def create(
             return pws
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
+        except HTTPException as e:
+            raise e
         except Exception as e:
             if hasattr(e, "status_code") and e.status_code is not None:
                 detail = e.detail if hasattr(e, "detail") else e.message
@@ -174,7 +178,13 @@ async def delete(
 
 
 class WorkspacePatchOperation(PatchOperation):
-    mutable_fields = ["display_name", "logo_url", "config/email", "config/data_owner", "config/ticket_system"]
+    mutable_fields = [
+        "display_name",
+        "logo_url",
+        "config/email",
+        "config/data_owner",
+        "config/ticket_system",
+    ]
 
 
 WorkspaceJsonPatchDocument = JsonPatchDocument[WorkspacePatchOperation]

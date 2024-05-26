@@ -56,7 +56,7 @@ class TestGetDataOwner(unittest.TestCase):
         config: dict[str, Any] = {DATAOWNER_CONFIG_KEY: expected_email}
 
         ws = Workspace(
-            display_name="foo", creator_id="bar", config=config, created_by="bar"
+            display_name="foo", unique_name="foo", creator_id="bar", config=config, created_by="bar"
         )
 
         owner = asyncio.new_event_loop().run_until_complete(
