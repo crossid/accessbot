@@ -144,6 +144,7 @@ applications_table = sqlalchemy.Table(
     Column("aliases", JSON(), nullable=False),
     Column("extra_instructions", String(), nullable=True),
     Column("provision_schema", JSON(), nullable=True),
+    Column("created_at", DateTime(), nullable=False),
 )
 
 Index(

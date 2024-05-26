@@ -112,6 +112,7 @@ class Application(BaseModel):
     aliases: Optional[list[str]]
     extra_instructions: Optional[str]
     provision_schema: Optional[dict]
+    created_at: datetime = Field(default_factory=datetime.now)
 
     @staticmethod
     def from_db_record(record: dict):
