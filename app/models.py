@@ -46,6 +46,10 @@ class WorkspaceStatuses(enum.Enum):
 class Workspace(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
+    unique_name: str
+    _normalize_unique_name = field_validator("unique_name")(
+        must_be_lowercase_alphanumeric_validator
+    )
     display_name: str
     logo_url: Optional[str] = None
     status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
