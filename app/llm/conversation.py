@@ -66,7 +66,7 @@ def add_messages(
 def prepare_known_apps_str(apps: list[Application]):
     app_str = []
     for app in apps:
-        app_str.append(f"{app.display_name} - aka {', '.join(app.aliases)};")
+        app_str.append(f"{app.unique_name} - aka {', '.join(app.aliases)};")
 
     return "\n".join(app_str)
 

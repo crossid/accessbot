@@ -2,9 +2,15 @@ import enum
 from datetime import datetime
 from typing import Any, ClassVar, Generic, List, Optional, Set, TypeVar
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, validator
 
 from .id import generate
+
+
+def must_be_lowercase_alphanumeric_validator(v: str):
+    if not v.isalnum() or not v.islower():
+        raise ValueError("must be lowercase alphanumeric")
+    return v
 
 
 class User(BaseModel):
@@ -95,7 +101,10 @@ class Conversation(BaseModel):
 class Application(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     workspace_id: str
-    display_name: str
+    unique_name: str
+    _normalize_unique_name = field_validator("unique_name")(
+        must_be_lowercase_alphanumeric_validator
+    )
     aliases: Optional[list[str]]
     extra_instructions: Optional[str]
     provision_schema: Optional[dict]
@@ -105,7 +114,7 @@ class Application(BaseModel):
         return Application(
             id=record.id if hasattr(record, "id") else "",
             workspace_id=record.workspace_id if hasattr(record, "workspace_id") else "",
-            display_name=record.display_name if hasattr(record, "display_name") else "",
+            unique_name=record.unique_name if hasattr(record, "unique_name") else "",
             aliases=record.aliases if hasattr(record, "aliases") else None,
             extra_instructions=record.extra_instructions
             if hasattr(record, "extra_instructions")

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -44,7 +45,11 @@ def prepare_metadata_ids_content(docs: List[Doc]):
     content = []
 
     for doc in docs:
-        dmeta = {"directory": doc.directory, "app": doc.apps}
+        dmeta = {
+            "directory": doc.directory,
+            "app": doc.apps,
+            "created_at": datetime.now().isoformat(),
+        }
         metadatas.append(dmeta)
         ids.append(doc.external_id if doc.external_id is not None else generate())
         content.append(doc.content)

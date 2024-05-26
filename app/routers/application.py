@@ -26,7 +26,7 @@ router = APIRouter(
 
 
 class CreateApplicationBody(BaseModel):
-    display_name: str
+    unique_name: str
     aliases: list[str]
     extra_instructions: Optional[str] = None
     provision_schema: Optional[dict] = None
@@ -47,7 +47,7 @@ def create(
         try:
             app = Application(
                 workspace_id=workspace.id,
-                display_name=body.display_name,
+                unique_name=body.unique_name,
                 aliases=body.aliases,
                 provision_schema=body.provision_schema,
                 extra_instructions=body.extra_instructions,
@@ -58,13 +58,17 @@ def create(
             )
             return papp
         except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.errors())
-        except Exception as e:
-            if hasattr(e, "status_code") and e.status_code is not None:
-                detail = e.detail if hasattr(e, "detail") else e.message
-                raise HTTPException(status_code=e.status_code, detail=detail)
-
+            raise HTTPException(status_code=422, detail=e.json())
+        except HTTPException as e:
             raise e
+        except Exception as e:
+            status_code = (
+                e.status_code
+                if hasattr(e, "status_code")
+                else status.HTTP_400_BAD_REQUEST
+            )
+            detail = e.detail if hasattr(e, "detail") else e.message
+            raise HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get(
@@ -153,7 +157,7 @@ async def update_application(
 class PApplication(BaseModel):
     id: str | None
     workspace_id: str | None
-    display_name: str | None
+    unique_name: str | None
     aliases: list[str] | None
     extra_instructions: str | None
     provision_schema: dict | None
@@ -163,7 +167,7 @@ class PApplication(BaseModel):
         return PApplication(
             id=app.id or None,
             workspace_id=app.workspace_id or None,
-            display_name=app.display_name or None,
+            unique_name=app.unique_name or None,
             aliases=app.aliases or None,
             extra_instructions=app.extra_instructions or None,
             provision_schema=app.provision_schema or None,
