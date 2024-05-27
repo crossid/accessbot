@@ -1,10 +1,16 @@
 import logging
 from typing import Annotated, Optional
 
-from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, DIRECTORIES_KEY, EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 import jsonpatch
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl, ValidationError
+
+from app.llm.tools.consts import (
+    DATAOWNER_CONFIG_KEY,
+    DIRECTORIES_KEY,
+    EMAIL_CONFIG_KEY,
+    TICKET_SYSTEM_CONFIG_KEY,
+)
 
 from ..auth import (
     CurrentUser,
@@ -65,7 +71,7 @@ def create(
                 display_name=body.display_name,
                 unique_name=body.unique_name,
                 logo_url=body.logo_url.unicode_string() if body.logo_url else None,
-                created_by=current_user.id,
+                created_by=current_user.email,
                 config={},
             )
             # note: this is required for the hooks to work
@@ -149,7 +155,7 @@ async def delete(
     app_store: Annotated[ApplicationStore, Depends(factory_app_store)],
     ovstore=Depends(setup_workspace_vstore),
 ):
-    if current_user.id != workspace.created_by or workspace_id != workspace.id:
+    if current_user.email != workspace.created_by or workspace_id != workspace.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authorized to delete this workspace",
@@ -185,7 +191,7 @@ class WorkspacePatchOperation(PatchOperation):
         f"config/{EMAIL_CONFIG_KEY}",
         f"config/{DATAOWNER_CONFIG_KEY}",
         f"config/{TICKET_SYSTEM_CONFIG_KEY}",
-        f"config/{DIRECTORIES_KEY}"
+        f"config/{DIRECTORIES_KEY}",
     ]
 
 
