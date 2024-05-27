@@ -13,7 +13,6 @@ async def streaming(
 ):
     final_outputs = []
     event_output = ""
-    current_llm_name = None
     async for event in runnable.astream_events(
         ctx, version=stream_version, config=config
     ):
@@ -23,20 +22,12 @@ async def streaming(
             if content:
                 # Empty content in the context of OpenAI means that the model is asking for a tool to be invoked,
                 # so we only print non-empty content
-                llm_name = event["name"]
-                # initialize first llm_name
-                if current_llm_name is None:
-                    current_llm_name = llm_name
-
-                output = event_transformer(content, llm_name)
-
-                # add content from different llms to outputs in order to send only the last msg to callback
-                if llm_name != current_llm_name:
-                    final_outputs.append(event_output)
-                    event_output = ""
-                    current_llm_name = llm_name
-
                 event_output += content
+                llm_name = event["name"]
+                output = event_transformer(content, llm_name)
                 yield output
+        elif kind == "on_chat_model_end":
+            final_outputs.append(event_output)
+            event_output = ""
 
     callback(final_outputs[-1]) if callback else None
