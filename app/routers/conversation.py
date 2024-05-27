@@ -25,7 +25,13 @@ from ..llm.prompts import (
 )
 from ..llm.sql_chat_message_history import LangchainChatMessageHistory
 from ..llm.streaming import streaming
-from ..models import Conversation, CurrentUser, PaginatedListBase, Workspace
+from ..models import (
+    Conversation,
+    ConversationStatuses,
+    CurrentUser,
+    PaginatedListBase,
+    Workspace,
+)
 from ..models_stores import ChatMessageStore, ConversationStore
 from ..services import (
     factory_app_store,
@@ -230,3 +236,55 @@ async def conversation(
             ),
             media_type="text/event-stream",
         )
+
+
+class CancelConvResp(BaseModel):
+    cancelled_ids: List[str]
+
+
+@router.patch(
+    "/{conversation_id}/.cancel",
+    response_model=CancelConvResp,
+    response_model_exclude_none=True,
+)
+def cancel_conv(
+    conversation_id,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
+):
+    wid = workspace.id
+    cancelled_ids = []
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        conv = conversation_store.get_by_id(
+            workspace_id=wid, conversation_id=conversation_id, tx_context=tx_context
+        )
+        if conv.status != ConversationStatuses.active:
+            raise HTTPException(
+                detail="cannot cancel non active conversation",
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+            )
+
+        cconv = conversation_store.update(
+            workspace_id=workspace.id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+            updates={"status": ConversationStatuses.cancelled},
+        )
+        cancelled_ids.append(cconv.id)
+
+        if cconv.previous_conversation is not None:
+            pconv = conversation_store.get_by_id(
+                workspace_id=wid,
+                conversation_id=cconv.previous_conversation,
+                tx_context=tx_context,
+            )
+            if pconv.status == ConversationStatuses.active:
+                conversation_store.update(
+                    workspace_id=wid,
+                    conversation_id=cconv.previous_conversation,
+                    tx_context=tx_context,
+                    updates={"status": ConversationStatuses.cancelled},
+                )
+                cancelled_ids.append(cconv.previous_conversation)
+
+    return CancelConvResp(cancelled_ids=cancelled_ids)
