@@ -1,6 +1,7 @@
 import logging
 from typing import Annotated, Optional
 
+from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, DIRECTORIES_KEY, EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 import jsonpatch
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl, ValidationError
@@ -181,9 +182,10 @@ class WorkspacePatchOperation(PatchOperation):
     mutable_fields = [
         "display_name",
         "logo_url",
-        "config/email",
-        "config/data_owner",
-        "config/ticket_system",
+        f"config/{EMAIL_CONFIG_KEY}",
+        f"config/{DATAOWNER_CONFIG_KEY}",
+        f"config/{TICKET_SYSTEM_CONFIG_KEY}",
+        f"config/{DIRECTORIES_KEY}"
     ]
 
 
