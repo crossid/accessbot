@@ -201,7 +201,7 @@ def base_edges() -> list[_Condition_Edge]:
             else state["sender"],
             conditional_edge_mapping={
                 INFORMATION_AGENT_NAME: INFORMATION_AGENT_NAME,
-                # DATA_OWNER_AGENT_NODE: DATA_OWNER_AGENT_NODE,
+                DATA_OWNER_AGENT_NODE: DATA_OWNER_AGENT_NODE,
                 "call_tool": "call_tool",
             },
         ),
