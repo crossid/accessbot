@@ -3,27 +3,23 @@ from typing import Any
 from langchain_core.tools import StructuredTool, ToolException
 from pydantic.v1 import BaseModel, Field, create_model
 
-from app.models import ConversationStatuses, Workspace
-from app.services import factory_app_store, factory_conversation_store, factory_ws_store
+from app.models import ConversationStatuses, Directory, Workspace
+from app.services import factory_app_store, factory_conversation_store, factory_dir_store
 from app.sql import SQLAlchemyTransactionContext
 
-from .consts import DIRECTORIES_KEY, PROVISION_CONFIG_KEY
+from .consts import PROVISION_CONFIG_KEY
 from .provision.factory import ProvisionerFactory
 
 
 async def provision_role(
-    ws: Workspace, requester_email: str, directory: str, **kwargs
+    directory: Directory, workspace_id:str, requester_email: str, **kwargs
 ) -> bool:
-    pconfig = (
-        ws.config.get(DIRECTORIES_KEY, {})
-        .get(directory, {})
-        .get(PROVISION_CONFIG_KEY, None)
-    )
+    pconfig = directory.provisioning_config
     if pconfig is None:
-        raise ValueError(f"provisioning config is undefined for directory {directory}")
+        raise ValueError(f"provisioning config is undefined for directory {directory.name}")
 
     prov_fact = ProvisionerFactory(
-        workspace_id=ws.id,
+        workspace_id=workspace_id,
         type=pconfig["type"],
         config=pconfig["config"],
     )
@@ -41,17 +37,17 @@ async def _provision_role(
     **kwargs,
 ) -> str:
     directory = directory.lower()
-    ws_store = factory_ws_store()
+    dir_store = factory_dir_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
+        dir = dir_store.get_by_name(name=directory, workspace_id=workspace_id, tx_context=tx_context)
 
-        if ws is not None:
+        if dir is not None:
             try:
                 success = await provision_role(
-                    ws=ws,
+                    directory=dir,
                     requester_email=requester_email,
-                    directory=directory,
+                    workspace_id=workspace_id,
                     **kwargs,
                 )
                 if success is False:
@@ -69,7 +65,7 @@ async def _provision_role(
             )
 
         else:
-            raise ToolException(f"unknown workspace: {workspace_id}")
+            raise ToolException(f"unknown directory: {directory}")
 
     return "role approve completed"
 

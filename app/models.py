@@ -12,6 +12,17 @@ def must_be_lowercase_alphanumeric_validator(v: str):
         raise ValueError("must be lowercase alphanumeric")
     return v
 
+class OptionalModel(BaseModel):
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
+        super().__pydantic_init_subclass__(**kwargs)
+
+        for field in cls.model_fields.values():
+            field.default = None
+
+        cls.model_rebuild(force=True)
+
+
 
 class User(BaseModel):
     id: str
@@ -130,6 +141,21 @@ class Application(BaseModel):
             else None,
         )
 
+class Directory(BaseModel):
+    id: str = Field(default_factory=lambda: generate())
+    workspace_id: str
+    name: str
+    _normalize_name = field_validator("name")(
+        must_be_lowercase_alphanumeric_validator
+    )
+    provisioning_config: Optional[dict] = None
+    data_owner_config: Optional[dict] = None
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class PartialDirectory(Directory, OptionalModel):
+    pass
 
 class Document(BaseModel):
     uuid: str

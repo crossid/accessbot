@@ -18,6 +18,7 @@ from app.services import (
     factory_app_store,
     factory_checkpointer,
     factory_conversation_store,
+    factory_dir_store,
     factory_message_store,
     factory_user_store,
     factory_ws_store,
@@ -73,13 +74,15 @@ async def _request_roles(
     user_store = factory_user_store()
     current_user = user_store.get_by_email(email=user_email)
     ws_store = factory_ws_store()
+    dir_store = factory_dir_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
+        dir = dir_store.get_by_name(name=directory, workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
             try:
                 owner = await get_data_owner(
-                    ws=ws, app_name=app_name, directory=directory, **kwargs
+                    ws=ws, app_name=app_name, directory=dir, **kwargs
                 )
                 ticket_id = await make_request(
                     ws=ws,

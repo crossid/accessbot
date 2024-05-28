@@ -2,7 +2,7 @@ import logging
 from typing import Annotated, List, Optional
 
 import jsonpatch
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 
 from ..auth import get_current_workspace
@@ -183,10 +183,10 @@ async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     list_params: dict = Depends(pagination_params),
     app_store: ApplicationStore = Depends(factory_app_store),
-    projection: List[str] = Query([]),
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)
+    projection = list_params.get("projection", None)
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             items, count = app_store.list(

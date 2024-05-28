@@ -9,6 +9,7 @@ from .models import (
     ChatMessage,
     Conversation,
     CurrentUser,
+    Directory,
     User,
     Workspace,
     WorkspaceStatuses,
@@ -329,6 +330,53 @@ class ApplicationStore(ABC):
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
     ) -> None:
+        pass
+
+
+class DirectoryStore(ABC):
+    @abstractmethod
+    def get_by_id(
+        self, directory_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Directory]:
+        pass
+
+    @abstractmethod
+    def get_by_name(
+        self, directory_name: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Directory]:
+        pass
+
+    @abstractmethod
+    def insert(self, directory: Directory, tx_context: TransactionContext) -> Directory:
+        pass
+
+    @abstractmethod
+    def delete(
+        self,
+        workspace_id: str,
+        directory_id: str,
+        tx_context: TransactionContext = None,
+    ):
+        pass
+
+    @abstractmethod
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        projection: List[str] = [],
+        tx_context: TransactionContext = None,
+    ) -> tuple[list[Directory], int]:
+        pass
+
+    @abstractmethod
+    def update(
+        self,
+        directory: Directory,
+        tx_context: TransactionContext,
+    ) -> Directory:
         pass
 
 

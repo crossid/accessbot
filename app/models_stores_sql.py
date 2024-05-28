@@ -15,6 +15,7 @@ from sqlalchemy import (
     JSON,
     TIMESTAMP,
     Column,
+    Connection,
     DateTime,
     Enum,
     ForeignKey,
@@ -30,6 +31,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 
 from .id import generate
 from .models import (
@@ -39,6 +41,8 @@ from .models import (
     ConversationStatuses,
     ConversationTypes,
     CurrentUser,
+    Directory,
+    PartialDirectory,
     Workspace,
     WorkspaceStatuses,
 )
@@ -58,6 +62,7 @@ CONVERSATION_TABLE_NAME = "conversations"
 MESSAGE_TABLE_NAME = "messages"
 APPLICATIONS_TABLE_NAME = "applications"
 CHECKPOINT_TABLE_NAME = "checkpoints"
+DIRECTORIES_TABLE_NAME = "directories"
 
 workspace_table = sqlalchemy.Table(
     WORKSPACE_TABLE_NAME,
@@ -130,6 +135,31 @@ checkpoint_table = sqlalchemy.Table(
     Column("checkpoint", LargeBinary()),
     Column("metadata", JSON()),
 )
+
+directory_table = sqlalchemy.Table(
+    DIRECTORIES_TABLE_NAME,
+    metadata,
+    Column("id", String(10), primary_key=True),
+    Column(
+        "workspace_id",
+        String(10),
+        ForeignKey(workspace_table.c.id),
+        nullable=False,
+    ),
+    Column("name", String(), nullable=False),
+    Column("provisioning_config", JSON(), nullable=True),
+    Column("data_owner_config", JSON(), nullable=True),
+    Column("created_by", String(), nullable=False),
+    Column("created_at", DateTime(), nullable=False),
+)
+
+Index(
+    "idx_ws_name",
+    directory_table.c.workspace_id,
+    directory_table.c.name,
+    unique=True,
+)
+
 
 applications_table = sqlalchemy.Table(
     APPLICATIONS_TABLE_NAME,
@@ -674,6 +704,140 @@ class ApplicationStoreSQL(ApplicationStore):
         return None
 
 
+class DirectoryStoreSQL:
+    default_table_name: str = DIRECTORIES_TABLE_NAME
+    metadata: MetaData
+    directories: Table
+
+    @classmethod
+    def build_table(cls, metadata: MetaData, table_name: str) -> Table:
+        return directory_table
+
+    def __init__(
+        self,
+        table_name: str = default_table_name,
+    ):
+        self.metadata = metadata
+        self.directories = self.build_table(
+            metadata=self.metadata, table_name=table_name
+        )
+
+    def create_tables(self, engine: Engine):
+        self.metadata.create_all(engine)
+
+    def get_by_id(
+        self, directory_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Directory]:
+        query = (
+            self.directories.select()
+            .where(self.directories.c.workspace_id == workspace_id)
+            .where(self.directories.c.id == directory_id)
+            .limit(1)
+        )
+
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            return Directory(**result._asdict())
+
+    def get_by_name(
+        self, workspace_id: str, name: str, tx_context: TransactionContext
+    ) -> Optional[dict]:
+        query = (
+            self.directories.select()
+            .where(self.directories.c.workspace_id == workspace_id)
+            .where(self.directories.c.name == name)
+            .limit(1)
+        )
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            return Directory(**result._asdict())
+
+    def insert(self, dir: Directory, tx_context: TransactionContext) -> Directory:
+        if dir.id is None:
+            dir.id = generate()
+        o = dir.model_dump()
+        handle_db_operation(tx_context.connection, self.directories.insert(), o)
+        return dir
+
+    def delete(
+        self,
+        workspace_id: str,
+        directory_id: str,
+        tx_context: TransactionContext,
+    ):
+        q = (
+            self.directories.delete()
+            .where(self.directories.c.workspace_id == workspace_id)
+            .where(self.directories.c.id == directory_id)
+        )
+        res = tx_context.connection.execute(q)
+        if res.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Directory not found")
+        return None
+
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        tx_context: TransactionContext = None,
+        projection: List[str] = [],
+    ) -> tuple[list[PartialDirectory], int]:
+        base_count_query = (
+            select(func.count())
+            .select_from(self.directories)
+            .where(self.directories.c.workspace_id == workspace_id)
+        )
+
+        # Applying filters to the count query
+        if filters:
+            for field, value in filters.items():
+                base_count_query = base_count_query.where(
+                    self.directories.c[field] == value
+                )
+
+        # Execute count query
+        total_count = tx_context.connection.execute(base_count_query).scalar_one()
+
+        columns = [
+            self.directories.c[column_name]
+            for column_name in projection
+            if column_name in self.directories.c
+        ]
+        query = (
+            select(*columns if len(columns) > 0 else self.directories.c)
+            .where(self.directories.c.workspace_id == workspace_id)
+            .order_by(self.directories.c.name.asc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if filters:
+            for field, value in filters.items():
+                query = query.where(self.directories.c[field] == value)
+
+        result = tx_context.connection.execute(query)
+        directories = []
+        for record in result:
+            directories.append(PartialDirectory(**record._asdict()))
+
+        return directories, total_count
+
+    def update(
+        self,
+        directory: Directory,
+        tx_context: TransactionContext,
+    ) -> Workspace:
+        q = (
+            self.directories.update()
+            .where(self.directories.c.id == directory.id)
+            .values({k: v for k, v in directory.model_dump().items() if k != "id"})
+        )
+        tx_context.connection.execute(q)
+        return directory
+
+
 class CheckpointStoreSQL(CheckpointStore):
     class Config:
         arbitrary_types_allowed = True
@@ -869,3 +1033,34 @@ class CheckpointStoreSQL(CheckpointStore):
         )
         tx_context.connection.execute(q)
         return None
+
+
+def handle_db_operation(connection: Connection, db_operation, params):
+    """
+    Handles a database operation, converting SQLAlchemy IntegrityError
+    to FastAPI HTTPException.
+
+    Args:
+    - connection: The SQLAlchemy connection to use for the operation.
+    - db_operation: A callable representing the database operation.
+
+    Returns:
+    The result of the db_operation if successful.
+
+    Raises:
+    - HTTPException: If a unique constraint violation occurs.
+    """
+    try:
+        # Execute the database operation
+        return connection.execute(db_operation, params)
+    except IntegrityError as e:
+        # Check if the error is due to a unique constraint violation
+        error_info = str(e.orig)
+        if (
+            "unique constraint" in error_info.lower()
+            or "duplicate key" in error_info.lower()
+        ):
+            raise HTTPException(status_code=409, detail="This record already exist.")
+        else:
+            # For other types of IntegrityErrors, you might want to handle them differently
+            raise HTTPException(status_code=400, detail="Database operation failed.")
