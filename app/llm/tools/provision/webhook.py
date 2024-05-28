@@ -22,9 +22,8 @@ class WebhookImpl(ProvisionInterface):
             )
 
         body = {**kwargs, "requester_email": requester_email}
-        try:
-            response = requests.post(url=self.url, json=body)
-            return response.status_code >= 200 and response.status_code <= 399
-        except Exception:
-            # logger
-            return False
+        response = requests.post(url=self.url, json=body)
+        if response.status_code >= 200 and response.status_code <= 399:
+            return True
+        else:
+            raise ValueError(response.text)
