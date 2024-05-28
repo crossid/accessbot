@@ -191,7 +191,7 @@ class WorkspacePatchOperation(PatchOperation):
         f"config/{EMAIL_CONFIG_KEY}",
         f"config/{DATAOWNER_CONFIG_KEY}",
         f"config/{TICKET_SYSTEM_CONFIG_KEY}",
-        f"config/{DIRECTORIES_KEY}",
+        f"config/{DIRECTORIES_KEY}/*",
     ]
 
 

@@ -1,8 +1,9 @@
 import enum
+import re
 from datetime import datetime
 from typing import Any, ClassVar, Generic, List, Optional, Set, TypeVar
 
-from pydantic import BaseModel, Field, field_validator, validator
+from pydantic import BaseModel, Field, field_validator
 
 from .id import generate
 
@@ -162,13 +163,18 @@ class PatchOperation(BaseModel):
     # can overridden in subclasses for more restcitive behavior
     mutable_fields: ClassVar[Set[str]] = None  # None = all fields are allowed
 
-    @validator("path")
+    @field_validator("path")
     def validate_path(cls, v):
         field_name = v.lstrip("/")  # Remove the leading '/' from the path
         if field_name in cls.immutable_fields:
             raise ValueError(f"Modification of '{field_name}' is not allowed")
-        if cls.mutable_fields and field_name not in cls.mutable_fields:
-            raise ValueError(f"Modification of '{field_name}' is not permitted")
+        if cls.mutable_fields:
+            # Check if the field name matches any of the mutable fields or their wildcard variations
+            rgs = [
+                re.escape(field).replace("\\*", ".*") for field in cls.mutable_fields
+            ]
+            if not any(re.match(f"^{rg}$", field_name) for rg in rgs):
+                raise ValueError(f"Modification of '{field_name}' is not permitted")
         return v
 
 
