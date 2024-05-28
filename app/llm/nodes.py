@@ -128,11 +128,6 @@ class IGNOutput(BaseModel):
 
 def entry_point_node(data_context):
     def _epn(state):
-        if state.get("conv_type") == CONV_TYPE_DATA_OWNER:
-            return {
-                "sender": "entry_point",
-            }
-
         msgs = []
         agent = create_agent(
             prompt=get_prompt(prompt_id=ENTRY_POINT, data_context=data_context),
