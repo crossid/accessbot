@@ -70,6 +70,7 @@ workspace_table = sqlalchemy.Table(
     Column("external_id", String(), nullable=True),
     Column("config", JSON(), nullable=False),
     Column("created_by", String(), nullable=False),
+    Column("created_at", DateTime(), nullable=False),
 )
 
 conversation_table = sqlalchemy.Table(
