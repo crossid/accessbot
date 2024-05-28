@@ -55,6 +55,7 @@ class Workspace(BaseModel):
     status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
     created_by: str
     config: dict[str, Any] = Field(description="Workspace configuration")
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class ChatMessage(BaseModel):
