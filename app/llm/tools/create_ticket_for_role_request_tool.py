@@ -40,6 +40,9 @@ async def make_request(
     **kwargs,
 ) -> str:
     ts = TicketSystemFactory(ws=ws)
+    if ts is None:
+        return ""
+
     # Owner might be none, so the ticket creation has to be defensive if it needs an owner
     ticket_id = ts.create_ticket(
         content=output,
