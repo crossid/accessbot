@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from fastapi import BackgroundTasks
 
 from app.models import (
@@ -28,12 +29,8 @@ class WorkspaceStoreMock(WorkspaceStore):
         self, workspace_id: str, tx_context: TransactionContext
     ) -> Optional[Workspace]:
         config: dict[str, Any] = {
-            "data_owner_config": {"default_data_owner_email": SINGLE_USER_EMAIL},
-            "ticket_system_config": {"type": "_mock_", "config": {}},
-            "provision_config": {
-                "okta": {"type": "_mock_", "config": {}},
-                "gcp": {"type": "_mock_", "config": {}},
-            },
+            DATAOWNER_CONFIG_KEY:SINGLE_USER_EMAIL,
+            TICKET_SYSTEM_CONFIG_KEY: {"type": "_mock_", "config": {}}
         }
         return Workspace(
             id=workspace_id,

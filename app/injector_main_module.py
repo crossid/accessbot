@@ -7,6 +7,7 @@ from .models_stores import (
     ChatMessageStore,
     CheckpointStore,
     ConversationStore,
+    DirectoryStore,
     WorkspaceStore,
     WorkspaceStoreHooks,
     WorkspaceStoreProxy,
@@ -16,6 +17,7 @@ from .models_stores_sql import (
     ChatMessageStoreSQL,
     CheckpointStoreSQL,
     ConversationStoreSQL,
+    DirectoryStoreSQL,
     WorkspaceStoreSQL,
 )
 
@@ -40,3 +42,4 @@ class MainModule(injector.Module):
         )
         binder.bind(ChatMessageStore, to=ChatMessageStoreSQL, scope=injector.singleton)
         binder.bind(ApplicationStore, to=ApplicationStoreSQL, scope=injector.singleton)
+        binder.bind(DirectoryStore, to=DirectoryStoreSQL, scope=injector.singleton)

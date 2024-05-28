@@ -1,11 +1,11 @@
 from typing import Any
 
 from app.llm.tools.data_owner.mock import MockImpl
-from app.models import User, Workspace
+from app.models import Directory, User, Workspace
 from app.services import factory_user_store
 from app.vault_utils import resolve_ws_config_secrets
 
-from ..consts import DATAOWNER_CONFIG_KEY, DIRECTORIES_KEY
+from ..consts import DATAOWNER_CONFIG_KEY
 from .iface import DataOwnerInterface
 from .okta import OktaImpl
 
@@ -30,15 +30,11 @@ def get_def_do(do_email: str) -> User:
 
 
 async def get_data_owner(
-    ws: Workspace, app_name: str, directory: str, **kwargs
+    ws: Workspace, app_name: str, directory: Directory, **kwargs
 ) -> User:
     default_do_email = ws.config.get(DATAOWNER_CONFIG_KEY, None)
 
-    do_config = (
-        ws.config.get(DIRECTORIES_KEY, {})
-        .get(directory, {})
-        .get(DATAOWNER_CONFIG_KEY, None)
-    )
+    do_config = directory.data_owner_config
 
     if do_config is None:
         return get_def_do(do_email=default_do_email)

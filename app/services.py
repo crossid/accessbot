@@ -1,10 +1,14 @@
+from typing import List
+
 import injector
+from fastapi import Query
 
 from .models_stores import (
     ApplicationStore,
     ChatMessageStore,
     CheckpointStore,
     ConversationStore,
+    DirectoryStore,
     UserStore,
     WorkspaceStore,
 )
@@ -47,6 +51,10 @@ def factory_ws_store():
     return service_registry().get(WorkspaceStore)
 
 
+def factory_dir_store():
+    return service_registry().get(DirectoryStore)
+
+
 def factory_user_store():
     return service_registry().get(UserStore)
 
@@ -71,5 +79,10 @@ def factory_vault():
     return service_registry().get(VaultAPI)
 
 
-async def pagination_params(q: str | None = None, offset: int = 0, limit: int = 10):
-    return {"q": q, "offset": offset, "limit": limit}
+async def pagination_params(
+    q: str | None = None,
+    offset: int = 0,
+    limit: int = 10,
+    projection: List[str] = Query([]),
+):
+    return {"q": q, "offset": offset, "limit": limit, "projection": projection}

@@ -1,6 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
 
+from app.routers import directories
 import injector
 from fastapi import APIRouter, FastAPI
 
@@ -35,6 +36,7 @@ api = APIRouter(prefix="/api")
 api.include_router(workspace.router)
 api.include_router(conversation.router)
 api.include_router(content.router)
+api.include_router(directories.router)
 api.include_router(application.router)
 app.include_router(api)
 

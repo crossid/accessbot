@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from typing import Any
 
-from app.models import Workspace
+from app.models import Directory, Workspace
 
 
 class TestGetDataOwner(unittest.TestCase):
@@ -59,8 +59,10 @@ class TestGetDataOwner(unittest.TestCase):
             display_name="foo", unique_name="foo", creator_id="bar", config=config, created_by="bar"
         )
 
+        dir = Directory(name="okta", config={}, workspace_id="foo", created_by="foo@acme.io")
+
         owner = asyncio.new_event_loop().run_until_complete(
-            get_data_owner(ws=ws, app_name="foo", directory="okta")
+            get_data_owner(ws=ws, directory=dir, app_name="foo")
         )
 
         self.assertEqual(owner.email, expected_email)

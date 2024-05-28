@@ -2,15 +2,13 @@ import logging
 from typing import Annotated, Optional
 
 import jsonpatch
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel, HttpUrl, ValidationError
-
 from app.llm.tools.consts import (
     DATAOWNER_CONFIG_KEY,
-    DIRECTORIES_KEY,
     EMAIL_CONFIG_KEY,
     TICKET_SYSTEM_CONFIG_KEY,
 )
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from pydantic import BaseModel, HttpUrl, ValidationError
 
 from ..auth import (
     CurrentUser,
@@ -211,7 +209,6 @@ class WorkspacePatchOperation(PatchOperation):
         f"config/{EMAIL_CONFIG_KEY}",
         f"config/{DATAOWNER_CONFIG_KEY}",
         f"config/{TICKET_SYSTEM_CONFIG_KEY}",
-        f"config/{DIRECTORIES_KEY}",
     ]
 
 
