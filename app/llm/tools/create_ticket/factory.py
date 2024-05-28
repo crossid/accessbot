@@ -10,6 +10,9 @@ from .slack import SlackImpl
 
 
 def TicketSystemFactory(ws: Workspace) -> TicketInterface:
+    if TICKET_SYSTEM_CONFIG_KEY not in ws.config:
+        return None
+
     type = ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"]
     config = ws.config[TICKET_SYSTEM_CONFIG_KEY]["config"]
     resolved_config = resolve_ws_config_secrets(workspace_id=ws.id, config=config)
