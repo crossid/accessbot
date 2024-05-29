@@ -37,3 +37,6 @@ class UserStoreFromJsonFile(UserStore):
                 raise ValueError(f"Could not find user: {user_id}")
 
             return user.get("memberOf", [])
+
+    def add_user_to_workspace(self, user_id: str, workspace_id: str):
+        pass

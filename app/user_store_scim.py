@@ -7,3 +7,6 @@ class UserStoreSCIM(UserStore):
 
     def list_workspaces_for_user(self, user_id: str) -> list[str]:
         pass
+
+    def add_user_to_workspace(self, user_id: str, workspace_id: str):
+        pass

@@ -31,6 +31,9 @@ class TestGetDataOwner(unittest.TestCase):
             def list_workspaces_for_user(self, user_id: str) -> list[str]:
                 pass
 
+            def add_user_to_workspace(self, user_id: str, workspace_id: str):
+                pass
+
         class ExtensionModule(injector.Module):
             def configure(self, binder):
                 binder.bind(UserStore, to=TestUserStore, scope=injector.singleton)
@@ -56,10 +59,16 @@ class TestGetDataOwner(unittest.TestCase):
         config: dict[str, Any] = {DATAOWNER_CONFIG_KEY: expected_email}
 
         ws = Workspace(
-            display_name="foo", unique_name="foo", creator_id="bar", config=config, created_by="bar"
+            display_name="foo",
+            unique_name="foo",
+            creator_id="bar",
+            config=config,
+            created_by="bar",
         )
 
-        dir = Directory(name="okta", config={}, workspace_id="foo", created_by="foo@acme.io")
+        dir = Directory(
+            name="okta", config={}, workspace_id="foo", created_by="foo@acme.io"
+        )
 
         owner = asyncio.new_event_loop().run_until_complete(
             get_data_owner(ws=ws, directory=dir, app_name="foo")

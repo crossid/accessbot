@@ -1,8 +1,8 @@
 from typing import Any, Optional
 
-from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from fastapi import BackgroundTasks
 
+from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from app.models import (
     Application,
     ChatMessage,
@@ -29,8 +29,8 @@ class WorkspaceStoreMock(WorkspaceStore):
         self, workspace_id: str, tx_context: TransactionContext
     ) -> Optional[Workspace]:
         config: dict[str, Any] = {
-            DATAOWNER_CONFIG_KEY:SINGLE_USER_EMAIL,
-            TICKET_SYSTEM_CONFIG_KEY: {"type": "_mock_", "config": {}}
+            DATAOWNER_CONFIG_KEY: SINGLE_USER_EMAIL,
+            TICKET_SYSTEM_CONFIG_KEY: {"type": "_mock_", "config": {}},
         }
         return Workspace(
             id=workspace_id,
@@ -200,3 +200,6 @@ class UserStoreMock(UserStore):
 
     def list_workspaces_for_user(self, user_id: str) -> list[str]:
         return []
+
+    def add_user_to_workspace(self, user_id: str, workspace_id: str):
+        pass
