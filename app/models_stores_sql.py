@@ -42,6 +42,7 @@ from .models import (
     ConversationTypes,
     CurrentUser,
     Directory,
+    PartialApplication,
     PartialDirectory,
     Workspace,
     WorkspaceStatuses,
@@ -570,7 +571,7 @@ class ApplicationStoreSQL(ApplicationStore):
         limit=10,
         tx_context: TransactionContext = None,
         projection: List[str] = [],
-    ) -> tuple[list[Application], int]:
+    ) -> tuple[list[PartialApplication], int]:
         base_count_query = (
             select(func.count())
             .select_from(self.apps)
@@ -603,10 +604,7 @@ class ApplicationStoreSQL(ApplicationStore):
                 query = query.where(self.apps.c[field] == value)
 
         result = tx_context.connection.execute(query)
-        apps = []
-        for record in result:
-            app = Application.from_db_record(record)
-            apps.append(app)
+        apps = [PartialApplication(**record._asdict()) for record in result]
 
         return apps, total_count
 

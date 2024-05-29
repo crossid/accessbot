@@ -10,6 +10,7 @@ from ..models import (
     Application,
     JsonPatchDocument,
     PaginatedListBase,
+    PartialApplication,
     PatchOperation,
     Workspace,
 )
@@ -154,28 +155,8 @@ async def update_application(
         raise HTTPException(status_code=422, detail=e.errors())
 
 
-class PApplication(BaseModel):
-    id: str | None
-    workspace_id: str | None
-    unique_name: str | None
-    aliases: list[str] | None
-    extra_instructions: str | None
-    provision_schema: dict | None
-
-    @staticmethod
-    def from_app(app: Application):
-        return PApplication(
-            id=app.id or None,
-            workspace_id=app.workspace_id or None,
-            unique_name=app.unique_name or None,
-            aliases=app.aliases or None,
-            extra_instructions=app.extra_instructions or None,
-            provision_schema=app.provision_schema or None,
-        )
-
-
 class ApplicationList(PaginatedListBase):
-    items: List[PApplication]
+    items: List[PartialApplication]
 
 
 @router.get("", response_model=ApplicationList, response_model_exclude_none=True)
@@ -197,7 +178,7 @@ async def list(
                 projection=projection,
             )
             return ApplicationList(
-                items=[PApplication.from_app(app) for app in items],
+                items=items,
                 offset=offset,
                 total=count,
             )
