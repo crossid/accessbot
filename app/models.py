@@ -12,6 +12,7 @@ def must_be_lowercase_alphanumeric_validator(v: str):
         raise ValueError("must be lowercase alphanumeric")
     return v
 
+
 class OptionalModel(BaseModel):
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -19,9 +20,9 @@ class OptionalModel(BaseModel):
 
         for field in cls.model_fields.values():
             field.default = None
+            field.default_factory = None
 
         cls.model_rebuild(force=True)
-
 
 
 class User(BaseModel):
@@ -126,28 +127,16 @@ class Application(BaseModel):
     provision_schema: Optional[dict]
     created_at: datetime = Field(default_factory=datetime.now)
 
-    @staticmethod
-    def from_db_record(record: dict):
-        return Application(
-            id=record.id if hasattr(record, "id") else "",
-            workspace_id=record.workspace_id if hasattr(record, "workspace_id") else "",
-            unique_name=record.unique_name if hasattr(record, "unique_name") else "",
-            aliases=record.aliases if hasattr(record, "aliases") else None,
-            extra_instructions=record.extra_instructions
-            if hasattr(record, "extra_instructions")
-            else None,
-            provision_schema=record.provision_schema
-            if hasattr(record, "provision_schema")
-            else None,
-        )
+
+class PartialApplication(Application, OptionalModel):
+    pass
+
 
 class Directory(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     workspace_id: str
     name: str
-    _normalize_name = field_validator("name")(
-        must_be_lowercase_alphanumeric_validator
-    )
+    _normalize_name = field_validator("name")(must_be_lowercase_alphanumeric_validator)
     provisioning_config: Optional[dict] = None
     data_owner_config: Optional[dict] = None
     created_by: str
@@ -156,6 +145,7 @@ class Directory(BaseModel):
 
 class PartialDirectory(Directory, OptionalModel):
     pass
+
 
 class Document(BaseModel):
     uuid: str
