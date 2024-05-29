@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 from fastapi import BackgroundTasks
+from langgraph.checkpoint import BaseCheckpointSaver
 
 from .models import (
     Application,
@@ -72,6 +73,16 @@ class WorkspaceStoreHooks(ABC):
     ):
         pass
 
+    @abstractmethod
+    def post_delete(
+        self,
+        workspace: Workspace,
+        current_user: CurrentUser,
+        background_tasks: BackgroundTasks,
+        tx_context: TransactionContext,
+    ):
+        pass
+
 
 # This is here just because the injector for some reason is not handling Optional injection
 class WorkspaceStoreHooksPass(WorkspaceStoreHooks):
@@ -85,6 +96,15 @@ class WorkspaceStoreHooksPass(WorkspaceStoreHooks):
         workspace.status = WorkspaceStatuses.active
 
     def pre_delete(
+        self,
+        workspace: Workspace,
+        current_user: CurrentUser,
+        background_tasks: BackgroundTasks,
+        tx_context: TransactionContext,
+    ):
+        pass
+
+    def post_delete(
         self,
         workspace: Workspace,
         current_user: CurrentUser,
@@ -146,12 +166,22 @@ class WorkspaceStoreProxy:
                 background_tasks=background_tasks,
                 tx_context=tx_context,
             )
-        return self._store.delete(
+        result = self._store.delete(
             workspace=workspace,
             current_user=current_user,
             background_tasks=background_tasks,
             tx_context=tx_context,
         )
+
+        if self._hooks:
+            self._hooks.post_delete(
+                workspace=workspace,
+                current_user=current_user,
+                background_tasks=background_tasks,
+                tx_context=tx_context,
+            )
+
+        return result
 
 
 class UserStore(ABC):
@@ -295,6 +325,14 @@ class ApplicationStore(ABC):
     ):
         pass
 
+    @abstractmethod
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        pass
+
+
+class CheckpointStore(BaseCheckpointSaver):
     @abstractmethod
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None

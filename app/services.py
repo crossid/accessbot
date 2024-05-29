@@ -1,9 +1,9 @@
 import injector
-from langgraph.checkpoint import BaseCheckpointSaver
 
 from .models_stores import (
     ApplicationStore,
     ChatMessageStore,
+    CheckpointStore,
     ConversationStore,
     UserStore,
     WorkspaceStore,
@@ -60,7 +60,7 @@ def factory_message_store():
 
 
 def factory_checkpointer():
-    return service_registry().get(BaseCheckpointSaver)
+    return service_registry().get(CheckpointStore)
 
 
 def factory_app_store():

@@ -5,7 +5,6 @@ from typing import Any, AsyncIterator, List, Optional
 import sqlalchemy
 from fastapi import BackgroundTasks, HTTPException
 from langchain_core.runnables import ConfigurableFieldSpec, RunnableConfig
-from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.checkpoint.base import (
     Checkpoint,
     CheckpointThreadTs,
@@ -46,6 +45,7 @@ from .models import (
 from .models_stores import (
     ApplicationStore,
     ChatMessageStore,
+    CheckpointStore,
     ConversationStore,
     TransactionContext,
     WorkspaceStore,
@@ -674,7 +674,7 @@ class ApplicationStoreSQL(ApplicationStore):
         return None
 
 
-class CheckpointStoreSQL(BaseCheckpointSaver):
+class CheckpointStoreSQL(CheckpointStore):
     class Config:
         arbitrary_types_allowed = True
 
@@ -857,3 +857,15 @@ class CheckpointStoreSQL(BaseCheckpointSaver):
                 "workspace_id": workspace_id,
             }
         }
+
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        if workspace_id is None:
+            return None
+
+        q = self.checkpoints.delete().where(
+            self.checkpoints.c.workspace_id == workspace_id
+        )
+        tx_context.connection.execute(q)
+        return None

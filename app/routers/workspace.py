@@ -22,11 +22,13 @@ from ..models import JsonPatchDocument, PatchOperation, Workspace
 from ..models_stores import (
     ApplicationStore,
     ChatMessageStore,
+    CheckpointStore,
     ConversationStore,
     WorkspaceStore,
 )
 from ..services import (
     factory_app_store,
+    factory_checkpointer,
     factory_conversation_store,
     factory_message_store,
     factory_vault,
@@ -118,6 +120,7 @@ def wipe_workspace(
     msg_store: ChatMessageStore,
     conversation_store: ConversationStore,
     app_store: ApplicationStore,
+    checkpoint_store: CheckpointStore,
     background_tasks: BackgroundTasks,
     ovstore,
 ):
@@ -127,6 +130,9 @@ def wipe_workspace(
         workspace_id=workspace.id, tx_context=tx_context
     )
     app_store.delete_for_workspace(workspace_id=workspace.id, tx_context=tx_context)
+    checkpoint_store.delete_for_workspace(
+        workspace_id=workspace.id, tx_context=tx_context
+    )
 
     vault: VaultAPI = factory_vault()
     ws_secrets = vault.list_secrets(workspace_id=workspace.id)
@@ -153,6 +159,7 @@ async def delete(
         ConversationStore, Depends(factory_conversation_store)
     ],
     app_store: Annotated[ApplicationStore, Depends(factory_app_store)],
+    checkpoint_store: Annotated[CheckpointStore, Depends(factory_checkpointer)],
     ovstore=Depends(setup_workspace_vstore),
 ):
     if current_user.email != workspace.created_by or workspace_id != workspace.id:
@@ -170,18 +177,31 @@ async def delete(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="workspace not found",
             )
-
-        wipe_workspace(
-            workspace=current_ws,
-            current_user=current_user,
-            tx_context=tx_context,
-            workspace_store=workspace_store,
-            conversation_store=conversation_store,
-            background_tasks=background_tasks,
-            msg_store=msg_store,
-            app_store=app_store,
-            ovstore=ovstore,
-        )
+        try:
+            wipe_workspace(
+                workspace=current_ws,
+                current_user=current_user,
+                tx_context=tx_context,
+                workspace_store=workspace_store,
+                conversation_store=conversation_store,
+                background_tasks=background_tasks,
+                msg_store=msg_store,
+                app_store=app_store,
+                checkpoint_store=checkpoint_store,
+                ovstore=ovstore,
+            )
+        except Exception as e:
+            error_info = str(e.orig)
+            if "foreign key" in error_info.lower():
+                raise HTTPException(
+                    status_code=status.HTTP_412_PRECONDITION_FAILED,
+                    detail="constraint violation.",
+                )
+            else:
+                # For other types of IntegrityErrors, you might want to handle them differently
+                raise HTTPException(
+                    status_code=400, detail="Database operation failed."
+                )
 
 
 class WorkspacePatchOperation(PatchOperation):

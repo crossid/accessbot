@@ -1,11 +1,11 @@
 import injector
-from langgraph.checkpoint import BaseCheckpointSaver
 
 from app.sql import sqlalchemy_engine
 
 from .models_stores import (
     ApplicationStore,
     ChatMessageStore,
+    CheckpointStore,
     ConversationStore,
     WorkspaceStore,
     WorkspaceStoreHooks,
@@ -29,7 +29,7 @@ class MainModule(injector.Module):
         return WorkspaceStoreProxy(store=workspace_store_sql, hooks=hooks)
 
     @injector.provider
-    def provide_checkpoint_store(self) -> BaseCheckpointSaver:
+    def provide_checkpoint_store(self) -> CheckpointStore:
         checkpoint_store_sql = CheckpointStoreSQL(engine=sqlalchemy_engine)
         return checkpoint_store_sql
 
