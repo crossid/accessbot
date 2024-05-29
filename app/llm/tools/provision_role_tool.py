@@ -116,7 +116,6 @@ def create_provision_role_tool(app_id: str, ws_id: str) -> StructuredTool:
         name="approve_roles",
         description="useful for when you need to approve requested roles by data owner",
         args_schema=dynamic_model,
-        return_direct=True,
         handle_tool_error=True,
     )
 
