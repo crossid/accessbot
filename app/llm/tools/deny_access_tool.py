@@ -48,7 +48,6 @@ def create_deny_provision_tool(app_id: str, ws_id: str) -> StructuredTool:
         name="deny_access",
         description="useful for when you need to deny requested access",
         args_schema=DenyProvisionInput,
-        return_direct=True,
         handle_tool_error=True,
     )
 
