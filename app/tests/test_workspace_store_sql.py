@@ -1,14 +1,13 @@
 import unittest
 
-from fastapi import HTTPException
-from sqlalchemy.engine import create_engine
-
 from app.id import generate
 from app.models import Workspace
 from app.models_stores import WorkspaceStoreHooks, WorkspaceStoreProxy
 from app.models_stores_sql import WorkspaceStoreSQL
 from app.sql import SQLAlchemyTransactionContext
 from app.tx import TransactionContext
+from fastapi import HTTPException
+from sqlalchemy.engine import create_engine
 
 
 class TestWorkspaceStoreSQL(unittest.TestCase):
@@ -25,7 +24,12 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_insert_workspace(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme, Inc.", unique_name="acme", created_by=generate(), config={})
+            ws = Workspace(
+                display_name="Acme, Inc.",
+                unique_name="acme",
+                created_by=generate(),
+                config={},
+            )
             pws = self.test_store.insert(
                 ws, tx_context=tx_context, current_user=None, background_tasks=None
             )
@@ -39,7 +43,12 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_insert_workspace_dup(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme, Inc.", unique_name="acme", created_by=generate(), config={})
+            ws = Workspace(
+                display_name="Acme, Inc.",
+                unique_name="acme",
+                created_by=generate(),
+                config={},
+            )
             try:
                 self.test_store.insert(
                     ws, tx_context=tx_context, current_user=None, background_tasks=None
@@ -67,10 +76,24 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
             ):
                 pass
 
+            def post_delete(
+                self,
+                workspace: Workspace,
+                tx_context: TransactionContext,
+                current_user,
+                background_tasks,
+            ):
+                pass
+
         f = WorkspaceStoreProxy(store=self.test_store, hooks=WorkspaceHooks())
 
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme1, Inc.", unique_name="acme1", created_by=generate(), config={})
+            ws = Workspace(
+                display_name="Acme1, Inc.",
+                unique_name="acme1",
+                created_by=generate(),
+                config={},
+            )
             f.insert(
                 ws, tx_context=tx_context, current_user=None, background_tasks=None
             )
@@ -87,7 +110,12 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
 
     def test_tx(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
-            ws = Workspace(display_name="Acme2, Inc.", unique_name="acme2", created_by=generate(), config={})
+            ws = Workspace(
+                display_name="Acme2, Inc.",
+                unique_name="acme2",
+                created_by=generate(),
+                config={},
+            )
             self.test_store.insert(
                 ws, tx_context=tx_context, current_user=None, background_tasks=None
             )
