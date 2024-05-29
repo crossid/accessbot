@@ -242,7 +242,7 @@ class CancelConvResp(BaseModel):
     cancelled_ids: List[str]
 
 
-@router.patch(
+@router.post(
     "/{conversation_id}/.cancel",
     response_model=CancelConvResp,
     response_model_exclude_none=True,
