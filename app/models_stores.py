@@ -195,6 +195,11 @@ class UserStore(ABC):
     def list_workspaces_for_user(self, user_id: str) -> list[str]:
         pass
 
+    # workspace_id: workspace's external_id
+    @abstractmethod
+    def add_user_to_workspace(self, user_id: str, workspace_id: str):
+        pass
+
 
 class ConversationStore(ABC):
     @abstractmethod
