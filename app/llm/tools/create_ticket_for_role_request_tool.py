@@ -102,7 +102,9 @@ async def _request_roles(
             assignee=owner.email,
             previous_conversation=conversation_id,
             context={
-                "communication_channel": ws.config[TICKET_SYSTEM_CONFIG_KEY]["type"]
+                "communication_channel": ws.config.get(
+                    TICKET_SYSTEM_CONFIG_KEY, {}
+                ).get("type", "portal")
             },
         )
         new_do_conv = conv_store.insert(conversation=do_conv, tx_context=tx_context)
