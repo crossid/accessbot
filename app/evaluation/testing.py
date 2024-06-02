@@ -1,10 +1,10 @@
 import argparse
+from typing import List
 
 import injector
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langsmith.evaluation import LangChainStringEvaluator, evaluate
+from langsmith.evaluation import evaluate
 from langsmith.schemas import Example, Run
 
 from app.embeddings import create_embedding
@@ -22,6 +22,7 @@ from app.models_stores import (
     ApplicationStore,
     ChatMessageStore,
     ConversationStore,
+    DirectoryStore,
     UserStore,
     WorkspaceStore,
 )
@@ -35,6 +36,7 @@ from .stores import (
     ApplicationStoreMock,
     ChatMessageStoreMock,
     ConversationStoreMock,
+    DirectoryStoreMock,
     UserStoreMock,
     WorkspaceStoreMock,
 )
@@ -42,12 +44,16 @@ from .stores import (
 load_dotenv()
 
 
+def get_score(required: List[str], prediction: str):
+    score = sum(1 for word in required if word.lower() in prediction) / len(required)
+    return {"key": "must_mention", "score": score}
+
+
 def must_mention(run: Run, example: Example) -> dict:
     prediction = run.outputs.get("output") or ""
-    words_in_prediction = prediction.split()
+    prediction = prediction.lower()
     required = example.outputs.get("must_mention") or []
-    score = sum(1 for word in words_in_prediction if word in required) / len(required)
-    return {"key": "must_mention", "score": score}
+    return get_score(required=required, prediction=prediction)
 
 
 def create_graph_for_test(ws_id, conv_id, retriever):
@@ -59,11 +65,14 @@ def create_graph_for_test(ws_id, conv_id, retriever):
             apps=[
                 Application(
                     id="1",
-                    display_name="fooquery",
-                    aliases=["fquery", "fq"],
+                    unique_name="projects",
+                    aliases=["jira"],
                     workspace_id=ws_id,
-                    extra_instructions="bla bla bla",
-                    provision_schema={},
+                    extra_instructions="Project Access Levels:**Basic User Access**: Allows viewing project details and statuses without the ability to make changes.**Team Member Access**: Permits adding, editing, and commenting on tasks within assigned projects.**Project Manager Access**: Grants capabilities to manage project settings, assign tasks, manage budgets, and generate reports.**Administrator Access**: Provides full control over the project management tool, including creating projects, managing user roles, and setting up integrations.**Audit and Compliance Access**: Allows viewing all project activities, audit logs, and compliance reports to ensure the project adheres to legal and organizational standards.You should try to figure out what access level the user requires, otherwise fallback to `Basic User Access`",
+                    provision_schema={
+                        "project_id": {"description": "the project name"},
+                        "access_level": {"description": "the access level needed"},
+                    },
                 )
             ]
         ),
@@ -89,7 +98,9 @@ def predict_for_ws(ws_id):
                 "workspace_id": ws_id,
             }
         }
-        messages = inputs[MEMORY_KEY]
+
+        messages = [d.get("data") for d in inputs.get("input")]
+
         result = graph.invoke(
             {
                 MEMORY_KEY: messages,
@@ -112,22 +123,22 @@ def prepare_data(run: Run, example: Example):
 
 
 def run_evaluation(ws_id, dataset="default"):
-    eval_llm = ChatOpenAI(model="gpt-4", temperature=0)
+    # eval_llm = ChatOpenAI(model="gpt-4", temperature=0)
     experiment_results = evaluate(
         predict_for_ws(ws_id=ws_id),  # Your AI system
         data=dataset,  # The data to predict and grade over
         evaluators=[
             must_mention,
-            LangChainStringEvaluator(
-                "labeled_criteria",
-                config={
-                    "criteria": {
-                        "usefulness": "The prediction is useful if...",
-                    },
-                    "llm": eval_llm,
-                },
-                prepare_data=prepare_data,
-            ),
+            # LangChainStringEvaluator(
+            #     "labeled_criteria",
+            #     config={
+            #         "criteria": {
+            #             "usefulness": "The prediction is useful if...",
+            #         },
+            #         "llm": eval_llm,
+            #     },
+            #     prepare_data=prepare_data,
+            # ),
         ],  # The evaluators to score the results
         experiment_prefix="testing_information_node",
         metadata={
@@ -152,6 +163,7 @@ class TestModule(injector.Module):
         binder.bind(UserStore, to=UserStoreMock, scope=injector.singleton)
         binder.bind(VaultAPI, to=EnvVarVault, scope=injector.singleton)
         binder.bind(ApplicationStore, to=ApplicationStoreMock, scope=injector.singleton)
+        binder.bind(DirectoryStore, to=DirectoryStoreMock, scope=injector.singleton)
 
 
 def start():

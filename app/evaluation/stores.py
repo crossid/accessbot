@@ -8,6 +8,7 @@ from app.models import (
     ChatMessage,
     Conversation,
     CurrentUser,
+    Directory,
     User,
     Workspace,
 )
@@ -15,6 +16,7 @@ from app.models_stores import (
     ApplicationStore,
     ChatMessageStore,
     ConversationStore,
+    DirectoryStore,
     TransactionContext,
     UserStore,
     WorkspaceStatuses,
@@ -145,11 +147,14 @@ class ChatMessageStoreMock(ChatMessageStore):
 class ApplicationStoreMock(ApplicationStore):
     application = Application(
         id="1",
+        unique_name="projects",
+        aliases=["jira"],
         workspace_id="1",
-        display_name="fooquery",
-        aliases=["fquery", "fq"],
-        extra_instructions="bla bla bla",
-        provision_schema={},
+        extra_instructions="Project Access Levels:**Basic User Access**: Allows viewing project details and statuses without the ability to make changes.**Team Member Access**: Permits adding, editing, and commenting on tasks within assigned projects.**Project Manager Access**: Grants capabilities to manage project settings, assign tasks, manage budgets, and generate reports.**Administrator Access**: Provides full control over the project management tool, including creating projects, managing user roles, and setting up integrations.**Audit and Compliance Access**: Allows viewing all project activities, audit logs, and compliance reports to ensure the project adheres to legal and organizational standards.You should try to figure out what access level the user requires, otherwise fallback to `Basic User Access`",
+        provision_schema={
+            "project_id": {"description": "the project name"},
+            "access_level": {"description": "the access level needed"},
+        },
     )
 
     def list(
@@ -202,4 +207,49 @@ class UserStoreMock(UserStore):
         return []
 
     def add_user_to_workspace(self, user_id: str, workspace_id: str):
+        pass
+
+
+class DirectoryStoreMock(DirectoryStore):
+    dir = Directory(
+        id="1", workspace_id="1", name="projects", created_by=SINGLE_USER_EMAIL
+    )
+
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        tx_context: TransactionContext = None,
+    ) -> list[Application]:
+        return [self.application]
+
+    def get_by_id(
+        self, app_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Application]:
+        return self.application
+
+    def get_by_name(
+        self, app_name: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Application]:
+        return self.application
+
+    def insert(self, app: Application, tx_context: TransactionContext) -> Application:
+        pass
+
+    def delete(
+        self,
+        workspace_id: str,
+        app_id: str,
+        tx_context: TransactionContext = None,
+    ):
+        pass
+
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        pass
+
+    def update(self, **kwargs):
         pass
