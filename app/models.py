@@ -118,6 +118,9 @@ class Conversation(BaseModel):
     messages: Optional[list[ChatMessage]] = Field(
         default=None, description="Messages related to the conversations"
     )
+    summary: Optional[str] = Field(
+        default=None, description="summary of the conversation"
+    )
 
 
 class Application(BaseModel):

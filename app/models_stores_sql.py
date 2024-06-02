@@ -97,6 +97,7 @@ conversation_table = sqlalchemy.Table(
     Column("previous_conversation", String(), nullable=True),
     Column("context", JSON(), nullable=False),
     Column("created_at", DateTime(), nullable=False),
+    Column("summary", String(), nullable=True),
 )
 
 Index("idx_conv_status", conversation_table.c.status)

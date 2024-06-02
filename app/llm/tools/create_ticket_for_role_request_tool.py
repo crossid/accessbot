@@ -69,7 +69,7 @@ async def _request_roles(
     **kwargs,
 ) -> str:
     directory = directory.lower()
-    output = f"requester:{user_email}; directory: {directory}; summary: {conv_summary}"
+    output = f"requester:{user_email}; directory: {directory}; app name: {app_name}; summary: {conv_summary}"
 
     user_store = factory_user_store()
     current_user = user_store.get_by_email(email=user_email)
@@ -135,7 +135,7 @@ async def _request_roles(
 
         checkpoint = empty_checkpoint()
         kwargs_str = "\n".join(f"{key}: {value}" for key, value in kwargs.items())
-        sys_msg = f"requester: {user_email}.\nprevious conversation summary: {conv_summary}.\ndirectory: {directory}\n{kwargs_str}"
+        sys_msg = f"requester: {user_email}.\nprevious conversation summary: {conv_summary}.\ndirectory: {directory}\napp_name: {app_name}\n{kwargs_str}"
         checkpoint["channel_values"] = {
             MEMORY_KEY: [
                 SystemMessage(content=sys_msg),
@@ -157,7 +157,10 @@ async def _request_roles(
         await checkpointer.aput(config, checkpoint, cmetadata)
 
         # update conversation to completed
-        updates: dict[str, Any] = {"status": ConversationStatuses.completed.value}
+        updates: dict[str, Any] = {
+            "status": ConversationStatuses.completed.value,
+            "summary": conv_summary,
+        }
         conv_store.update(
             workspace_id=workspace_id,
             conversation_id=conversation_id,
