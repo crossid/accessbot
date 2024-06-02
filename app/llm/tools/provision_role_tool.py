@@ -1,22 +1,26 @@
 from typing import Any
 
+from app.models import ConversationStatuses, Directory
+from app.services import (
+    factory_app_store,
+    factory_conversation_store,
+    factory_dir_store,
+)
+from app.sql import SQLAlchemyTransactionContext
 from langchain_core.tools import StructuredTool, ToolException
 from pydantic.v1 import BaseModel, Field, create_model
 
-from app.models import ConversationStatuses, Directory, Workspace
-from app.services import factory_app_store, factory_conversation_store, factory_dir_store
-from app.sql import SQLAlchemyTransactionContext
-
-from .consts import PROVISION_CONFIG_KEY
 from .provision.factory import ProvisionerFactory
 
 
 async def provision_role(
-    directory: Directory, workspace_id:str, requester_email: str, **kwargs
+    directory: Directory, workspace_id: str, requester_email: str, **kwargs
 ) -> bool:
     pconfig = directory.provisioning_config
     if pconfig is None:
-        raise ValueError(f"provisioning config is undefined for directory {directory.name}")
+        raise ValueError(
+            f"provisioning config is undefined for directory {directory.name}"
+        )
 
     prov_fact = ProvisionerFactory(
         workspace_id=workspace_id,
@@ -40,7 +44,9 @@ async def _provision_role(
     dir_store = factory_dir_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        dir = dir_store.get_by_name(name=directory, workspace_id=workspace_id, tx_context=tx_context)
+        dir = dir_store.get_by_name(
+            name=directory, workspace_id=workspace_id, tx_context=tx_context
+        )
 
         if dir is not None:
             try:
