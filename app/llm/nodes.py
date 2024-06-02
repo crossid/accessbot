@@ -1,6 +1,5 @@
 import asyncio
 import functools
-import json
 
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
@@ -128,7 +127,6 @@ class IGNOutput(BaseModel):
 
 def entry_point_node(data_context):
     def _epn(state):
-        msgs = []
         agent = create_agent(
             prompt=get_prompt(prompt_id=ENTRY_POINT, data_context=data_context),
             tools=[find_app_extra_inst_tool],
@@ -136,22 +134,18 @@ def entry_point_node(data_context):
             streaming=False,
         )
 
-        result = asyncio.new_event_loop().run_until_complete(agent.ainvoke(state))
+        result = agent.invoke(state)
         output = result["output"]
-        json_string = output.strip("```json\n")
-        try:
-            json_output = json.loads(json_string)
-        except Exception:
+        if not isinstance(output, dict):
             return {
                 "sender": "entry_point",
             }
 
         return {
-            MEMORY_KEY: msgs,
             "sender": "entry_point",
-            APP_ID_KEY: json_output[APP_ID_KEY],
-            APP_NAME_KEY: json_output[APP_NAME_KEY],
-            EXTRA_INSTRUCTIONS_KEY: json_output[EXTRA_INSTRUCTIONS_KEY],
+            APP_ID_KEY: output[APP_ID_KEY],
+            APP_NAME_KEY: output[APP_NAME_KEY],
+            EXTRA_INSTRUCTIONS_KEY: output[EXTRA_INSTRUCTIONS_KEY],
         }
 
     return _epn

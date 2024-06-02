@@ -47,5 +47,6 @@ find_app_extra_inst_tool = StructuredTool.from_function(
     name="find_app",
     description="finds the app name in the messages",
     args_schema=FindAppInput,
+    return_direct=True,
     handle_tool_error=True,
 )

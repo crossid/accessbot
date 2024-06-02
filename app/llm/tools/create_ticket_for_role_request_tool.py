@@ -77,10 +77,13 @@ async def _request_roles(
     dir_store = factory_dir_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         dir = dir_store.get_by_name(
             name=directory, workspace_id=workspace_id, tx_context=tx_context
         )
+        if dir is None:
+            return "use recommender"
+
+        ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
             try:
                 owner = await get_data_owner(
@@ -208,8 +211,8 @@ def create_request_roles_tool(app_id: str, ws_id: str):
     request_roles_tool = StructuredTool.from_function(
         func=_request_roles,
         coroutine=_request_roles,
-        name="request_roles",
-        description="useful for when you need to request roles",
+        name="request_access",
+        description="useful for when you need to request access",
         args_schema=rrt_model,
         return_direct=False,
         handle_tool_error=True,

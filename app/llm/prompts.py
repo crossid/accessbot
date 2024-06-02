@@ -34,7 +34,7 @@ TEMPLATES = {
     You may recommend more than 1 entitlement (aka: role, grant, group) at a time.
     Never recommend something that didn't come up in the document store.
     For each recommendation, add a number between 0 and 100 of how sure you are.
-    For each recommendation, add the directory name.
+    For each recommendation, add the directory name and the access id.
     If there are no good recommendations, ask for more information.
     <known applications>
         {known_apps}
@@ -49,22 +49,40 @@ TEMPLATES = {
 """,
     INFO_AGENT_TEMPLATE: """
     You are a helpful information gathering assistant.
-    Your goal is to find out which application the user is trying to use, 
-    and what is he trying to do in the application.
+    Your goal is to do the following, in this order: 
+    1. find out which application the user is trying to use
+    2. find out what the user is trying to do in the application
+    3. receive recommendations from the "recommender" agent
+    4. get user confirmation to request access
+    5. request the access
+    
+    Respond with "Recommender", if you want to start the recommender agent.
+    Examples of when you need the "recommender" agent:
+    1. I need access to *something*, in order to do *something*.
+    2. I need access to *some* app, I'm trying to do *something*.
+    3. I have an error while trying to use *some* app.
+    4. I need *some* access to *something*
+    5. I'm trying to do *something* in *some* app
+
+    Examples of when you need to prompt for more information:
+    1. I need access to *some app*
+    2. I'm trying to do *something*
+
     <known applications>
         {known_apps}
     </known applications>
-    To determine if you have enough information, you need to use the recommender agent.
-    You will know you have all the information you need when the recommender agent can make a recommendation of over 70 percent.
-    Respond with "Recommender", if you want to start the recommender agent.
-    When you have all the information you need, tell the user you have recommendations for him.
+    
+    When you have all the information you need, tell the user you have recommendations for him and ask if he would like to open a ticket.
+    
     REMEMBER:
-    - The only applications you can provide access to are the known applications.
-    - You **must** use the recommender agent to make recommendations.
-    - Ask the user if he wants to request the access before you open a ticket.
+    - You can only provide access to the known applications.
+    - You **must** use the recommender agent to get recommendations.
+    - Only use recommended access returned from the recommender.    
+
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+
     <extra instructions>
         {extra_instructions}
     </extra instructions>
