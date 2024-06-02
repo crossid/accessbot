@@ -33,11 +33,28 @@ async def provision_role(
     return success
 
 
+def create_summary(
+    conv_summary: str, requester_email: str, app_name: str, directory: str, **kwargs
+):
+    kwargs_str = "\n".join(f"{key}: {value}" for key, value in kwargs.items())
+    summary = f"""
+        {conv_summary};
+        by: {requester_email};
+        app: {app_name};
+        directory: {directory};
+        access: {kwargs_str}
+    """
+
+    return summary
+
+
 async def _provision_role(
+    conv_summary: str,
     conversation_id: str,
     user_email: str,
     requester_email: str,
     workspace_id: str,
+    app_name: str,
     directory: str,
     **kwargs,
 ) -> str:
@@ -63,7 +80,16 @@ async def _provision_role(
                 raise ToolException(f"failed to provision role: {err}")
 
             # update current request to approved
-            updates: dict[str, Any] = {"status": ConversationStatuses.approved.value}
+            updates: dict[str, Any] = {
+                "status": ConversationStatuses.approved.value,
+                "summary": create_summary(
+                    conv_summary=conv_summary,
+                    requester_email=requester_email,
+                    app_name=app_name,
+                    directory=directory,
+                    **kwargs,
+                ),
+            }
             conv_store.update(
                 workspace_id=workspace_id,
                 conversation_id=conversation_id,
@@ -78,6 +104,9 @@ async def _provision_role(
 
 
 class ApproveRolesInput(BaseModel):
+    conv_summary: str = Field(
+        description="should be a summary of the conversation with the user"
+    )
     requester_email: str = Field(
         description="the email of the user who requested the role"
     )
@@ -86,6 +115,7 @@ class ApproveRolesInput(BaseModel):
         description="the email of the current user in the conversation"
     )
     workspace_id: str = Field(description="workspace id of the current request")
+    app_name: str = Field(description="name of the application the user needs access")
     directory: str = Field(description="directory related to the role")
 
 

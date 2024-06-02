@@ -13,12 +13,18 @@ async def _deny_provision(
     user_email: str,
     requester_email: str,
     workspace_id: str,
-    reason: str,
+    reason: Optional[str],
 ):
     conv_store = factory_conversation_store()
+    ad_reason = "no reason provided"
+    if reason is not None and reason != "":
+        ad_reason = reason
     with SQLAlchemyTransactionContext().manage() as tx_context:
         # update current request to denied
-        updates: dict[str, Any] = {"status": ConversationStatuses.denied.value}
+        updates: dict[str, Any] = {
+            "status": ConversationStatuses.denied.value,
+            "summary": f"access requested by {requester_email} was denied because: {ad_reason} ",
+        }
         conv_store.update(
             workspace_id=workspace_id,
             conversation_id=conversation_id,
