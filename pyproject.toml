@@ -24,6 +24,7 @@ injector = "^0.21.0"
 pgvector = "^0.2.5"
 jsonpatch = "^1.33"
 langgraph = "0.0.30"
+slack-bolt = "^1.18.1"
 
 [tool.poetry.group.test.dependencies]
 ruff = "^0.2.2"
@@ -32,10 +33,6 @@ sentence-transformers = "^2.4.0"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.2"
-
-
-[tool.poetry.group.messaging.dependencies]
-slack-bolt = "^1.18.1"
 
 [tool.poetry.scripts]
 evaluation = "app.evaluation.testing:start"
