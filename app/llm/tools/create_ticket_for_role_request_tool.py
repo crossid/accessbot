@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import StructuredTool, ToolException
-from langgraph.checkpoint.base import empty_checkpoint
+from langgraph.checkpoint.base import CheckpointMetadata, empty_checkpoint
 from pydantic.v1 import BaseModel, Field, create_model
 
 from app.llm.prompts import MEMORY_KEY
@@ -78,7 +78,9 @@ async def _request_roles(
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
-        dir = dir_store.get_by_name(name=directory, workspace_id=workspace_id, tx_context=tx_context)
+        dir = dir_store.get_by_name(
+            name=directory, workspace_id=workspace_id, tx_context=tx_context
+        )
         if ws is not None:
             try:
                 owner = await get_data_owner(
@@ -139,6 +141,8 @@ async def _request_roles(
                 ),
             ]
         }
+        cmetadata = CheckpointMetadata()
+        cmetadata["source"] = "update"
 
         checkpointer = factory_checkpointer()
         config = {
@@ -147,7 +151,7 @@ async def _request_roles(
                 "workspace_id": new_do_conv.workspace_id,
             }
         }
-        await checkpointer.aput(config, checkpoint)
+        await checkpointer.aput(config, checkpoint, cmetadata)
 
         # update conversation to completed
         updates: dict[str, Any] = {"status": ConversationStatuses.completed.value}

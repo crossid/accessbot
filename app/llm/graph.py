@@ -2,18 +2,14 @@ import json
 import operator
 from typing import Annotated, Any, Callable, Dict, Optional, Sequence, TypedDict
 
-# from langchain.agents.agent_toolkits import create_retriever_tool
 from langchain.prompts.prompt import PromptTemplate
-from langchain_core.messages import (
-    BaseMessage,
-    FunctionMessage,
-)
+from langchain_core.messages import BaseMessage, ToolMessage
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.base import RunnableLike
 from langchain_core.tools import BaseTool
 from langgraph.checkpoint import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
-from langgraph.prebuilt.tool_executor import ToolExecutor, ToolInvocation
+from langgraph.prebuilt import ToolExecutor, ToolInvocation
 
 from app.llm.tools.create_ticket_for_role_request_tool import create_request_roles_tool
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
@@ -84,12 +80,13 @@ def create_tool_node(tools, ws_id):
         )
         # We call the tool_executor and get back a response
         response = tool_executor.invoke(action)
-        # We use the response to create a FunctionMessage
-        function_message = FunctionMessage(
+        # We use the response to create a ToolMessage
+        tool_message = ToolMessage(
             content=f"{tool_name} response: {str(response)}", name=action.tool
         )
+
         # We return a list, because this will get added to the existing list
-        return {"messages": [function_message]}
+        return {"messages": [tool_message]}
 
     return tool_node
 

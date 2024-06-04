@@ -7,8 +7,6 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
 from langchain_core.pydantic_v1 import BaseModel, Field
-
-# from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStoreRetriever
 
 
@@ -35,7 +33,7 @@ def _get_relevant_documents(
     callbacks: Callbacks = None,
 ) -> str:
     retriever.search_kwargs.update({"filter": {"app": {"contains": app_name.lower()}}})
-    docs = retriever.get_relevant_documents(query, callbacks=callbacks)
+    docs = retriever.invoke(query, config={"callbacks": callbacks})
     return document_separator.join(
         format_document(doc, document_prompt) for doc in docs
     )
@@ -49,8 +47,8 @@ async def _aget_relevant_documents(
     document_separator: str,
     callbacks: Callbacks = None,
 ) -> str:
-    retriever.search_kwargs.update({"filter": {"app": {"contains": app_name}}})
-    docs = await retriever.aget_relevant_documents(query, callbacks=callbacks)
+    retriever.search_kwargs.update({"filter": {"app": {"contains": app_name.lower()}}})
+    docs = await retriever.ainvoke(query, config={"callbacks": callbacks})
     formatted_docs = [format_document(doc, document_prompt) for doc in docs]
     return document_separator.join(formatted_docs)
 
