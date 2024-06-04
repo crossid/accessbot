@@ -1,4 +1,5 @@
 from app.llm.tools.consts import EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
+from app.llm.tools.create_ticket.webhook import WebhookImpl
 from app.models import Workspace
 from app.vault_utils import resolve_ws_config_secrets
 
@@ -24,6 +25,8 @@ def TicketSystemFactory(ws: Workspace) -> TicketInterface:
             return JiraTicketImpl(**resolved_config)
         case "slack":
             return SlackImpl(**resolved_config)
+        case "webhook":
+            return WebhookImpl(**resolved_config)
         case "_mock_":
             return MockImpl(**resolved_config)
 
