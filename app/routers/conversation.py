@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -6,7 +7,6 @@ from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ValidationError
 from starlette import status
-from zmq import Enum
 
 from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
