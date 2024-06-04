@@ -36,3 +36,7 @@ ipykernel = "^6.29.2"
 
 [tool.poetry.scripts]
 evaluation = "app.evaluation.testing:start"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
