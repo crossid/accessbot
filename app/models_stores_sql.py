@@ -1,4 +1,3 @@
-import pickle
 from datetime import datetime
 from typing import Any, AsyncIterator, List, Optional
 
@@ -7,7 +6,8 @@ from fastapi import BackgroundTasks, HTTPException
 from langchain_core.runnables import ConfigurableFieldSpec, RunnableConfig
 from langgraph.checkpoint.base import (
     Checkpoint,
-    CheckpointThreadTs,
+    CheckpointMetadata,
+    CheckpointThreadId,
     CheckpointTuple,
 )
 from pydantic_core import ErrorDetails
@@ -134,7 +134,7 @@ checkpoint_table = sqlalchemy.Table(
         nullable=False,
     ),
     Column("checkpoint", LargeBinary()),
-    Column("metadata", JSON()),
+    Column("metadata", LargeBinary()),
 )
 
 directory_table = sqlalchemy.Table(
@@ -853,20 +853,13 @@ class CheckpointStoreSQL(CheckpointStore):
         self.metadata.create_all(engine)
 
     def __init__(self, engine: Engine):
-        super().__init__(engine=engine)
+        super().__init__()
         self.engine = engine
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         return [
-            ConfigurableFieldSpec(
-                id="thread_id",
-                annotation=Optional[str],
-                name="Thread ID",
-                description=None,
-                default=None,
-                is_shared=True,
-            ),
+            CheckpointThreadId,
             ConfigurableFieldSpec(
                 id="workspace_id",
                 annotation=Optional[str],
@@ -875,7 +868,6 @@ class CheckpointStoreSQL(CheckpointStore):
                 default=None,
                 is_shared=True,
             ),
-            CheckpointThreadTs,
         ]
 
     def get(self, config: RunnableConfig) -> Optional[Checkpoint]:
@@ -908,8 +900,10 @@ class CheckpointStoreSQL(CheckpointStore):
                             "workspace_id": workspace_id,
                         }
                     },
-                    pickle.loads(rdict["checkpoint"]),
-                    # rdict["metadata"],
+                    self.serde.loads(rdict["checkpoint"]),
+                    self.serde.loads(rdict["metadata"])
+                    if rdict["metadata"] is not None
+                    else {},
                     {
                         "configurable": {
                             "thread_id": thread_id,
@@ -945,8 +939,10 @@ class CheckpointStoreSQL(CheckpointStore):
                     vdict = value._asdict()
                     return CheckpointTuple(
                         config,
-                        pickle.loads(vdict["checkpoint"]),
-                        # vdict["metadata"],
+                        self.serde.loads(vdict["checkpoint"]),
+                        self.serde.loads(vdict["metadata"])
+                        if vdict["metadata"] is not None
+                        else {},
                         {
                             "configurable": {
                                 "thread_id": thread_id,
@@ -976,8 +972,10 @@ class CheckpointStoreSQL(CheckpointStore):
                                 "workspace_id": workspace_id,
                             }
                         },
-                        pickle.loads(vdict["checkpoint"]),
-                        # vdict["metadata"],
+                        self.serde.loads(vdict["checkpoint"]),
+                        self.serde.loads(vdict["metadata"])
+                        if vdict["metadata"] is not None
+                        else {},
                         {
                             "configurable": {
                                 "thread_id": thread_id,
@@ -993,7 +991,7 @@ class CheckpointStoreSQL(CheckpointStore):
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
-        # metadata: CheckpointMetadata,
+        metadata: CheckpointMetadata,
     ) -> None:
         thread_id = config["configurable"]["thread_id"]
         workspace_id = config["configurable"]["workspace_id"]
@@ -1005,8 +1003,8 @@ class CheckpointStoreSQL(CheckpointStore):
                 "parent_ts": datetime.fromisoformat(checkpoint.get("parent_ts"))
                 if checkpoint.get("parent_ts")
                 else None,
-                "checkpoint": pickle.dumps(checkpoint),
-                # "metadata": metadata,
+                "checkpoint": self.serde.dumps(checkpoint),
+                "metadata": self.serde.dumps(metadata),
             }
 
             conn.execute(self.checkpoints.insert(), record)

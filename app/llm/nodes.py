@@ -2,7 +2,7 @@ import asyncio
 import functools
 import json
 
-from langchain_core.messages import FunctionMessage, HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
@@ -36,7 +36,7 @@ def agent_node(state, agent_creator, name):
     agent = agent_creator(state)
     result = asyncio.new_event_loop().run_until_complete(agent.ainvoke(state))
     # We convert the agent output into a format that is suitable to append to the global state
-    if isinstance(result, FunctionMessage):
+    if isinstance(result, ToolMessage):
         pass
     else:
         result = HumanMessage(content=result["output"], name=name)
