@@ -189,14 +189,16 @@ async def delete(
                 ovstore=ovstore,
             )
         except Exception as e:
-            error_info = str(e.orig)
-            if "foreign key" in error_info.lower():
-                raise HTTPException(
-                    status_code=status.HTTP_412_PRECONDITION_FAILED,
-                    detail="constraint violation.",
-                )
+            if hasattr(e, "orig") and e.orig is not None:
+                error_info = str(e.orig)
+                if "foreign key" in error_info.lower():
+                    raise HTTPException(
+                        status_code=status.HTTP_412_PRECONDITION_FAILED,
+                        detail="constraint violation.",
+                    )
             else:
                 # For other types of IntegrityErrors, you might want to handle them differently
+                logger.exception("Failed to delete workspace", exc_info=e)
                 raise HTTPException(
                     status_code=400, detail="Database operation failed."
                 )
