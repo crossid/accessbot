@@ -53,7 +53,7 @@ class CurrentUser(User):
 class WorkspaceStatuses(enum.Enum):
     creating = "creating"
     active = "active"
-    failed = "failed"
+    error = "error"
 
 
 class Workspace(BaseModel):
