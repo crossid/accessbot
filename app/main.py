@@ -1,13 +1,14 @@
 import logging
 from contextlib import asynccontextmanager
 
-from app.routers import directories
 import injector
 from fastapi import APIRouter, FastAPI
 
+from app.routers import directories
+
 from .injector_extensions_module import ExtensionModule
 from .injector_main_module import MainModule
-from .routers import application, content, conversation, internal, workspace
+from .routers import application, content, conversation, internal, rule, workspace
 from .services import set_service_registry
 from .slack.store_sql import init_sql
 from .sql import create_tables
@@ -38,6 +39,7 @@ api.include_router(conversation.router)
 api.include_router(content.router)
 api.include_router(directories.router)
 api.include_router(application.router)
+api.include_router(rule.router)
 app.include_router(api)
 
 # extensions
