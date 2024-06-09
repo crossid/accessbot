@@ -32,6 +32,8 @@ class Permissions(Enum):
     UPDATE_SECRETS = "update:secrets"
     DELETE_SECRETS = "delete:secrets"
     READ_SECRETS = "read:secrets"
+    READ_RULES = "read:rules"
+    UPDATE_RULES = "update:rules"
 
 
 class AdminOrScopes:
