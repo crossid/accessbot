@@ -16,6 +16,7 @@ RECOMMENDATION_TEMPLATE = "RECOMMENDATION_TEMPLATE"
 INFO_AGENT_TEMPLATE = "INFO_AGENT_TEMPLATE"
 DATA_OWNER_TEMPLATE = "DATA_OWNER_TEMPLATE"
 ENTRY_POINT = "ENTRY_POINT"
+RULE_ENGINE_TEMPLATE = "RULE_ENGINE_TEMPLATE"
 
 TEMPLATES = {
     ENTRY_POINT: """
@@ -98,6 +99,24 @@ TEMPLATES = {
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+""",
+    RULE_ENGINE_TEMPLATE: """
+    You are a rule engine assistant.
+    Your goal is to determine if any of the provided rules are correct.
+    <approve_rules>
+        {approve_rules}
+    </approve_rules>
+    <deny_rules>
+        {deny_rules}
+    </deny_rules>
+
+    Default to "deny"
+  
+    Answer with a dictionary containing the fields:
+    - final_answer: should be approve or deny
+    - rules: list of from approve_rules or deny_rules that match
+    - why: explanation for your decision
+    - final_decision_rule: the rule that made you take your final decision
 """,
 }
 
