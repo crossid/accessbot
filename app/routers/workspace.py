@@ -2,13 +2,15 @@ import logging
 from typing import Annotated, Optional
 
 import jsonpatch
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from pydantic import BaseModel, HttpUrl, ValidationError
+
+from app.authz import Permissions, is_admin_or_has_scopes
 from app.llm.tools.consts import (
     DATAOWNER_CONFIG_KEY,
     EMAIL_CONFIG_KEY,
     TICKET_SYSTEM_CONFIG_KEY,
 )
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel, HttpUrl, ValidationError
 
 from ..auth import (
     CurrentUser,
@@ -63,6 +65,7 @@ def create(
     background_tasks: BackgroundTasks,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_WORKSPACES.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -159,7 +162,9 @@ async def delete(
     app_store: Annotated[ApplicationStore, Depends(factory_app_store)],
     checkpoint_store: Annotated[CheckpointStore, Depends(factory_checkpointer)],
     ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.DELETE_WORKSPACES.value])),
 ):
+    # Do we still need this check?
     if current_user.email != workspace.created_by or workspace_id != workspace.id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -228,6 +233,7 @@ async def update_org(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     workspace_store: Annotated[WorkspaceStore, Depends(get_service(WorkspaceStore))],
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_WORKSPACES.value])),
 ):
     try:
         with SQLAlchemyTransactionContext().manage() as tx_context:

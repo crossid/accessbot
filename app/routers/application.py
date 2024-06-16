@@ -5,6 +5,8 @@ import jsonpatch
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 
+from app.authz import Permissions, is_admin_or_has_scopes
+
 from ..auth import get_current_workspace
 from ..models import (
     Application,
@@ -43,6 +45,7 @@ def create(
     body: CreateApplicationBody,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     application_store: ApplicationStore = Depends(get_service(ApplicationStore)),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_APPLICATIONS.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -81,6 +84,7 @@ def get(
     application_id: str,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     application_store: ApplicationStore = Depends(get_service(ApplicationStore)),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_APPLICATIONS.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         app = application_store.get_by_id(
@@ -98,6 +102,7 @@ async def delete(
     application_store: Annotated[
         ApplicationStore, Depends(get_service(ApplicationStore))
     ],
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.DELETE_APPLICATIONS.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         application_store.delete(
@@ -126,6 +131,7 @@ async def update_application(
     application_store: Annotated[
         ApplicationStore, Depends(get_service(ApplicationStore))
     ],
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_APPLICATIONS.value])),
 ):
     try:
         with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -157,6 +163,7 @@ async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     list_params: dict = Depends(pagination_params),
     app_store: ApplicationStore = Depends(factory_app_store),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_APPLICATIONS.value])),
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)
