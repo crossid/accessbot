@@ -34,9 +34,11 @@ class User(BaseModel):
 
 class CurrentUser(User):
     workspace_id: Optional[str] = None
+    scopes: Optional[List[str]] = None
 
     @staticmethod
     def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
+        scopes = decoded_access_token.get("scope", "").split(" ")
         self = CurrentUser(
             id=decoded_access_token["sub"],
             email=userinfo["email"],
@@ -45,6 +47,7 @@ class CurrentUser(User):
             workspace_id=decoded_access_token.get("org_id")
             or decoded_access_token.get("ext", {}).get("org_id")
             or None,
+            scopes=scopes,
         )
 
         return self

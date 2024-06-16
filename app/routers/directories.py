@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 from pydantic_core import ErrorDetails
 
+from app.authz import Permissions, is_admin_or_has_scopes
 from app.models_stores_sql import PartialDirectory
 
 from ..auth import get_current_active_user, get_current_workspace
@@ -45,6 +46,7 @@ def create(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     directory_store: DirectoryStore = Depends(get_service(DirectoryStore)),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_DIRECTORIES.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -88,6 +90,7 @@ def get(
     directory_id: str,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     directory_store: DirectoryStore = Depends(get_service(DirectoryStore)),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_DIRECTORIES.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         dir = directory_store.get_by_id(
@@ -103,6 +106,7 @@ async def delete(
     directory_id: str,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.DELETE_DIRECTORIES.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         directory_store.delete(
@@ -129,6 +133,7 @@ async def update_directory(
     directory_id: str,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_DIRECTORIES.value])),
 ):
     try:
         with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -162,6 +167,7 @@ async def list(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
     list_params: dict = Depends(pagination_params),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_DIRECTORIES.value])),
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)

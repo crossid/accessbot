@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, List, Optional
 
 import jwt
 import requests
@@ -101,7 +101,8 @@ class OAuth2Impl(AuthAPI):
     def get_current_user(self, request: Request, decoded_access_token: dict[str, Any]):
         access_token = self._get_token_from_request(request)
         user = self.fetch_userinfo_by_access_token(access_token)
-        return CurrentUser.from_oauth2(user, decoded_access_token)
+        current_user = CurrentUser.from_oauth2(user, decoded_access_token)
+        return current_user
 
 
 # factory method for AuthAPI
@@ -117,9 +118,9 @@ def get_current_active_user(request: Request) -> Optional[CurrentUser]:
         decoded_token = auth_api.authenticate(request)
         return auth_api.get_current_user(request, decoded_token)
     except Exception as e:
-        log.info("Failed to authenticate: %s", e)
+        log.info("Failed to authenticate: %s", str(e))
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Athenticated"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authenticated"
         )
 
 

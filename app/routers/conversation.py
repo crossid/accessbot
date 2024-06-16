@@ -8,6 +8,8 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ValidationError
 from starlette import status
 
+from app.authz import AdminOrScopes, Permissions, is_admin_or_has_scopes
+
 from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
     add_messages,
@@ -64,6 +66,7 @@ def create(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])),
 ):
     workspace_id = workspace.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -87,15 +90,20 @@ class IDType(str, Enum):
 
 
 @router.get(
-    "/{conversation_id}", response_model=Conversation, response_model_exclude_none=True
+    "/{conversation_id}",
+    response_model=Conversation,
+    response_model_exclude_none=True,
+    dependencies=[],
 )
 def get(
     conversation_id,
-    # current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     id_type: IDType = IDType.internal,
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     links: List[str] = Query(None),
+    admin_or_scope: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.READ_CONVERSATIONS.value])
+    ),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -114,11 +122,22 @@ def get(
                     links=links,
                     tx_context=tx_context,
                 )
+
             if conv is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="conversation not found",
                 )
+
+            if (
+                admin_or_scope.is_admin is not True
+                and conv.assignee != admin_or_scope.current_user_email
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="not conversation owner",
+                )
+
             return conv
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
@@ -135,7 +154,11 @@ def list(
     list_params: dict = Depends(pagination_params),
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     links: List[str] = Query(None),
+    admin_or_scope: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.READ_CONVERSATIONS.value])
+    ),
 ):
+    filters = {} if admin_or_scope.is_admin else {"assignee": current_user.email}
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             items, count = conversation_store.list(
@@ -144,7 +167,7 @@ def list(
                 links=links,
                 limit=list_params["limit"],
                 offset=list_params["offset"],
-                filters={"assignee": current_user.email},
+                filters=filters,
             )
             return ConversationList(items=items, offset=0, total=count)
         except ValidationError as e:
@@ -168,6 +191,9 @@ async def conversation(
     workspace: Annotated[Workspace | None, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
     message_store: ChatMessageStore = Depends(factory_message_store),
+    admin_or_scope: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])
+    ),
 ):
     workspace_id = workspace.id
 
@@ -196,6 +222,15 @@ async def conversation(
         if ar is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
+            )
+
+        if (
+            admin_or_scope.is_admin is not True
+            and ar.assignee != admin_or_scope.current_user_email
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="not conversation owner",
             )
 
         app_store = factory_app_store()
@@ -251,6 +286,9 @@ def cancel_conv(
     conversation_id,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
+    admin_or_scope: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])
+    ),
 ):
     wid = workspace.id
     cancelled_ids = []
@@ -258,6 +296,15 @@ def cancel_conv(
         conv = conversation_store.get_by_id(
             workspace_id=wid, conversation_id=conversation_id, tx_context=tx_context
         )
+        if (
+            admin_or_scope.is_admin is not True
+            and conv.assignee != admin_or_scope.current_user_email
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="not conversation owner",
+            )
+
         if conv.status != ConversationStatuses.active:
             raise HTTPException(
                 detail="cannot cancel non active conversation",

@@ -5,6 +5,7 @@ from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ValidationError
 
+from app.authz import Permissions, is_admin_or_has_scopes
 from app.models import Document, PaginatedListBase, Workspace
 from app.services import pagination_params
 from app.sql import SQLAlchemyTransactionContext
@@ -58,7 +59,11 @@ def prepare_metadata_ids_content(docs: List[Doc]):
 
 
 @router.put("", response_model=AddContentResponse)
-async def update(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
+async def update(
+    body: AddContentBody,
+    ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONTENT.value])),
+):
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
     try:
         delete_ids(ovstore=ovstore, ids=ids)
@@ -75,7 +80,11 @@ async def update(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
 
 
 @router.post("", response_model=AddContentResponse)
-async def add(body: AddContentBody, ovstore=Depends(setup_workspace_vstore)):
+async def add(
+    body: AddContentBody,
+    ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONTENT.value])),
+):
     texts, metadata, ids = prepare_metadata_ids_content(body.docs)
     inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
     # convert ids to strings (SQLite returns int)
@@ -88,7 +97,11 @@ class RemoveContentBody(BaseModel):
 
 
 @router.post("/.delete", status_code=status.HTTP_204_NO_CONTENT)
-async def remove(body: RemoveContentBody, ovstore=Depends(setup_workspace_vstore)):
+async def remove(
+    body: RemoveContentBody,
+    ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.DELETE_CONTENT.value])),
+):
     try:
         delete_ids(ovstore=ovstore, ids=body.ids)
     except NotImplementedError:
@@ -123,6 +136,7 @@ async def get(
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     projection: List[str] | None = Query(None),
     ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_CONTENT.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
@@ -151,6 +165,7 @@ async def list(
     list_params: dict = Depends(pagination_params),
     projection: List[str] | None = Query(None),
     ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_CONTENT.value])),
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)
