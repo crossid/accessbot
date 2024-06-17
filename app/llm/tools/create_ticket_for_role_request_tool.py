@@ -86,14 +86,15 @@ async def _request_roles(
         dir = dir_store.get_by_name(
             name=directory, workspace_id=workspace_id, tx_context=tx_context
         )
-        app = app_store.get_by_name(
-            app_name=app_name, workspace_id=workspace_id, tx_context=tx_context
-        )
+
         if dir is None:
             return "use recommender"
 
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
+            app = app_store.get_by_name(
+                app_name=app_name, workspace_id=workspace_id, tx_context=tx_context
+            )
             answer = should_auto_approve(
                 ws=ws, dir=dir, app=app, user_email=user_email, **kwargs
             )
