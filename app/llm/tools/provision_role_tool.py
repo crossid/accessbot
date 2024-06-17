@@ -1,5 +1,8 @@
 from typing import Any
 
+from langchain_core.tools import StructuredTool, ToolException
+from pydantic.v1 import BaseModel, Field, create_model
+
 from app.models import ConversationStatuses, Directory
 from app.services import (
     factory_app_store,
@@ -7,8 +10,6 @@ from app.services import (
     factory_dir_store,
 )
 from app.sql import SQLAlchemyTransactionContext
-from langchain_core.tools import StructuredTool, ToolException
-from pydantic.v1 import BaseModel, Field, create_model
 
 from .provision.factory import ProvisionerFactory
 
@@ -73,7 +74,7 @@ async def _provision_role(
         else:
             raise ToolException(f"unknown directory: {directory}")
 
-    return "role approve completed"
+    return f"role approved for {requester_email} successfully"
 
 
 class ApproveRolesInput(BaseModel):

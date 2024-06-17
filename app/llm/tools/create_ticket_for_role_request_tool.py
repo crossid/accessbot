@@ -121,7 +121,7 @@ async def _request_roles(
             {output}.\n
             Here are our recommendations:\n
             {kwargs}.\n
-            Would you like to approve it any of the above recommendations?"""
+            Would you like to approve any of the above recommendations?"""
 
         message_store = factory_message_store()
         chat_history = LangchainChatMessageHistory(
