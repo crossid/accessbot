@@ -95,22 +95,26 @@ async def _request_roles(
             app = app_store.get_by_name(
                 app_name=app_name, workspace_id=workspace_id, tx_context=tx_context
             )
-            answer = should_auto_approve(
-                ws=ws, dir=dir, app=app, user_email=user_email, **kwargs
-            )
-            if answer.final_answer == FinalAnswer.approve:
-                logger.debug(f"access approved automatically because: {answer.why}")
-                success = await provision_role(
-                    directory=dir,
-                    workspace_id=ws.id,
-                    requester_email=user_email,
-                    **kwargs,
-                )
-                if success:
-                    return "access approved automatically"
-                else:
-                    raise ValueError("failed to provision access for unknown reason")
+
             try:
+                answer = await should_auto_approve(
+                    ws=ws, dir=dir, app=app, user_email=user_email, **kwargs
+                )
+                if answer.final_answer == FinalAnswer.approve:
+                    logger.debug(f"access approved automatically because: {answer.why}")
+                    success = await provision_role(
+                        directory=dir,
+                        workspace_id=ws.id,
+                        requester_email=user_email,
+                        **kwargs,
+                    )
+                    if success:
+                        return "access approved automatically"
+                    else:
+                        raise ValueError(
+                            "failed to provision access for unknown reason"
+                        )
+
                 owner = await get_data_owner(
                     ws=ws, app_name=app_name, directory=dir, **kwargs
                 )

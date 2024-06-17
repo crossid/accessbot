@@ -8,4 +8,4 @@ class MockImpl(AccessDataInterface):
         pass
 
     async def get_access_data(self, app_name: str, **kwargs) -> dict[str, Any]:
-        return ({"sensitivity": 5, "description": "grants admin access"},)
+        return {"sensitivity": 5, "description": "grants read and write access"}

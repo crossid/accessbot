@@ -1,5 +1,5 @@
 from app.llm.tools.access_data.iface import AccessDataInterface
-from app.llm.tools.provision.mock import MockImpl
+from app.llm.tools.access_data.mock import MockImpl
 from app.models import Directory, Workspace
 from app.vault_utils import resolve_ws_config_secrets
 

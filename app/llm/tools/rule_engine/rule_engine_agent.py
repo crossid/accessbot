@@ -2,10 +2,10 @@ import enum
 from typing import List
 
 from langchain_core.messages import HumanMessage
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from app.llm.agents import create_agent
-from app.llm.prompts import MEMORY_KEY
+from app.llm.prompts import MEMORY_KEY, RULE_ENGINE_TEMPLATE, get_prompt
 from app.llm.tools.rule_engine.rule_engine_relevant_data import (
     create_relevant_data_tool,
 )
@@ -28,26 +28,6 @@ class RulesAnswer(BaseModel):
     final_decision_rule: str = Field(
         description="the rule that made you take your final decision"
     )
-
-
-prompt_template = """
-  You are a rule engine assistant.
-  Your goal is to determine if any of the provided rules are correct.
-  <approve_rules>
-    {approve_rules}
-  </approve_rules>
-  <deny_rules>
-    {deny_rules}
-  </deny_rules>
-
-  Default to "deny"
-  
-  Answer with a dictionary containing the fields:
-    - final_answer: should be approve or deny
-    - rules: list of from approve_rules or deny_rules that match
-    - why: explanation for your decision
-    - final_decision_rule: the rule that made you take your final decision
-"""
 
 
 # engine is here for easier testing
@@ -89,7 +69,23 @@ def rules_to_prompt_str(rules: dict[str, List[Rule]]) -> dict[str, str]:
     return {"approve_rules": approve_rules_str, "deny_rules": deny_rules_str}
 
 
-def should_auto_approve(
+def create_msg(
+    ws: Workspace, app: Application, dir: Directory, user_email: str, **kwargs
+) -> str:
+    kwargs_str = "\n".join(f"{key}: {value};" for key, value in kwargs.items())
+    content = f"""
+      workspace_id: {ws.id};
+      app_name: {app.unique_name};
+      app_id: {app.id};
+      directory_name: {dir.name};
+      directory_id: {dir.id};
+      {kwargs_str}
+    """
+
+    return content
+
+
+async def should_auto_approve(
     ws: Workspace, dir: Directory, app: Application, user_email: str, **kwargs
 ) -> RulesAnswer:
     # get rules
@@ -104,22 +100,19 @@ def should_auto_approve(
                 why="no rules defined for this ws/dir/app",
                 final_decision_rule="",
             )
+
     # create agent
-    prompt = prompt_template.format_map(rules_to_prompt_str(rules))
+    data_ctx = rules_to_prompt_str(rules)
+    prompt = get_prompt(prompt_id=RULE_ENGINE_TEMPLATE, data_context=data_ctx)
     agent = create_agent(
         prompt=prompt,
         tools=[create_relevant_data_tool(app_id=app.id, ws_id=ws.id)],
         name="rule_engine",
         streaming=False,
     )
+
     # run agent
-    kwargs_str = "\n".join(f"{key}: {value};" for key, value in kwargs.items())
-    content = f"""
-      workspace_id: {ws.id};
-      app_name: {app.unique_name};
-      directory_name: {dir.name};
-      user_email: {user_email};
-      {kwargs_str}
-    """
-    answer = agent.invoke(input={MEMORY_KEY: [HumanMessage(content=content)]})
-    return answer
+    content = create_msg(ws=ws, dir=dir, app=app, user_email=user_email, **kwargs)
+    answer = await agent.ainvoke(input={MEMORY_KEY: [HumanMessage(content=content)]})
+    ranswer = RulesAnswer.model_validate_json(answer["output"])
+    return ranswer
