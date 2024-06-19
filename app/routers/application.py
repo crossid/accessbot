@@ -59,7 +59,9 @@ def create(
             )
             return papp
         except ValidationError as e:
-            raise HTTPException(status_code=422, detail=e.json())
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.json()
+            )
         except HTTPException as e:
             raise e
         except Exception as e:
@@ -98,15 +100,6 @@ async def delete(
     ],
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
-        app = application_store.get_by_id(
-            app_id=application_id, workspace_id=workspace.id, tx_context=tx_context
-        )
-        if app is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Application not found",
-            )
-
         application_store.delete(
             app_id=application_id,
             workspace_id=workspace.id,
