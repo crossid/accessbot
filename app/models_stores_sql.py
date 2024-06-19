@@ -10,7 +10,6 @@ from langgraph.checkpoint.base import (
     CheckpointThreadId,
     CheckpointTuple,
 )
-from pydantic_core import ErrorDetails
 from sqlalchemy import (
     JSON,
     TIMESTAMP,
@@ -232,25 +231,11 @@ class WorkspaceStoreSQL(WorkspaceStore):
         background_tasks: BackgroundTasks,
         tx_context: TransactionContext,
     ) -> Workspace:
-        query = (
-            self.workspaces.select()
-            .where(self.workspaces.c.unique_name == workspace.unique_name)
-            .limit(1)
-        )
-
-        result: object = tx_context.connection.execute(query).first()
-        if result:
-            error = ErrorDetails(
-                type="uniqueness",
-                loc=("body", "unique_name"),
-                msg=f"unique_name '{workspace.unique_name}' already exists",
-            )
-            raise HTTPException(status_code=409, detail=[error])
-
         if workspace.id is None:
             workspace.id = generate()
+
         o = workspace.model_dump()
-        tx_context.connection.execute(self.workspaces.insert(), o)
+        handle_db_operation(tx_context.connection, self.workspaces.insert(), o)
         return workspace
 
     def update(
@@ -274,7 +259,9 @@ class WorkspaceStoreSQL(WorkspaceStore):
         tx_context: TransactionContext,
     ):
         q = self.workspaces.delete().where(self.workspaces.c.id == workspace.id)
-        tx_context.connection.execute(q)
+        res = tx_context.connection.execute(q)
+        if res.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Workspace not found")
 
         return None
 
@@ -427,7 +414,7 @@ class ConversationStoreSQL(ConversationStore):
         o = conversation.model_dump()
         # fixes Error binding parameter 4: type 'StatusEnum' is not supported
         o["status"] = o["status"].value
-        tx_context.connection.execute(self.conversations.insert(), o)
+        handle_db_operation(tx_context.connection, self.conversations.insert(), o)
         return conversation
 
     def update(
@@ -519,7 +506,7 @@ class ChatMessageStoreSQL(ChatMessageStore):
         if message.id is None:
             message.id = generate()
         o = message.model_dump()
-        tx_context.connection.execute(self.messages.insert(), o)
+        handle_db_operation(tx_context.connection, self.messages.insert(), o)
         return message
 
     def delete(self, filter=None, tx_context: TransactionContext = None):
@@ -642,26 +629,12 @@ class ApplicationStoreSQL(ApplicationStore):
             return Application(**result._asdict())
 
     def insert(self, app: Application, tx_context: TransactionContext) -> Application:
-        query = (
-            self.apps.select()
-            .where(self.apps.c.workspace_id == app.workspace_id)
-            .where(self.apps.c.unique_name == app.unique_name)
-            .limit(1)
-        )
-
-        result: object = tx_context.connection.execute(query).first()
-        if result:
-            error = ErrorDetails(
-                type="uniqueness",
-                loc=("body", "unique_name"),
-                msg=f"unique_name '{app.unique_name}' already exists",
-            )
-            raise HTTPException(status_code=409, detail=[error])
-
         if app.id is None:
             app.id = generate()
+
         o = app.model_dump()
-        tx_context.connection.execute(self.apps.insert(), o)
+        handle_db_operation(tx_context.connection, self.apps.insert(), o)
+
         return app
 
     def delete(
@@ -675,7 +648,9 @@ class ApplicationStoreSQL(ApplicationStore):
             .where(self.apps.c.id == app_id)
             .where(self.apps.c.workspace_id == workspace_id)
         )
-        tx_context.connection.execute(q)
+        res = tx_context.connection.execute(q)
+        if res.rowcount == 0:
+            raise HTTPException(status_code=404, detail="App not found")
         return None
 
     def update(
