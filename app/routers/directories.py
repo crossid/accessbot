@@ -2,10 +2,11 @@ import logging
 from typing import Annotated, List
 
 import jsonpatch
-from app.models_stores_sql import PartialDirectory
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 from pydantic_core import ErrorDetails
+
+from app.models_stores_sql import PartialDirectory
 
 from ..auth import get_current_active_user, get_current_workspace
 from ..models import (
@@ -29,7 +30,7 @@ router = APIRouter(
 
 
 # TODO consider adding provisioning_config, data_owner_config, etc.
-class CreateDirectorynBody(BaseModel):
+class CreateDirectoryBody(BaseModel):
     name: str
 
 
@@ -40,7 +41,7 @@ class CreateDirectorynBody(BaseModel):
     status_code=status.HTTP_201_CREATED,
 )
 def create(
-    body: CreateDirectorynBody,
+    body: CreateDirectoryBody,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     directory_store: DirectoryStore = Depends(get_service(DirectoryStore)),
