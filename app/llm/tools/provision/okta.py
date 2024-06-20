@@ -2,7 +2,7 @@ from .iface import ProvisionInterface
 
 
 class OktaImpl(ProvisionInterface):
-    def __init__(self, tenant, password) -> None:
+    def __init__(self, tenant, token) -> None:
         try:
             from okta.client import Client as OktaClient
         except ImportError:
@@ -11,14 +11,13 @@ class OktaImpl(ProvisionInterface):
                 "Please install it with `pip install okta`."
             )
 
-        config = {"orgUrl": f"https://{tenant}", "token": password}
+        config = {"orgUrl": f"https://{tenant}", "token": token}
         self.client = OktaClient(config)
 
     async def approve_request(self, requester_email: str, **kwargs) -> bool:
-        role_name = kwargs.get("role_name", None)
-        if role_name is None:
-            raise ValueError("role_name must be set for okta provisioning")
-        role_id = role_name.split("/")[1]
+        role_id = kwargs.get("role_id", None)
+        if role_id is None:
+            raise ValueError("role_id must be set for okta provisioning")
         users, _, err = await self.client.list_users(
             query_params={"search": f'email eq "{requester_email}"'}
         )

@@ -143,6 +143,7 @@ class Directory(BaseModel):
     name: str
     _normalize_name = field_validator("name")(must_be_lowercase_alphanumeric_validator)
     provisioning_config: Optional[dict] = None
+    read_config: Optional[dict] = None
     data_owner_config: Optional[dict] = None
     created_by: str
     created_at: datetime = Field(default_factory=datetime.now)

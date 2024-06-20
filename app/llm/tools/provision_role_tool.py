@@ -103,7 +103,7 @@ def create_expanded_model(extra_fields):
 
 def create_provision_role_tool(app_id: str, ws_id: str) -> StructuredTool:
     app_store = factory_app_store()
-    extra_fields = {"role_name": {"description": "should be a the role name"}}
+    extra_fields = {"access_id": {"description": "should be a the access id"}}
     with SQLAlchemyTransactionContext().manage() as tx_context:
         app = app_store.get_by_id(
             app_id=app_id, workspace_id=ws_id, tx_context=tx_context

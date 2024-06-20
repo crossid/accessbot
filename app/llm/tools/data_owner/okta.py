@@ -7,7 +7,7 @@ from .iface import DataOwnerInterface
 class OktaImpl(DataOwnerInterface):
     attribute_name: str
 
-    def __init__(self, tenant, password, attribute_name="data_owner") -> None:
+    def __init__(self, tenant, token, attribute_name="data_owner") -> None:
         try:
             from okta.client import Client as OktaClient
         except ImportError:
@@ -16,7 +16,7 @@ class OktaImpl(DataOwnerInterface):
                 "Please install it with `pip install okta`."
             )
 
-        config = {"orgUrl": f"https://{tenant}", "token": password}
+        config = {"orgUrl": f"https://{tenant}", "token": token}
         self.client = OktaClient(config)
         self.attribute_name = attribute_name
 

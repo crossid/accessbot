@@ -2,14 +2,19 @@ import logging
 from typing import Annotated, List
 
 import jsonpatch
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 from pydantic_core import ErrorDetails
 
 from app.authz import Permissions, is_admin_or_has_scopes
+from app.data_fetching.factory import DataFetcherFactory, background_data_fetch
 from app.models_stores_sql import PartialDirectory
 
-from ..auth import get_current_active_user, get_current_workspace
+from ..auth import (
+    get_current_active_user,
+    get_current_workspace,
+    setup_workspace_vstore,
+)
 from ..models import (
     CurrentUser,
     Directory,
@@ -188,3 +193,26 @@ async def list(
             )
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
+
+
+@router.post(
+    "/{dir_id}/.import", response_model=dict, status_code=status.HTTP_202_ACCEPTED
+)
+async def import_content(
+    dir_id: str,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
+    background_tasks: BackgroundTasks,
+    ovstore=Depends(setup_workspace_vstore),
+):
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        dir = directory_store.get_by_id(
+            directory_id=dir_id, workspace_id=workspace.id, tx_context=tx_context
+        )
+
+        if not dir:
+            raise HTTPException(status_code=404, detail="Directory not found")
+
+    data_fetcher = DataFetcherFactory(dir=dir)
+    background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir)
+    return {"message": "data import happening in background"}

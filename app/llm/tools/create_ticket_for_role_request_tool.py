@@ -196,8 +196,8 @@ def create_expanded_model(extra_fields):
 def create_request_roles_tool(app_id: str, ws_id: str):
     app_store = factory_app_store()
     extra_fields = {
-        "access": {
-            "description": "should be a the recommended access deduced from the conversation"
+        "access_id": {
+            "description": "should be a the recommended access identifier deduced from the conversation"
         }
     }
     with SQLAlchemyTransactionContext().manage() as tx_context:
