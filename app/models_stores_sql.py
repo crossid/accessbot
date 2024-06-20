@@ -152,6 +152,7 @@ directory_table = sqlalchemy.Table(
     ),
     Column("name", String(), nullable=False),
     Column("provisioning_config", JSON(), nullable=True),
+    Column("read_config", JSON(), nullable=True),
     Column("data_owner_config", JSON(), nullable=True),
     Column("created_by", String(), nullable=False),
     Column("created_at", DateTime(), nullable=False),

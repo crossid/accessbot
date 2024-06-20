@@ -1,17 +1,16 @@
 import logging
-from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ValidationError
 
 from app.authz import Permissions, is_admin_or_has_scopes
+from app.data_fetching.utils import Doc, prepare_metadata_ids_content
 from app.models import Document, PaginatedListBase, Workspace
 from app.services import pagination_params
 from app.sql import SQLAlchemyTransactionContext
 
 from ..auth import get_current_workspace, setup_workspace_vstore
-from ..id import generate
 from ..settings import settings
 from ..vector_store import delete_ids, get_protocol
 
@@ -23,14 +22,6 @@ router = APIRouter(
 )
 
 
-class Doc(BaseModel):
-    id: Optional[str] = None
-    apps: Optional[list[str]]
-    directory: Optional[str]
-    content: Optional[str]
-    external_id: Optional[str]
-
-
 class AddContentBody(BaseModel):
     docs: List[Doc]
 
@@ -38,24 +29,6 @@ class AddContentBody(BaseModel):
 class AddContentResponse(BaseModel):
     ok: bool
     ids: List[str]
-
-
-def prepare_metadata_ids_content(docs: List[Doc]):
-    metadatas = []
-    ids = []
-    content = []
-
-    for doc in docs:
-        dmeta = {
-            "directory": doc.directory,
-            "app": doc.apps,
-            "created_at": datetime.now().isoformat(),
-        }
-        metadatas.append(dmeta)
-        ids.append(doc.external_id if doc.external_id is not None else generate())
-        content.append(doc.content)
-
-    return content, metadatas, ids
 
 
 @router.put("", response_model=AddContentResponse)
