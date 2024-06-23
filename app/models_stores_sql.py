@@ -99,6 +99,8 @@ conversation_table = sqlalchemy.Table(
     Column("created_at", DateTime(), nullable=False),
 )
 
+Index("idx_conv_status", conversation_table.c.status)
+
 message_table = sqlalchemy.Table(
     MESSAGE_TABLE_NAME,
     metadata,
@@ -132,6 +134,7 @@ checkpoint_table = sqlalchemy.Table(
         String(10),
         ForeignKey(workspace_table.c.id),
         nullable=False,
+        primary_key=True,
     ),
     Column("checkpoint", LargeBinary()),
     Column("metadata", LargeBinary()),
