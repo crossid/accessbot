@@ -335,3 +335,65 @@ def cancel_conv(
                 cancelled_ids.append(cconv.previous_conversation)
 
     return CancelConvResp(cancelled_ids=cancelled_ids)
+
+
+@router.post(
+    "/{conversation_id}/.archive",
+    response_model=Conversation,
+    response_model_exclude_none=True,
+)
+def archive_conv(
+    conversation_id,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
+):
+    wid = workspace.id
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        conv = conversation_store.get_by_id(
+            workspace_id=wid, conversation_id=conversation_id, tx_context=tx_context
+        )
+        if conv.status != ConversationStatuses.active:
+            raise HTTPException(
+                detail="cannot archive non active conversation",
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+            )
+
+        aconv = conversation_store.update(
+            workspace_id=workspace.id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+            updates={"status": ConversationStatuses.archived},
+        )
+
+    return aconv
+
+
+@router.post(
+    "/{conversation_id}/.unarchive",
+    response_model=Conversation,
+    response_model_exclude_none=True,
+)
+def unarchive_conv(
+    conversation_id,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
+):
+    wid = workspace.id
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        conv = conversation_store.get_by_id(
+            workspace_id=wid, conversation_id=conversation_id, tx_context=tx_context
+        )
+        if conv.status != ConversationStatuses.archived:
+            raise HTTPException(
+                detail="cannot unarchive non archived conversation",
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+            )
+
+        uaconv = conversation_store.update(
+            workspace_id=workspace.id,
+            conversation_id=conversation_id,
+            tx_context=tx_context,
+            updates={"status": ConversationStatuses.active},
+        )
+
+    return uaconv

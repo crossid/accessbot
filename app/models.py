@@ -97,6 +97,7 @@ class ConversationStatuses(enum.Enum):
     cancelled = "cancelled"
     approved = "approved"
     denied = "denied"
+    archived = "archived"
 
 
 class ConversationTypes(enum.Enum):
