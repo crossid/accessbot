@@ -51,6 +51,7 @@ from .models_stores import (
     ChatMessageStore,
     CheckpointStore,
     ConversationStore,
+    DirectoryStore,
     TransactionContext,
     WorkspaceStore,
 )
@@ -677,7 +678,7 @@ class ApplicationStoreSQL(ApplicationStore):
         return None
 
 
-class DirectoryStoreSQL:
+class DirectoryStoreSQL(DirectoryStore):
     default_table_name: str = DIRECTORIES_TABLE_NAME
     metadata: MetaData
     directories: Table
