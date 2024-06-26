@@ -31,6 +31,7 @@ slack-bolt = "^1.18.1"
 ruff = "^0.2.2"
 sqlite-vss = "^0.1.2"
 sentence-transformers = "^2.4.0"
+pytest = "^8.2.2"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.2"
