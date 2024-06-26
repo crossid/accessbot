@@ -1,5 +1,4 @@
-import unittest
-
+import pytest
 from sqlalchemy.engine import create_engine
 
 from app.models import Application
@@ -7,14 +6,21 @@ from app.models_stores_sql import ApplicationStoreSQL
 from app.sql import SQLAlchemyTransactionContext
 
 
-class TestWorkspaceStoreSQL(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # Set up a test engine, possibly an in-memory database
-        cls.engine = create_engine("sqlite:///:memory:")
-        cls.test_store = ApplicationStoreSQL()
-        cls.test_store.create_tables(cls.engine)
+@pytest.fixture(scope="class")
+def setup_database(request):
+    # Set up a test engine, possibly an in-memory database
+    engine = create_engine("sqlite:///:memory:")
+    test_store = ApplicationStoreSQL()
+    test_store.create_tables(engine)
 
+    # Assign the engine and test_store to the test class
+    request.cls.engine = engine
+    request.cls.test_store = test_store
+    yield  # yield here if needed, but typically you might yield the engine/test_store for other uses.
+
+
+@pytest.mark.usefixtures("setup_database")
+class TestWorkspaceStoreSQL:
     def test_insert_workspace(self):
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             app = Application(
@@ -24,24 +30,20 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
                 unique_name="fooquery",
                 aliases=["fquery", "fq"],
                 extra_instructions="dssa",
-                provision_schema=None
+                provision_schema=None,
             )
             pws = self.test_store.insert(app, tx_context=tx_context)
-            self.assertIsNotNone(pws)
-            self.assertIsNotNone(pws.id)
-            # # Retrieve the ws to verify it was inserted correctly
+            assert pws is not None
+            assert pws.id is not None
+            # Retrieve the ws to verify it was inserted correctly
             lws = self.test_store.get_by_id(pws.id, "1", tx_context=tx_context)
-            self.assertIsNotNone(lws)
-            self.assertEqual(lws.id, pws.id)
+            assert lws is not None
+            assert lws.id == pws.id
 
             lws = self.test_store.get_by_name("fooquery", "1", tx_context=tx_context)
-            self.assertIsNotNone(lws)
-            self.assertEqual(lws.id, pws.id)
+            assert lws is not None
+            assert lws.id == pws.id
 
             lws = self.test_store.get_by_name("fquery", "1", tx_context=tx_context)
-            self.assertIsNotNone(lws)
-            self.assertEqual(lws.id, pws.id)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert lws is not None
+            assert lws.id == pws.id
