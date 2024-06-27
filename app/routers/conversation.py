@@ -346,6 +346,9 @@ def archive_conv(
     conversation_id,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
+    _: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])
+    ),
 ):
     wid = workspace.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
@@ -377,6 +380,9 @@ def unarchive_conv(
     conversation_id,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     conversation_store: ConversationStore = Depends(factory_conversation_store),
+    _: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])
+    ),
 ):
     wid = workspace.id
     with SQLAlchemyTransactionContext().manage() as tx_context:
