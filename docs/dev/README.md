@@ -18,8 +18,7 @@ poetry run uvicorn app.main:app --port 8000 --reload
 ## Running tests
 
 ```bash
-poetry run python -m unittest discover -s app -p 'test*.py'
-poetry run python -m unittest discover -s app/llm -p 'test*.py'
+poetry run pytest app
 ```
 
 ## Debugging via VSCode
