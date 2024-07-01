@@ -122,7 +122,7 @@ async def delete(
 
 
 class DirectoryPatchOperation(PatchOperation):
-    mutable_fields = ["provisioning_config", "data_owner_config"]
+    mutable_fields = ["provisioning_config", "data_owner_config", "read_config"]
 
 
 DirectoryJsonPatchDocument = JsonPatchDocument[DirectoryPatchOperation]
