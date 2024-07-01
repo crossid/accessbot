@@ -204,6 +204,7 @@ async def import_content(
     directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
     background_tasks: BackgroundTasks,
     ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONTENT.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         dir = directory_store.get_by_id(
