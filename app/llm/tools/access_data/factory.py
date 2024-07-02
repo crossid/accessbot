@@ -1,5 +1,6 @@
 from app.llm.tools.access_data.iface import AccessDataInterface
 from app.llm.tools.access_data.mock import MockImpl
+from app.llm.tools.access_data.webhook import WebhookImpl
 from app.models import Directory, Workspace
 from app.vault_utils import resolve_ws_config_secrets
 
@@ -17,6 +18,8 @@ def GetAccessDataFactory(
     )
 
     match read_type:
+        case "webhook":
+            return WebhookImpl(**resolved_config)
         case "_mock_":
             return MockImpl(**resolved_config)
 
