@@ -10,6 +10,8 @@ from .models import (
     Conversation,
     CurrentUser,
     Directory,
+    PartialRule,
+    Rule,
     User,
     Workspace,
     WorkspaceStatuses,
@@ -382,6 +384,53 @@ class DirectoryStore(ABC):
         directory: Directory,
         tx_context: TransactionContext,
     ) -> Directory:
+        pass
+
+
+class RuleStore(ABC):
+    @abstractmethod
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        tx_context: TransactionContext = None,
+        projection: List[str] = [],
+    ) -> tuple[list[PartialRule], int]:
+        pass
+
+    @abstractmethod
+    def get_by_id(
+        self, rule_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Rule]:
+        pass
+
+    @abstractmethod
+    def update(
+        self,
+        rule: Rule,
+        tx_context: TransactionContext,
+    ) -> Rule:
+        pass
+
+    @abstractmethod
+    def insert(self, rule: Rule, tx_context: TransactionContext) -> Rule:
+        pass
+
+    @abstractmethod
+    def delete(
+        self,
+        workspace_id: str,
+        rule_id: str,
+        tx_context: TransactionContext = None,
+    ):
+        pass
+
+    @abstractmethod
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
         pass
 
 

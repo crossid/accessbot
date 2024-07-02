@@ -164,6 +164,35 @@ class Document(BaseModel):
     collection_id: str
 
 
+class RuleTypes(enum.Enum):
+    auto_approve = "auto_approve"
+
+
+class ThenTypes(enum.Enum):
+    approve = "approve"
+    deny = "deny"
+
+
+# currently, applications and directories are immutable because it's too much work to update them
+RULE_MUTABLE_FIELDS = ["when"]
+
+
+class Rule(BaseModel):
+    id: str = Field(default_factory=lambda: generate())
+    workspace_id: str
+    directory_ids: Optional[List[str]] = Field(default=None)
+    application_ids: Optional[List[str]] = Field(default=None)
+    when: str
+    then: ThenTypes
+    type: RuleTypes
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+class PartialRule(Rule, OptionalModel):
+    pass
+
+
 # Payloads
 #
 

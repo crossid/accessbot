@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 
 from langchain_core.messages import AIMessage, SystemMessage
@@ -7,6 +8,8 @@ from pydantic.v1 import BaseModel, Field, create_model
 
 from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
+from app.llm.tools.provision_role_tool import provision_role
+from app.llm.tools.rule_engine.rule_engine_agent import FinalAnswer, should_auto_approve
 from app.models import (
     Conversation,
     ConversationStatuses,
@@ -28,6 +31,8 @@ from app.sql import SQLAlchemyTransactionContext
 from .consts import TICKET_SYSTEM_CONFIG_KEY
 from .create_ticket.factory import TicketSystemFactory
 from .data_owner.factory import get_data_owner
+
+logger = logging.getLogger(__name__)
 
 
 async def make_request(
@@ -75,17 +80,41 @@ async def _request_roles(
     current_user = user_store.get_by_email(email=user_email)
     ws_store = factory_ws_store()
     dir_store = factory_dir_store()
+    app_store = factory_app_store()
     conv_store = factory_conversation_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
         dir = dir_store.get_by_name(
             name=directory, workspace_id=workspace_id, tx_context=tx_context
         )
+
         if dir is None:
             return "use recommender"
 
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
+            app = app_store.get_by_name(
+                app_name=app_name, workspace_id=workspace_id, tx_context=tx_context
+            )
+
             try:
+                answer = await should_auto_approve(
+                    ws=ws, dir=dir, app=app, user_email=user_email, **kwargs
+                )
+                if answer.final_answer == FinalAnswer.approve:
+                    logger.debug(f"access approved automatically because: {answer.why}")
+                    success = await provision_role(
+                        directory=dir,
+                        workspace_id=ws.id,
+                        requester_email=user_email,
+                        **kwargs,
+                    )
+                    if success:
+                        return "access approved automatically"
+                    else:
+                        raise ValueError(
+                            "failed to provision access for unknown reason"
+                        )
+
                 owner = await get_data_owner(
                     ws=ws, app_name=app_name, directory=dir, **kwargs
                 )

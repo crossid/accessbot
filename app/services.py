@@ -9,6 +9,7 @@ from .models_stores import (
     CheckpointStore,
     ConversationStore,
     DirectoryStore,
+    RuleStore,
     UserStore,
     WorkspaceStore,
 )
@@ -73,6 +74,10 @@ def factory_checkpointer():
 
 def factory_app_store():
     return service_registry().get(ApplicationStore)
+
+
+def factory_rule_store():
+    return service_registry().get(RuleStore)
 
 
 def factory_vault():

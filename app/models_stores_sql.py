@@ -25,6 +25,7 @@ from sqlalchemy import (
     Table,
     Text,
     cast,
+    distinct,
     func,
     or_,
     select,
@@ -34,6 +35,7 @@ from sqlalchemy.exc import IntegrityError
 
 from .id import generate
 from .models import (
+    RULE_MUTABLE_FIELDS,
     Application,
     ChatMessage,
     Conversation,
@@ -43,6 +45,10 @@ from .models import (
     Directory,
     PartialApplication,
     PartialDirectory,
+    PartialRule,
+    Rule,
+    RuleTypes,
+    ThenTypes,
     Workspace,
     WorkspaceStatuses,
 )
@@ -52,6 +58,7 @@ from .models_stores import (
     CheckpointStore,
     ConversationStore,
     DirectoryStore,
+    RuleStore,
     TransactionContext,
     WorkspaceStore,
 )
@@ -64,6 +71,8 @@ MESSAGE_TABLE_NAME = "messages"
 APPLICATIONS_TABLE_NAME = "applications"
 CHECKPOINT_TABLE_NAME = "checkpoints"
 DIRECTORIES_TABLE_NAME = "directories"
+RULES_TABLE_NAME = "rules"
+RULES_CONTEXT_TABLE_NAME = "rules_context"
 
 workspace_table = sqlalchemy.Table(
     WORKSPACE_TABLE_NAME,
@@ -189,6 +198,43 @@ Index(
     applications_table.c.workspace_id,
     applications_table.c.unique_name,
     unique=True,
+)
+
+rules_table = sqlalchemy.Table(
+    RULES_TABLE_NAME,
+    metadata,
+    Column("id", String(10), primary_key=True),
+    Column(
+        "workspace_id",
+        String(10),
+        ForeignKey(workspace_table.c.id),
+        nullable=False,
+    ),
+    Column("when", String(), nullable=False),
+    Column("then", Enum(ThenTypes), nullable=False),
+    Column("type", Enum(RuleTypes), nullable=False),
+    Column("created_by", String(), nullable=False),
+    Column("created_at", DateTime(), nullable=False),
+)
+
+rules_context_table = sqlalchemy.Table(
+    RULES_CONTEXT_TABLE_NAME,
+    metadata,
+    Column("id", String(10), primary_key=True),
+    Column("rule_id", String(10), ForeignKey(rules_table.c.id), nullable=False),
+    Column(
+        "workspace_id", String(10), ForeignKey(workspace_table.c.id), nullable=False
+    ),
+    Column(
+        "directory_id",
+        String(10),
+        ForeignKey(directory_table.c.id),
+    ),
+    Column(
+        "application_id",
+        String(10),
+        ForeignKey(applications_table.c.id),
+    ),
 )
 
 
@@ -817,6 +863,219 @@ class DirectoryStoreSQL(DirectoryStore):
         return directory
 
 
+class RuleStoreSQL(RuleStore):
+    default_table_name: str = RULES_TABLE_NAME
+    default_ctx_table_name: str = RULES_CONTEXT_TABLE_NAME
+    metadata: MetaData
+    rules: Table
+    rules_context: Table
+
+    @classmethod
+    def build_table(cls, metadata: MetaData, table_name: str) -> Table:
+        return rules_table
+
+    @classmethod
+    def build_context_table(cls, metadata: MetaData, table_name: str) -> Table:
+        return rules_context_table
+
+    def __init__(
+        self,
+        table_name: str = default_table_name,
+        ctx_table_name: str = default_ctx_table_name,
+    ):
+        self.metadata = metadata
+        self.rules = self.build_table(metadata=self.metadata, table_name=table_name)
+        self.rules_context = self.build_context_table(
+            metadata=self.metadata, table_name=ctx_table_name
+        )
+
+    def create_tables(self, engine: Engine):
+        self.metadata.create_all(engine)
+
+    def get_by_id(
+        self, rule_id: str, workspace_id: str, tx_context: TransactionContext
+    ) -> Optional[Rule]:
+        query = (
+            self.rules.select()
+            .where(self.rules.c.workspace_id == workspace_id)
+            .where(self.rules.c.id == rule_id)
+            .limit(1)
+        )
+
+        result: object = tx_context.connection.execute(query).first()
+        if result:
+            rule = Rule(**result._asdict())
+            q = select(
+                self.rules_context.c.directory_id, self.rules_context.c.application_id
+            ).where(self.rules_context.c.rule_id == result.id)
+            links = tx_context.connection.execute(q).all()
+            for link in links:
+                if link.directory_id:
+                    if rule.directory_ids is None:
+                        rule.directory_ids = []
+                    rule.directory_ids.append(link.directory_id)
+                if link.application_id:
+                    if rule.application_ids is None:
+                        rule.application_ids = []
+                    rule.application_ids.append(link.application_id)
+
+            return rule
+
+    def insert(self, rule: Rule, tx_context: TransactionContext) -> Rule:
+        if rule.id is None:
+            rule.id = generate()
+
+        o = rule.model_dump()
+        handle_db_operation(tx_context.connection, self.rules.insert(), o)
+
+        rule_ctx = {
+            "id": generate(),
+            "workspace_id": rule.workspace_id,
+            "rule_id": rule.id,
+        }
+
+        for app_id in rule.application_ids or []:
+            rctx = {**rule_ctx, "application_id": app_id}
+            handle_db_operation(
+                tx_context.connection, self.rules_context.insert(), rctx
+            )
+
+        for dir_id in rule.directory_ids or []:
+            rctx = {**rule_ctx, "directory_id": dir_id}
+            handle_db_operation(
+                tx_context.connection, self.rules_context.insert(), rctx
+            )
+
+        if not rule.directory_ids and not rule.application_ids:
+            handle_db_operation(
+                tx_context.connection, self.rules_context.insert(), rule_ctx
+            )
+
+        return rule
+
+    def delete(
+        self,
+        workspace_id: str,
+        rule_id: str,
+        tx_context: TransactionContext,
+    ):
+        ctxq = (
+            self.rules_context.delete()
+            .where(self.rules_context.c.workspace_id == workspace_id)
+            .where(self.rules_context.c.rule_id == rule_id)
+        )
+        _ = tx_context.connection.execute(ctxq)
+        q = (
+            self.rules.delete()
+            .where(self.rules.c.workspace_id == workspace_id)
+            .where(self.rules.c.id == rule_id)
+        )
+        res = tx_context.connection.execute(q)
+        if res.rowcount == 0:
+            raise HTTPException(status_code=404, detail="rule not found")
+
+        return None
+
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ):
+        if workspace_id is None:
+            return None
+
+        subq = (
+            select(self.rules.c.id)
+            .where(self.rules.c.workspace_id == workspace_id)
+            .subquery()
+        )
+
+        ctxq = self.rules_context.delete().where(self.rules_context.c.rule_id.in_(subq))
+        tx_context.connection.execute(ctxq)
+        q = self.rules.delete().where(self.rules.c.id.in_(subq))
+        tx_context.connection.execute(q)
+
+        return None
+
+    def list(
+        self,
+        workspace_id: str,
+        filters: dict[str, Any] = None,
+        offset=0,
+        limit=10,
+        tx_context: TransactionContext = None,
+        projection: List[str] = [],
+    ) -> tuple[list[PartialRule], int]:
+        base_count_query = (
+            select(func.count(distinct(self.rules.c.id)))
+            .select_from(self.rules)
+            .join(self.rules_context, self.rules_context.c.rule_id == self.rules.c.id)
+            .where(self.rules.c.workspace_id == workspace_id)
+        )
+
+        # Applying filters to the count query
+        if filters:
+            for field, value in filters.items():
+                base_count_query = base_count_query.where(self.rules.c[field] == value)
+
+        # Execute count query
+        total_count = tx_context.connection.execute(base_count_query).scalar_one()
+
+        columns = [
+            self.rules.c.get(column_name, self.rules_context.c.get(column_name))
+            for column_name in projection
+            if column_name in self.rules.c or column_name in self.rules_context.c
+        ]
+
+        # TODO: if this is slow, we'll need to check if the join is needed (filter of projection need it)
+        query = (
+            select(
+                *columns if len(columns) > 0 else (self.rules.c, self.rules_context.c)
+            )
+            .join(self.rules_context, self.rules_context.c.rule_id == self.rules.c.id)
+            .where(self.rules.c.workspace_id == workspace_id)
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if filters:
+            for field, value in filters.items():
+                query = query.where(self.rules.c[field] == value)
+
+        def append_to_rule(r: PartialRule, record):
+            if hasattr(record, "application_id") and record.application_id is not None:
+                r.application_ids = (r.application_ids or []) + [record.application_id]
+
+            if hasattr(record, "directory_id") and record.directory_id is not None:
+                r.directory_ids = (r.directory_ids or []) + [record.directory_id]
+
+        result = tx_context.connection.execute(query)
+        rules: dict[str, PartialRule] = {}
+        for record in result:
+            if record.id in rules:
+                r = rules[record.id]
+                append_to_rule(r, record)
+            else:
+                r = PartialRule(**record._asdict())
+                append_to_rule(r, record)
+                rules[record.id] = r
+
+        return rules.values(), total_count
+
+    def update(
+        self,
+        rule: Rule,
+        tx_context: TransactionContext,
+    ) -> Rule:
+        q = (
+            self.rules.update()
+            .where(self.rules.c.id == rule.id)
+            .values(
+                {k: v for k, v in rule.model_dump().items() if k in RULE_MUTABLE_FIELDS}
+            )
+        )
+        tx_context.connection.execute(q)
+        return rule
+
+
 class CheckpointStoreSQL(CheckpointStore):
     class Config:
         arbitrary_types_allowed = True
@@ -1040,4 +1299,9 @@ def handle_db_operation(connection: Connection, db_operation, params):
             raise HTTPException(status_code=409, detail="This record already exist.")
         else:
             # For other types of IntegrityErrors, you might want to handle them differently
-            raise HTTPException(status_code=400, detail="Database operation failed.")
+            raise HTTPException(
+                status_code=400, detail=f"Database operation failed: {error_info}"
+            )
+    except Exception as e:
+        ei = str(e.orig) if hasattr(e, "orig") else str(e)
+        raise ValueError(ei)

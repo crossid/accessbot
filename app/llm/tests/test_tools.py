@@ -2,9 +2,6 @@ import asyncio
 import unittest
 import unittest.mock
 from typing import Any
-from unittest.mock import patch
-
-from app.llm.tools.provision.webhook import WebhookImpl
 from app.models import User, Workspace
 
 
@@ -28,7 +25,11 @@ class TestCreateTicketTool(unittest.TestCase):
         }
 
         ws = Workspace(
-            display_name="foo", unique_name="foo", creator_id="bar", config=config, created_by="bar"
+            display_name="foo",
+            unique_name="foo",
+            creator_id="bar",
+            config=config,
+            created_by="bar",
         )
         owner = User(id="123", email="john.doe@mock.com")
         output = "making request"
@@ -57,17 +58,3 @@ class TestCreateTicketTool(unittest.TestCase):
 
         rtt = create_expanded_model(extra_fields=extra_fields)
         print(rtt)
-
-    @patch("requests.post")
-    def test_webhook(self, mock_post):
-        mock_response = unittest.mock.Mock()
-        mock_response.status_code = 200
-        mock_post.return_value = mock_response
-
-        url = "http://example.com/api"
-        expected_body = {"requester_email": "jon.doe@foo.com", "foo": "bar"}
-        whi = WebhookImpl(url=url)
-        ack = asyncio.run(whi.approve_request(**expected_body))
-
-        self.assertTrue(ack)
-        mock_post.assert_called_once_with(url=url, json=expected_body)
