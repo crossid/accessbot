@@ -69,7 +69,7 @@ def create(
     background_tasks: BackgroundTasks,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
-    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_WORKSPACES.value])),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.CREATE_WORKSPACES.value])),
 ):
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:

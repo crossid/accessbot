@@ -16,6 +16,7 @@ class Permissions(Enum):
     UPDATE_WORKSPACES = "update:workspaces"
     READ_WORKSPACES = "read:workspaces"
     DELETE_WORKSPACES = "delete:workspaces"
+    CREATE_WORKSPACES = "create:workspaces"
     UPDATE_CONVERSATIONS = "update:conversations"
     READ_CONVERSATIONS = "read:conversations"
     UPDATE_CONTENT = "update:content"
