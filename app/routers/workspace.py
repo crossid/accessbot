@@ -24,13 +24,17 @@ from ..models_stores import (
     ChatMessageStore,
     CheckpointStore,
     ConversationStore,
+    DirectoryStore,
+    RuleStore,
     WorkspaceStore,
 )
 from ..services import (
     factory_app_store,
     factory_checkpointer,
     factory_conversation_store,
+    factory_dir_store,
     factory_message_store,
+    factory_rule_store,
     factory_vault,
     get_service,
 )
@@ -121,6 +125,8 @@ def wipe_workspace(
     msg_store: ChatMessageStore,
     conversation_store: ConversationStore,
     app_store: ApplicationStore,
+    dir_store: DirectoryStore,
+    rule_store: RuleStore,
     checkpoint_store: CheckpointStore,
     background_tasks: BackgroundTasks,
     ovstore,
@@ -131,6 +137,8 @@ def wipe_workspace(
         workspace_id=workspace.id, tx_context=tx_context
     )
     app_store.delete_for_workspace(workspace_id=workspace.id, tx_context=tx_context)
+    dir_store.delete_for_workspace(workspace_id=workspace.id, tx_context=tx_context)
+    rule_store.delete_for_workspace(workspace_id=workspace.id, tx_context=tx_context)
     checkpoint_store.delete_for_workspace(
         workspace_id=workspace.id, tx_context=tx_context
     )
@@ -160,6 +168,8 @@ async def delete(
         ConversationStore, Depends(factory_conversation_store)
     ],
     app_store: Annotated[ApplicationStore, Depends(factory_app_store)],
+    dir_store: Annotated[DirectoryStore, Depends(factory_dir_store)],
+    rule_store: Annotated[RuleStore, Depends(factory_rule_store)],
     checkpoint_store: Annotated[CheckpointStore, Depends(factory_checkpointer)],
     ovstore=Depends(setup_workspace_vstore),
     _=Depends(is_admin_or_has_scopes(scopes=[Permissions.DELETE_WORKSPACES.value])),
@@ -190,6 +200,8 @@ async def delete(
                 background_tasks=background_tasks,
                 msg_store=msg_store,
                 app_store=app_store,
+                dir_store=dir_store,
+                rule_store=rule_store,
                 checkpoint_store=checkpoint_store,
                 ovstore=ovstore,
             )
