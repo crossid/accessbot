@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy import text
 
 from app.models import Document
-from app.tx import TransactionContext
+from app.sql import SQLAlchemyTransactionContext
 
 collection_table_name = "langchain_pg_collection"
 embedding_table_name = "langchain_pg_embedding"
@@ -66,7 +66,7 @@ def get_document(
     id: Optional[str] = "",
     external_id: Optional[str] = "",
     projection: Optional[List[str]] = [],
-    tx_context: TransactionContext = None,
+    tx_context: SQLAlchemyTransactionContext = None,
 ):
     if id == "" and external_id == "":
         return None
@@ -102,7 +102,7 @@ def list_documents(
     offset=0,
     limit=10,
     projection: Optional[List[str]] = [],
-    tx_context: TransactionContext = None,
+    tx_context: SQLAlchemyTransactionContext = None,
 ) -> tuple[List[Document], int]:
     stmt = text(
         f"SELECT * FROM {collection_table_name} WHERE name = :workspace_id limit 1;"
