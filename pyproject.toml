@@ -27,6 +27,7 @@ langgraph = "^0.0"
 langchain-community = "^0.2.1"
 slack-bolt = "^1.18.1"
 okta = "^2.9.7"
+alembic = "^1.13.2"
 
 [tool.poetry.group.test.dependencies]
 ruff = "^0.2.2"
