@@ -862,6 +862,18 @@ class DirectoryStoreSQL(DirectoryStore):
         tx_context.connection.execute(q)
         return directory
 
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        if workspace_id is None:
+            return None
+
+        q = self.directories.delete().where(
+            self.directories.c.workspace_id == workspace_id
+        )
+        tx_context.connection.execute(q)
+        return None
+
 
 class RuleStoreSQL(RuleStore):
     default_table_name: str = RULES_TABLE_NAME

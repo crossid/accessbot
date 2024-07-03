@@ -386,6 +386,12 @@ class DirectoryStore(ABC):
     ) -> Directory:
         pass
 
+    @abstractmethod
+    def delete_for_workspace(
+        self, workspace_id: str, tx_context: TransactionContext = None
+    ) -> None:
+        pass
+
 
 class RuleStore(ABC):
     @abstractmethod
