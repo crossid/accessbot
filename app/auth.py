@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, List, Optional
+from typing import Annotated, Any, Optional
 
 import jwt
 import requests
@@ -153,18 +153,13 @@ async def get_current_workspace(
 async def get_optional_current_workspace(
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
     workspace_store: WorkspaceStore = Depends(get_service(WorkspaceStore)),
-):
+) -> Optional[Workspace]:
     workspace_id = current_user.workspace_id
     if workspace_id is None:
         return None
 
     with SQLAlchemyTransactionContext().manage() as tx_context:
         ws = workspace_store.get_by_id(workspace_id, tx_context=tx_context)
-        if ws is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="workspace not found"
-            )
-
         return ws
 
 
