@@ -8,7 +8,7 @@ from app.authz import Permissions, is_admin_or_has_scopes
 from app.data_fetching.utils import Doc, prepare_metadata_ids_content
 from app.models import Document, PaginatedListBase, Workspace
 from app.services import pagination_params
-from app.sql import SQLAlchemyTransactionContext
+from app.sql import SQLAlchemyTransactionContext, doc_store_engine
 
 from ..auth import get_current_workspace, setup_workspace_vstore
 from ..settings import settings
@@ -111,7 +111,7 @@ async def get(
     ovstore=Depends(setup_workspace_vstore),
     _=Depends(is_admin_or_has_scopes(scopes=[Permissions.READ_CONTENT.value])),
 ):
-    with SQLAlchemyTransactionContext().manage() as tx_context:
+    with SQLAlchemyTransactionContext(engine=doc_store_engine).manage() as tx_context:
         try:
             doc = ovstore.__get_doc__(
                 workspace_id=workspace.id,
@@ -142,7 +142,7 @@ async def list(
 ):
     limit = list_params.get("limit", 10)
     offset = list_params.get("offset", 0)
-    with SQLAlchemyTransactionContext().manage() as tx_context:
+    with SQLAlchemyTransactionContext(engine=doc_store_engine).manage() as tx_context:
         try:
             docs, total = ovstore.__list_docs__(
                 workspace_id=workspace.id,

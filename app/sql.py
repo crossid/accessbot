@@ -16,6 +16,12 @@ sqlalchemy_engine = create_engine(
     # connect_args={"connect_timeout": 10},
 )
 
+doc_store_engine = create_engine(
+    settings.VSTORE_URI,
+    echo=True,
+    # connect_args={"connect_timeout": 10}
+)
+
 
 def create_tables():
     from .models_stores_sql import (
