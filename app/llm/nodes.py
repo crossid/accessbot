@@ -1,13 +1,12 @@
 import asyncio
 import functools
+import json
 from types import coroutine
-
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 
 from app.llm.guardrails.on_topic import topical_guardrail
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
 from app.models import ConversationTypes
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 
 from .agents import create_agent
 from .prompts import (
@@ -123,12 +122,6 @@ def create_recommendation_node(data_context, ret_tool):
     return recommendation_node
 
 
-class IGNOutput(BaseModel):
-    extra_instructions: str = Field(description="extra instructions for the app")
-    app_id: str = Field(description="the app id")
-    app_name: str = Field(description="the app name")
-
-
 async def execute_chat_with_guardrail(runnable: coroutine, input):
     topical_guardrail_task = asyncio.create_task(topical_guardrail(input))
     chat_task = asyncio.create_task(runnable)
@@ -174,15 +167,19 @@ def entry_point_node(data_context):
             }
 
         if not isinstance(output, dict):
-            return {
-                "sender": "entry_point",
-            }
+            try:
+                trimmed_json_string = output.lstrip("`json")
+                output = json.loads(trimmed_json_string)
+            except json.JSONDecodeError:
+                return {
+                    "sender": "entry_point",
+                }
 
         return {
             "sender": "entry_point",
-            APP_ID_KEY: output[APP_ID_KEY],
-            APP_NAME_KEY: output[APP_NAME_KEY],
-            EXTRA_INSTRUCTIONS_KEY: output[EXTRA_INSTRUCTIONS_KEY],
+            APP_ID_KEY: output.get(APP_ID_KEY),
+            APP_NAME_KEY: output.get(APP_NAME_KEY),
+            EXTRA_INSTRUCTIONS_KEY: output.get(EXTRA_INSTRUCTIONS_KEY),
         }
 
     return _epn

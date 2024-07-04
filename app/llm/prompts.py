@@ -20,14 +20,16 @@ RULE_ENGINE_TEMPLATE = "RULE_ENGINE_TEMPLATE"
 
 TEMPLATES = {
     ENTRY_POINT: """
-    Your purpose is to fetch extra instructions for the app_name.
+    Your purpose is to fetch extra instructions for the app.
+    Use find_app tool to do so.
     <known applications>
         {known_apps}
     </known applications>
-    return the following in json formatted string: "extra_instructions", "app_id", "app_name", and nothing more.
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+
+    return a json object with the fields: "extra_instructions", "app_id", "app_name".
 """,
     RECOMMENDATION_TEMPLATE: """
     Your only goal is to help users get the correct access by recommendation.
