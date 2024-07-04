@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 from langchain_core.language_models.chat_models import (
@@ -22,9 +23,11 @@ def get_model_from_uri(uri: str) -> tuple[str, str, dict[str, str]]:
     return [protocol, parsed_url.netloc, qp]
 
 
-def create_model(**args) -> BaseChatModel:
+def create_model(model: Optional[str] = None, **args) -> BaseChatModel:
+    if model is None:
+        model = settings.LLM_MODEL
     # TODO convert qp as model args
-    type, model, qp = get_model_from_uri(settings.LLM_MODEL)
+    type, model, qp = get_model_from_uri(model)
     if type == "fake":
         filtered_args = {
             key: value for key, value in args.items() if key in LLM_ALLOWED_ARGS["fake"]
