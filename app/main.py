@@ -10,7 +10,6 @@ from .injector_extensions_module import ExtensionModule
 from .injector_main_module import MainModule
 from .routers import application, content, conversation, internal, rule, workspace
 from .services import set_service_registry
-from .sql import create_tables
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,6 @@ set_service_registry(service_registry)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.debug("Starting")
-    create_tables()
 
     yield
     logger.debug("Stopping")
