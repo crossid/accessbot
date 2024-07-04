@@ -89,13 +89,16 @@ async def _request_roles(
         )
 
         if dir is None:
-            return "use recommender"
+            return "request failed, use recommender"
 
         ws = ws_store.get_by_id(workspace_id=workspace_id, tx_context=tx_context)
         if ws is not None:
             app = app_store.get_by_name(
                 app_name=app_name, workspace_id=workspace_id, tx_context=tx_context
             )
+
+            if app is None:
+                return "use recommender"
 
             try:
                 answer = await should_auto_approve(
@@ -120,7 +123,7 @@ async def _request_roles(
                         )
                         return "access approved automatically"
                     else:
-                        raise ValueError(
+                        raise ToolException(
                             "failed to provision access for unknown reason"
                         )
 
@@ -173,7 +176,7 @@ async def _request_roles(
 
         checkpoint = empty_checkpoint()
         kwargs_str = "\n".join(f"{key}: {value}" for key, value in kwargs.items())
-        sys_msg = f"requester: {user_email}.\nprevious conversation summary: {conv_summary}.\ndirectory: {directory}\napp_name: {app_name}\n{kwargs_str}"
+        sys_msg = f"requester: {user_email}.\nprevious conversation summary: {conv_summary}.\ndirectory: {directory}\napp_id: {app.id}\napp_name: {app_name}\n{kwargs_str}"
         checkpoint["channel_values"] = {
             MEMORY_KEY: [
                 SystemMessage(content=sys_msg),
