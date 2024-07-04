@@ -1,9 +1,11 @@
 import asyncio
 import functools
+from types import coroutine
 
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 
+from app.llm.guardrails.on_topic import topical_guardrail
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
 from app.models import ConversationTypes
 
@@ -27,8 +29,10 @@ from .tools.provision_role_tool import create_provision_role_tool
 INFORMATION_AGENT_NAME = "Information"
 RECOMMENDER_AGENT_NAME = "Recommender"
 DATA_OWNER_AGENT_NODE = "DataOwner"
+CONVERSATION_TYPE_KEY = "conv_type"
 CONV_TYPE_DATA_OWNER = ConversationTypes.data_owner.value
 CONV_TYPE_INFO = ConversationTypes.recommendation.value
+CONV_TYPE_FAILED_GUARD = "FAILED_GUARD"
 
 
 def agent_node(state, agent_creator, name):
@@ -125,6 +129,27 @@ class IGNOutput(BaseModel):
     app_name: str = Field(description="the app name")
 
 
+async def execute_chat_with_guardrail(runnable: coroutine, input):
+    topical_guardrail_task = asyncio.create_task(topical_guardrail(input))
+    chat_task = asyncio.create_task(runnable)
+    while True:
+        done, _ = await asyncio.wait(
+            [topical_guardrail_task, chat_task], return_when=asyncio.FIRST_COMPLETED
+        )
+        if topical_guardrail_task in done:
+            guardrail_response = topical_guardrail_task.result()
+            if not guardrail_response.is_valid:
+                chat_task.cancel()
+                return {
+                    "output": "I'm sorry, I can only talk about access requests"
+                }, False
+            elif chat_task in done:
+                result = chat_task.result()
+                return result, True
+        else:
+            await asyncio.sleep(0.2)
+
+
 def entry_point_node(data_context):
     def _epn(state):
         agent = create_agent(
@@ -134,8 +159,20 @@ def entry_point_node(data_context):
             streaming=False,
         )
 
-        result = agent.invoke(state)
+        corou = agent.ainvoke(state)
+        result, ok = asyncio.new_event_loop().run_until_complete(
+            execute_chat_with_guardrail(runnable=corou, input=state[MEMORY_KEY][-3:])
+        )
+
         output = result["output"]
+
+        if not ok:
+            return {
+                "sender": "entry_point",
+                MEMORY_KEY: [AIMessage(content=output)],
+                CONVERSATION_TYPE_KEY: CONV_TYPE_FAILED_GUARD,
+            }
+
         if not isinstance(output, dict):
             return {
                 "sender": "entry_point",

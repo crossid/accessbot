@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     OAUTH2_AUDIENCE: str
     # llm
     LLM_MODEL: str = "openai://gpt-4-turbo-preview"
+    GUARDRAILS_LLM_MODEL: str = "openai://gpt-4o"
     # messaging
     SLACK_CLIENT_ID: str
     SLACK_CLIENT_SECRET: str
