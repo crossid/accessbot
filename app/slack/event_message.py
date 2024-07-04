@@ -107,7 +107,7 @@ def answer(client: WebClient, event, logger, say, context):
                 input=event["text"],
                 tx_context=tx_context,
             )
-            result = asyncio.new_event_loop().run_until_complete(co_routine)
+            result = asyncio.run(co_routine)
             say(
                 blocks=[
                     {

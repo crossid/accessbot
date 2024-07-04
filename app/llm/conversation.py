@@ -122,6 +122,7 @@ async def make_conversation(
         },
         config,
     )
+
     last_message = result[MEMORY_KEY][-1].content
     add_messages(chat_history, input, last_message)
     return {"output": last_message}

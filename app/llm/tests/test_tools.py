@@ -34,7 +34,7 @@ class TestCreateTicketTool(unittest.TestCase):
         owner = User(id="123", email="john.doe@mock.com")
         output = "making request"
 
-        _ = asyncio.new_event_loop().run_until_complete(
+        _ = asyncio.run(
             make_request(
                 ws=ws,
                 owner=owner,

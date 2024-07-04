@@ -70,8 +70,6 @@ class TestGetDataOwner(unittest.TestCase):
             name="okta", config={}, workspace_id="foo", created_by="foo@acme.io"
         )
 
-        owner = asyncio.new_event_loop().run_until_complete(
-            get_data_owner(ws=ws, directory=dir, app_name="foo")
-        )
+        owner = asyncio.run(get_data_owner(ws=ws, directory=dir, app_name="foo"))
 
         self.assertEqual(owner.email, expected_email)

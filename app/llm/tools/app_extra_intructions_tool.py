@@ -15,7 +15,7 @@ class FindAppInput(BaseModel):
     app_name: Optional[str] = Field(description="should be a the app name")
 
 
-def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
+async def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
     app_store = factory_app_store()
     empty_res = {
         APP_ID_KEY: None,
@@ -44,6 +44,7 @@ def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
 
 find_app_extra_inst_tool = StructuredTool.from_function(
     func=_find_app,
+    coroutine=_find_app,
     name="find_app",
     description="finds the app name in the messages",
     args_schema=FindAppInput,

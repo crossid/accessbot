@@ -18,7 +18,9 @@ from app.llm.tools.retriever_tool import create_retriever_tool
 
 from .nodes import (
     CONV_TYPE_DATA_OWNER,
+    CONV_TYPE_FAILED_GUARD,
     CONV_TYPE_INFO,
+    CONVERSATION_TYPE_KEY,
     DATA_OWNER_AGENT_NODE,
     INFORMATION_AGENT_NAME,
     RECOMMENDER_AGENT_NAME,
@@ -28,8 +30,6 @@ from .nodes import (
     entry_point_node,
 )
 from .prompts import MEMORY_KEY, WS_ID_KEY
-
-CONVERSATION_TYPE_KEY = "conv_type"
 
 
 class GraphState(TypedDict):
@@ -171,6 +171,7 @@ def base_edges() -> list[_Condition_Edge]:
             conditional_edge_mapping={
                 CONV_TYPE_INFO: INFORMATION_AGENT_NAME,
                 CONV_TYPE_DATA_OWNER: DATA_OWNER_AGENT_NODE,
+                CONV_TYPE_FAILED_GUARD: END,
             },
         ),
         _Condition_Edge(
