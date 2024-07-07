@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import StructuredTool, ToolException
@@ -10,6 +10,7 @@ from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.tools.provision_role_tool import provision_role
 from app.llm.tools.rule_engine.rule_engine_agent import FinalAnswer, should_auto_approve
+from app.llm.tools.utils import update_conv
 from app.models import (
     Conversation,
     ConversationStatuses,
@@ -109,6 +110,14 @@ async def _request_roles(
                         **kwargs,
                     )
                     if success:
+                        update_conv(
+                            conv_store=conv_store,
+                            status=ConversationStatuses.approved.value,
+                            conv_summary=conv_summary,
+                            workspace_id=workspace_id,
+                            conversation_id=conversation_id,
+                            tx_context=tx_context,
+                        )
                         return "access approved automatically"
                     else:
                         raise ValueError(
@@ -186,14 +195,12 @@ async def _request_roles(
         await checkpointer.aput(config, checkpoint, cmetadata)
 
         # update conversation to completed
-        updates: dict[str, Any] = {
-            "status": ConversationStatuses.completed.value,
-            "summary": conv_summary,
-        }
-        conv_store.update(
+        update_conv(
+            conv_store=conv_store,
+            status=ConversationStatuses.completed.value,
+            conv_summary=conv_summary,
             workspace_id=workspace_id,
             conversation_id=conversation_id,
-            updates=updates,
             tx_context=tx_context,
         )
 

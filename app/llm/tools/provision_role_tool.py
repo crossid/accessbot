@@ -1,8 +1,7 @@
-from typing import Any
-
 from langchain_core.tools import StructuredTool, ToolException
 from pydantic.v1 import BaseModel, Field, create_model
 
+from app.llm.tools.utils import update_conv
 from app.models import ConversationStatuses, Directory
 from app.services import (
     factory_app_store,
@@ -80,21 +79,19 @@ async def _provision_role(
                 raise ToolException(f"failed to provision role: {err}")
 
             # update current request to approved
-            updates: dict[str, Any] = {
-                "status": ConversationStatuses.approved.value,
-                "summary": create_summary(
+            update_conv(
+                conv_store=conv_store,
+                status=ConversationStatuses.approved.value,
+                conv_summary=create_summary(
                     conv_summary=conv_summary,
                     requester_email=requester_email,
                     app_name=app_name,
                     directory=directory,
                     **kwargs,
                 ),
-            }
-            conv_store.update(
                 workspace_id=workspace_id,
                 conversation_id=conversation_id,
                 tx_context=tx_context,
-                updates=updates,
             )
 
         else:
