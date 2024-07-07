@@ -1,3 +1,4 @@
+import json
 from typing import Callable, Dict
 
 from langchain.schema.runnable import Runnable, RunnableConfig
@@ -40,5 +41,15 @@ async def streaming(
                     final_outputs.append(msg_content)
                     content = event_transformer(msg_content, llm_name)
                     yield content
+        elif kind == "on_tool_start":
+            inputs = {"inputs": event["data"].get("input")}
+            content = json.dumps(inputs)
+            output = event_transformer(content, llm_name, "start-tool")
+            yield output
+        elif kind == "on_tool_end":
+            outputs = {"outputs": event["data"].get("output")}
+            content = json.dumps(outputs)
+            output = event_transformer(content, llm_name, "end-tool")
+            yield output
 
     callback(final_outputs[-1]) if callback else None
