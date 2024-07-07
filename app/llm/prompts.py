@@ -80,6 +80,7 @@ TEMPLATES = {
     - You **must** use the recommender agent to get recommendations.
     - Only use recommended access returned from the recommender.
     - If you see the answer "use recommender" than respond with "Recommender".
+    - Respond to the user in the same language he is talking.
 
     The current user email is: {email}
     The current workspace id is: {workspace_id}
