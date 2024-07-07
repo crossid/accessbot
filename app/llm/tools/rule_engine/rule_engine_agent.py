@@ -108,7 +108,7 @@ async def should_auto_approve(
         prompt=prompt,
         tools=[create_relevant_data_tool(app_id=app.id, ws_id=ws.id)],
         name="rule_engine",
-        streaming=False,
+        streaming=True,
     )
 
     # run agent
