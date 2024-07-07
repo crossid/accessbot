@@ -1,9 +1,10 @@
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.tools import Tool
 from pydantic.v1 import BaseModel, Field, create_model
 
 from app.models import Conversation, Workspace
+from app.models_stores import ConversationStore
 from app.services import (
     factory_app_store,
 )
@@ -45,3 +46,23 @@ def create_expanded_model(
     dynamic_model = create_model(f"Dynamic{model_name}", __base__=base_model, **fields)
 
     return dynamic_model
+
+
+def update_conv(
+    conv_store: ConversationStore,
+    status: str,
+    conv_summary: str,
+    workspace_id: str,
+    conversation_id: str,
+    tx_context,
+):
+    updates: dict[str, Any] = {
+        "status": status,
+        "summary": conv_summary,
+    }
+    conv_store.update(
+        workspace_id=workspace_id,
+        conversation_id=conversation_id,
+        updates=updates,
+        tx_context=tx_context,
+    )
