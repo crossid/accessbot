@@ -224,7 +224,7 @@ async def conversation(
                 status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
             )
 
-        if ar.status == ConversationStatuses.completed:
+        if ar.status != ConversationStatuses.active:
             raise HTTPException(
                 status_code=status.HTTP_412_PRECONDITION_FAILED,
                 detail="conversation has ended, please start a new one",

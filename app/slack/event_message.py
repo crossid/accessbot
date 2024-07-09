@@ -93,7 +93,7 @@ def answer(client: WebClient, event, logger, say, context):
                     conversation=conversation, tx_context=tx_context
                 )
                 logger.info("conversation %s created from slack", conversation.id)
-        elif conversation.status == ConversationStatuses.completed:
+        elif conversation.status != ConversationStatuses.active:
             say(
                 text="This conversation has ended, please start a new one.",
                 thread_ts=thread_ts,
