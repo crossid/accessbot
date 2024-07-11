@@ -41,7 +41,7 @@ def get_rules(
         workspace_id=ws_id,
         limit=9999,
         tx_context=tx_context,
-        filters={"type": RuleTypes.auto_approve},
+        filters={"type": RuleTypes.auto_approve, "active": True},
     )
 
     for rule in ws_rules:

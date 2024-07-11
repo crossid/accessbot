@@ -174,7 +174,7 @@ class ThenTypes(enum.Enum):
 
 
 # currently, applications and directories are immutable because it's too much work to update them
-RULE_MUTABLE_FIELDS = ["when"]
+RULE_MUTABLE_FIELDS = ["when", "active"]
 
 
 class Rule(BaseModel):
@@ -182,6 +182,7 @@ class Rule(BaseModel):
     workspace_id: str
     directory_ids: Optional[List[str]] = Field(default=None)
     application_ids: Optional[List[str]] = Field(default=None)
+    active: bool = Field(default=True)
     when: str
     then: ThenTypes
     type: RuleTypes
