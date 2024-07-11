@@ -86,6 +86,15 @@ class TestWorkspaceStoreSQL(unittest.TestCase):
                 then=ThenTypes.deny,
                 directory_ids=["foo"],
             ),
+            Rule(
+                id="7",
+                workspace_id="1",
+                created_by="foo",
+                type=RuleTypes.auto_approve,
+                when=rule1when,
+                then=ThenTypes.approve,
+                active=False,
+            ),
         ]
         with SQLAlchemyTransactionContext(engine=self.engine).manage() as tx_context:
             for r in rules:

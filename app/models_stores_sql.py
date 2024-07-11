@@ -13,6 +13,7 @@ from langgraph.checkpoint.base import (
 from sqlalchemy import (
     JSON,
     TIMESTAMP,
+    Boolean,
     Column,
     Connection,
     DateTime,
@@ -210,6 +211,7 @@ rules_table = sqlalchemy.Table(
         ForeignKey(workspace_table.c.id),
         nullable=False,
     ),
+    Column("active", Boolean(), nullable=False, default=True),
     Column("when", String(), nullable=False),
     Column("then", Enum(ThenTypes), nullable=False),
     Column("type", Enum(RuleTypes), nullable=False),
