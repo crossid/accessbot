@@ -1,4 +1,4 @@
-from app.llm.tools.consts import EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
+from app.consts import EMAIL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from app.models import Workspace
 from app.vault_utils import resolve_ws_config_secrets
 

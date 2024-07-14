@@ -3,6 +3,8 @@ from typing import List
 import injector
 from fastapi import Query
 
+from app.registration_provider import RegistrationProviderInterface
+
 from .models_stores import (
     ApplicationStore,
     ChatMessageStore,
@@ -82,6 +84,10 @@ def factory_rule_store():
 
 def factory_vault():
     return service_registry().get(VaultAPI)
+
+
+def factory_reg_provider():
+    return service_registry().get(RegistrationProviderInterface)
 
 
 async def pagination_params(

@@ -22,5 +22,7 @@ class Settings(BaseSettings):
 
     USER_STORE_FILE_PATH: str = "tmp/data.json"
 
+    REGISTRATION_URL_TEMPLATE: str = "https://www.crossid.io/portal/accessbot/bot"
+
 
 settings = Settings()

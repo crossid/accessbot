@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import StructuredTool, ToolException
 from langgraph.checkpoint.base import CheckpointMetadata, empty_checkpoint
 
+from app.consts import TICKET_SYSTEM_CONFIG_KEY
 from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.tools.provision_role_tool import provision_role
@@ -28,7 +29,6 @@ from app.services import (
 )
 from app.sql import SQLAlchemyTransactionContext
 
-from .consts import TICKET_SYSTEM_CONFIG_KEY
 from .create_ticket.factory import TicketSystemFactory
 from .data_owner.factory import get_data_owner
 
