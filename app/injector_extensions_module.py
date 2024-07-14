@@ -1,5 +1,10 @@
 import injector
 
+from app.registration_provider import (
+    DefaultRegistrationProvider,
+    RegistrationProviderInterface,
+)
+
 from .json_file_stores import UserStoreFromJsonFile
 from .models_stores import (
     UserStore,
@@ -17,3 +22,8 @@ class ExtensionModule(injector.Module):
             WorkspaceStoreHooks, to=WorkspaceStoreHooksPass, scope=injector.singleton
         )
         binder.bind(VaultAPI, to=EnvVarVault, scope=injector.singleton)
+        binder.bind(
+            RegistrationProviderInterface,
+            to=DefaultRegistrationProvider,
+            scope=injector.singleton,
+        )

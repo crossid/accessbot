@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, HttpUrl, ValidationError
 
 from app.authz import Permissions, is_admin_or_has_scopes
-from app.llm.tools.consts import (
+from app.consts import (
     DATAOWNER_CONFIG_KEY,
     EMAIL_CONFIG_KEY,
     TICKET_SYSTEM_CONFIG_KEY,

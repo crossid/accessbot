@@ -1,5 +1,3 @@
-from app.models import User
-
 from .iface import DataOwnerInterface
 
 
@@ -9,5 +7,5 @@ class MockImpl(DataOwnerInterface):
     def __init__(self) -> None:
         pass
 
-    async def get_data_owner(self, app_name: str, **kwargs) -> User:
+    async def get_data_owner(self, app_name: str, **kwargs) -> str:
         return None

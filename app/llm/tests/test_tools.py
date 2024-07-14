@@ -18,7 +18,7 @@ class TestCreateTicketTool(unittest.TestCase):
         set_service_registry(service_registry)
 
     def test_make_request(self):
-        from app.llm.tools.consts import TICKET_SYSTEM_CONFIG_KEY
+        from app.consts import TICKET_SYSTEM_CONFIG_KEY
         from app.llm.tools.create_ticket_for_role_request_tool import make_request
 
         config: dict[str, Any] = {

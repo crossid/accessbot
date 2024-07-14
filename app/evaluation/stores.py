@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from fastapi import BackgroundTasks
 
-from app.llm.tools.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
+from app.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from app.models import (
     Application,
     ChatMessage,

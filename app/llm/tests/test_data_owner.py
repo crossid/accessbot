@@ -2,7 +2,13 @@ import asyncio
 import unittest
 from typing import Any
 
+from app.consts import EMAIL_CONFIG_KEY
+from app.llm.tools.data_owner.factory import send_registration_email
 from app.models import Directory, Workspace
+from app.registration_provider import (
+    DefaultRegistrationProvider,
+    RegistrationProviderInterface,
+)
 
 
 class TestGetDataOwner(unittest.TestCase):
@@ -43,6 +49,11 @@ class TestGetDataOwner(unittest.TestCase):
                     scope=injector.singleton,
                 )
                 binder.bind(VaultAPI, to=EnvVarVault, scope=injector.singleton)
+                binder.bind(
+                    RegistrationProviderInterface,
+                    to=DefaultRegistrationProvider,
+                    scope=injector.singleton,
+                )
 
         service_registry = injector.Injector([ExtensionModule()])
         set_service_registry(service_registry)
@@ -50,7 +61,7 @@ class TestGetDataOwner(unittest.TestCase):
     def test_get_data_owner(self):
         from dotenv import load_dotenv
 
-        from app.llm.tools.consts import DATAOWNER_CONFIG_KEY
+        from app.consts import DATAOWNER_CONFIG_KEY
         from app.llm.tools.data_owner.factory import get_data_owner
 
         load_dotenv()
@@ -75,3 +86,18 @@ class TestGetDataOwner(unittest.TestCase):
         )
 
         self.assertEqual(owner.email, expected_email)
+
+    def test_registration_email(self):
+        config: dict[str, Any] = {
+            EMAIL_CONFIG_KEY: {"type": "smtp", "config": {"host": "localhost:1025"}}
+        }
+        ws = Workspace(
+            display_name="foo",
+            unique_name="foo",
+            creator_id="bar",
+            config=config,
+            created_by="bar",
+        )
+
+        send_registration_email(ws=ws, to="foo@bar.com")
+        self.assertEqual(1, 1)
