@@ -167,6 +167,8 @@ async def setup_workspace_vstore(
     ws: Annotated[Workspace, Depends(get_current_workspace)],
 ):
     wvstore = create_workspace_vstore(
-        ws.id, create_embedding(settings.VSTORE_EMBEDDING)
+        workspace_id=ws.id,
+        embedding=create_embedding(settings.VSTORE_EMBEDDING),
+        workspace_unique_name=ws.unique_name,
     )
     return wvstore

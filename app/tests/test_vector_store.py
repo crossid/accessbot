@@ -18,10 +18,12 @@ def setup_teardown(request):
 class TestVectorStore:
     def test_create_workspace_vstore(self):
         workspace_id = "acme"
+        workspace_unique_name = "acme"
         vs = create_workspace_vstore(
-            workspace_id,
+            workspace_id=workspace_id,
             uri=f"sqlite://{self.db_file}",
             embedding=create_embedding("sentence_transformer"),
+            workspace_unique_name=workspace_unique_name,
         )
         t1 = "Ketanji Brown Jackson is awesome"
         t2 = "Ketanji Brown Jackson job is a judge"

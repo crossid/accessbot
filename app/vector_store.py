@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.parse import urlparse
 
 from langchain_community.vectorstores.pgvector import PGVector
@@ -26,7 +27,10 @@ def docs_sqlite(**kwargs):
 
 # TODO embedding function should be generalized
 def create_workspace_vstore(
-    workspace_id: str, embedding: Embeddings, uri=settings.VSTORE_URI
+    workspace_id: str,
+    embedding: Embeddings,
+    uri=settings.VSTORE_URI,
+    workspace_unique_name: Optional[str] = None,
 ) -> VectorStore:
     parsed_url = urlparse(uri)
     protocol = parsed_url.scheme
@@ -61,7 +65,7 @@ def create_workspace_vstore(
         sqlite_vss.load(connection)
         connection.enable_load_extension(False)
 
-        table = f"{workspace_id.translate(ID_TRANS_TABLE)}_data"
+        table = f"{workspace_unique_name if workspace_unique_name is not None else workspace_id.translate(ID_TRANS_TABLE)}_data"
         slv = SQLiteVSS(
             connection=connection,
             table=table,
@@ -103,9 +107,15 @@ def delete_ids(ovstore: VectorStore, ids: list[str], uri=settings.VSTORE_URI) ->
 
 
 # NOTE: this crashed if the workspace's vectorstore has no documents
-def create_retriever(workspace_id: str, embedding: Embeddings) -> BaseRetriever:
+def create_retriever(
+    workspace_id: str,
+    embedding: Embeddings,
+    workspace_unique_name: Optional[str] = None,
+) -> BaseRetriever:
     ws_ret = create_workspace_vstore(
-        workspace_id=workspace_id, embedding=embedding
+        workspace_id=workspace_id,
+        embedding=embedding,
+        workspace_unique_name=workspace_unique_name,
     ).as_retriever()
     return ws_ret
 
