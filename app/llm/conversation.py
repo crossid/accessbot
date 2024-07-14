@@ -38,9 +38,12 @@ def create_agent_for_access_request_conversation(
     data_context: dict[str, Any],
     checkpointer: BaseCheckpointSaver = None,
 ):
+    workspace_unique_name = ws.unique_name if ws is not None else None
     embedding = create_embedding()
     retriever = create_retriever(
-        workspace_id=conversation.workspace_id, embedding=embedding
+        workspace_id=conversation.workspace_id,
+        embedding=embedding,
+        workspace_unique_name=workspace_unique_name,
     )
 
     if checkpointer is None:
