@@ -11,6 +11,7 @@ from app.llm.tools.rule_engine.rule_engine_relevant_data import (
 )
 from app.models import Application, Directory, Rule, RuleTypes, ThenTypes, Workspace
 from app.services import factory_rule_store
+from app.settings import settings
 from app.sql import SQLAlchemyTransactionContext
 
 
@@ -109,6 +110,7 @@ async def should_auto_approve(
         tools=[create_relevant_data_tool(app_id=app.id, ws_id=ws.id)],
         name="rule_engine",
         streaming=False,
+        model=settings.SMALL_LLM_MODEL,
     )
 
     # run agent

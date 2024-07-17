@@ -3,10 +3,12 @@ import functools
 import json
 from types import coroutine
 
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
 from app.llm.guardrails.on_topic import topical_guardrail
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
 from app.models import ConversationTypes
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from app.settings import settings
 
 from .agents import create_agent
 from .prompts import (
@@ -150,6 +152,7 @@ def entry_point_node(data_context):
             tools=[find_app_extra_inst_tool],
             name="entry_point",
             streaming=False,
+            model=settings.SMALL_LLM_MODEL,
         )
 
         corou = agent.ainvoke(state)
