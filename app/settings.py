@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     OAUTH2_OPENID_CONFIGURATION: str
     OAUTH2_AUDIENCE: str
     # llm
-    LLM_MODEL: str = "openai://gpt-4-turbo-preview"
-    GUARDRAILS_LLM_MODEL: str = "openai://gpt-4o"
+    LLM_MODEL: str = "openai://gpt-4o"
+    SMALL_LLM_MODEL: str = "openai://gpt-4o-mini"
     # messaging
     SLACK_CLIENT_ID: str
     SLACK_CLIENT_SECRET: str
