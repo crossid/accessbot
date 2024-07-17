@@ -19,7 +19,7 @@ _parser = PydanticOutputParser(pydantic_object=Valid)
 
 def on_topic_guard():
     model = create_model(
-        model=settings.GUARDRAILS_LLM_MODEL,
+        model=settings.SMALL_LLM_MODEL,
         temperature=0.2,
         streaming=False,
         name="guardrails",

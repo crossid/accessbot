@@ -1,6 +1,7 @@
 import enum
 from typing import List
 
+from langchain.output_parsers import PydanticOutputParser
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
@@ -11,6 +12,7 @@ from app.llm.tools.rule_engine.rule_engine_relevant_data import (
 )
 from app.models import Application, Directory, Rule, RuleTypes, ThenTypes, Workspace
 from app.services import factory_rule_store
+from app.settings import settings
 from app.sql import SQLAlchemyTransactionContext
 
 
@@ -28,6 +30,9 @@ class RulesAnswer(BaseModel):
     final_decision_rule: str = Field(
         description="the rule that made you take your final decision"
     )
+
+
+_parser = PydanticOutputParser(pydantic_object=RulesAnswer)
 
 
 # engine is here for easier testing
@@ -103,16 +108,18 @@ async def should_auto_approve(
 
     # create agent
     data_ctx = rules_to_prompt_str(rules)
+    data_ctx["format_instructions"] = _parser.get_format_instructions()
     prompt = get_prompt(prompt_id=RULE_ENGINE_TEMPLATE, data_context=data_ctx)
     agent = create_agent(
         prompt=prompt,
         tools=[create_relevant_data_tool(app_id=app.id, ws_id=ws.id)],
         name="rule_engine",
         streaming=True,
+        model=settings.SMALL_LLM_MODEL,
     )
 
     # run agent
     content = create_msg(ws=ws, dir=dir, app=app, user_email=user_email, **kwargs)
     answer = await agent.ainvoke(input={MEMORY_KEY: [HumanMessage(content=content)]})
-    ranswer = RulesAnswer.model_validate_json(answer["output"])
+    ranswer = _parser.invoke(answer["output"])
     return ranswer

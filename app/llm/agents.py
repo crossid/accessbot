@@ -1,3 +1,5 @@
+from typing import Optional
+
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
@@ -33,6 +35,7 @@ def create_agent(
     tools: list[Tool] = [],
     name="",
     streaming=True,
+    model: Optional[str] = None,
 ) -> AgentExecutor:
     sys_msg = SystemMessagePromptTemplate(prompt=prompt)
 
@@ -45,7 +48,7 @@ def create_agent(
     )
 
     model_type, _, _ = get_model_from_uri(settings.LLM_MODEL)
-    model = create_model(temperature=0, streaming=streaming, name=name)
+    model = create_model(temperature=0, streaming=streaming, name=name, model=model)
 
     converter = create_llm_function_converter(model_type)
     llm_with_tools = model.bind(functions=[converter(t) for t in tools])

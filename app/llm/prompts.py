@@ -119,12 +119,8 @@ TEMPLATES = {
     </deny_rules>
 
     Default to "deny"
-  
-    Answer with a dictionary containing the fields:
-    - final_answer: should be approve or deny
-    - rules: list of from approve_rules or deny_rules that match
-    - why: explanation for your decision
-    - final_decision_rule: the rule that made you take your final decision
+
+    {format_instructions}
 """,
 }
 
