@@ -1,5 +1,6 @@
 from slack_sdk import WebClient
 
+from app.i18n import i18n
 from app.llm.tools.create_ticket.iface import TicketInterface
 from app.models import User
 from app.services import factory_conversation_store
@@ -11,7 +12,6 @@ class SlackImpl(TicketInterface):
     def __init__(self) -> None:
         pass
 
-    # TODO: needs to change to support recommendations and not specific role request
     def create_ticket(
         self,
         content: str,
@@ -21,6 +21,7 @@ class SlackImpl(TicketInterface):
         conversation_id: str,
         workspace_id: str,
         app_name: str,
+        conv_lang: str,
         **kwargs,
     ):
         if owner is None:
@@ -47,8 +48,9 @@ class SlackImpl(TicketInterface):
         slack_owner_response = client.users_lookupByEmail(email=owner.email)
         resp_channel = slack_owner_response.data["user"]["id"]
 
+        i = i18n(lang=conv_lang)
         formatted_kwargs = "; ".join(
-            [f"{key}: {value}" for key, value in kwargs.items()]
+            [f"{i.t(key)}: {value}" for key, value in kwargs.items()]
         )
 
         blocks = [
@@ -56,7 +58,7 @@ class SlackImpl(TicketInterface):
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"You have a new request from:\n*{requester.full_name}*",
+                    "text": f"{i.t('request_waiting').capitalize()}:\n*{requester.full_name}*",
                 },
             },
             {
@@ -64,15 +66,15 @@ class SlackImpl(TicketInterface):
                 "fields": [
                     {
                         "type": "mrkdwn",
-                        "text": f"*App Name:*\n{app_name}",
+                        "text": f"*{i.t('app_name').capitalize()}:*\n{app_name}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"*Summary:*\n{conv_summary}",
+                        "text": f"*{i.t('summary').capitalize()}:*\n{conv_summary}",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"*My Recommendation:*\n{formatted_kwargs}",
+                        "text": f"*{i.t('my_recommendation').capitalize()}:*\n{formatted_kwargs}",
                     },
                 ],
             },
@@ -97,7 +99,7 @@ class SlackImpl(TicketInterface):
         client.chat_postMessage(
             channel=resp_channel,
             thread_ts=thread,
-            text="Would you like to approve any of the above roles, or would you like for more recommendations?",
+            text=i.t("approval_q").capitalize(),
         )
 
         return thread

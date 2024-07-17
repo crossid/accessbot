@@ -11,6 +11,7 @@ class TicketInterface(ABC):
         owner: User,
         requester: User,
         conv_summary: str,
+        conv_lang: str,
         conversation_id: str,
         workspace_id: str,
         app_name: str,

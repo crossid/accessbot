@@ -10,7 +10,7 @@ from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.tools.provision_role_tool import provision_role
 from app.llm.tools.rule_engine.rule_engine_agent import FinalAnswer, should_auto_approve
-from app.llm.tools.utils import update_conv
+from app.llm.tools.utils import get_do_msg_content, update_conv
 from app.models import (
     Conversation,
     ConversationStatuses,
@@ -67,6 +67,7 @@ async def make_request(
 
 async def _request_roles(
     conv_summary: str,
+    conv_lang: str,
     conversation_id: str,
     user_email: str,
     workspace_id: str,
@@ -138,6 +139,7 @@ async def _request_roles(
                     requester=current_user,
                     conversation_id=conversation_id,
                     conv_summary=conv_summary,
+                    conv_lang=conv_lang,
                     **kwargs,
                 )
             except Exception as err:
@@ -158,11 +160,14 @@ async def _request_roles(
         )
         new_do_conv = conv_store.insert(conversation=do_conv, tx_context=tx_context)
 
-        msg = f"""hello, there's a new request waiting for you:\n 
-            {output}.\n
-            Here are our recommendations:\n
-            {kwargs}.\n
-            Would you like to approve any of the above recommendations?"""
+        kwargs_str = "\n".join(f"{key}: {value}" for key, value in kwargs.items())
+        msg = get_do_msg_content(
+            lang=conv_lang,
+            requester=user_email,
+            app_name=app_name,
+            conv_summary=conv_summary,
+            **kwargs,
+        )
 
         message_store = factory_message_store()
         chat_history = LangchainChatMessageHistory(
@@ -172,17 +177,14 @@ async def _request_roles(
             store=message_store,
         )
 
-        chat_history.add_ai_message(message=msg)
+        chat_history.add_ai_message(message=msg.full)
 
         checkpoint = empty_checkpoint()
-        kwargs_str = "\n".join(f"{key}: {value}" for key, value in kwargs.items())
         sys_msg = f"requester: {user_email}.\nprevious conversation summary: {conv_summary}.\ndirectory: {directory}\napp_id: {app.id}\napp_name: {app_name}\n{kwargs_str}"
         checkpoint["channel_values"] = {
             MEMORY_KEY: [
                 SystemMessage(content=sys_msg),
-                AIMessage(
-                    content="would you like to approve any of the above recommendations?"
-                ),
+                AIMessage(content=msg.approval_q),
             ]
         }
         cmetadata = CheckpointMetadata()
@@ -214,6 +216,7 @@ class RequestRolesInput(BaseModel):
     conv_summary: str = Field(
         description="should be a summary of the conversation with the user"
     )
+    conv_lang: str = Field(description="ISO 639 language code of the conversation")
     conversation_id: str = Field(description="the id of the current conversation")
     user_email: str = Field(
         description="the email of the current user in the conversation"

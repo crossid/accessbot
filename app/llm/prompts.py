@@ -98,10 +98,15 @@ TEMPLATES = {
     You can help the data owners by either approving access, denying access or make new access recommendations.
     For making recommendations, you need the recommender agent.
     Respond with "Recommender" if you want to start the recommender agent.
-    REMEMBER: Always use the recommender agent to make recommendations. Show the recommendations to the user. Do not approve access without explicit consent from the user.
     The current user email is: {email}
     The current workspace id is: {workspace_id}
     The conversation id is: {conversation_id}
+
+    REMEMBER:
+    - Respond to the user in the same language he is talking.
+    - Always use the recommender agent to make recommendations.
+    - Show the recommendations to the user.
+    - Do not approve access without explicit consent from the user.
 """,
     RULE_ENGINE_TEMPLATE: """
     You are a rule engine assistant.
