@@ -4,13 +4,12 @@ from typing import Optional
 from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import StructuredTool, ToolException
 from langgraph.checkpoint.base import CheckpointMetadata, empty_checkpoint
-from pydantic.v1 import BaseModel, Field, create_model
 
 from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.tools.provision_role_tool import provision_role
 from app.llm.tools.rule_engine.rule_engine_agent import FinalAnswer, should_auto_approve
-from app.llm.tools.utils import get_do_msg_content, update_conv
+from app.llm.tools.utils import create_expanded_model, get_do_msg_content, update_conv
 from app.models import (
     Conversation,
     ConversationStatuses,
@@ -212,54 +211,52 @@ async def _request_roles(
     return "conversation ended"
 
 
-class RequestRolesInput(BaseModel):
-    conv_summary: str = Field(
-        description="should be a summary of the conversation with the user"
-    )
-    conv_lang: str = Field(description="ISO 639 language code of the conversation")
-    conversation_id: str = Field(description="the id of the current conversation")
-    user_email: str = Field(
-        description="the email of the current user in the conversation"
-    )
-    workspace_id: str = Field(description="workspace id of the current request")
-    app_name: str = Field(description="name of the application the user needs access")
-    directory: str = Field(description="directory related to the roles")
-
-
-def create_expanded_model(extra_fields):
-    fields = {
-        k: (str, Field(description=info["description"]))
-        for k, info in extra_fields.items()
-    }
-    rrt_model = create_model(
-        "DynamicRequestRolesInput", __base__=RequestRolesInput, **fields
-    )
-
-    return rrt_model
+rri = {
+    "conv_summary": {
+        "type": str,
+        "description": "should be a summary of the conversation with the user",
+    },
+    "conv_lang": {
+        "type": str,
+        "description": "ISO 639 language code of the conversation",
+    },
+    "conversation_id": {
+        "type": str,
+        "description": "the id of the current conversation",
+    },
+    "user_email": {
+        "type": str,
+        "description": "the email of the current user in the conversation",
+    },
+    "workspace_id": {"type": str, "description": "workspace id of the current request"},
+    "app_name": {
+        "type": str,
+        "description": "name of the application the user needs access",
+    },
+    "directory": {"type": str, "description": "directory related to the roles"},
+}
 
 
 def create_request_roles_tool(app_id: str, ws_id: str):
-    app_store = factory_app_store()
-    extra_fields = {
+    default_extra_fields = {
         "access_id": {
             "description": "should be a the recommended access identifier deduced from the conversation"
         }
     }
-    with SQLAlchemyTransactionContext().manage() as tx_context:
-        app = app_store.get_by_id(
-            app_id=app_id, workspace_id=ws_id, tx_context=tx_context
-        )
-        if app is not None and app.provision_schema is not None:
-            extra_fields = app.provision_schema
 
-    rrt_model = create_expanded_model(extra_fields=extra_fields)
+    dynamic_model = create_expanded_model(
+        app_id=app_id,
+        ws_id=ws_id,
+        base_model=rri,
+        model_name="RequestRolesInput",
+        default_extra_fields=default_extra_fields,
+    )
     request_roles_tool = StructuredTool.from_function(
         func=_request_roles,
         coroutine=_request_roles,
         name="request_access",
         description="useful for when you need to request access",
-        args_schema=rrt_model,
-        return_direct=False,
+        args_schema=dynamic_model,
         handle_tool_error=True,
     )
 
