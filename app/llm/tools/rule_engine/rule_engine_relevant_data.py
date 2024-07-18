@@ -1,5 +1,4 @@
 from langchain_core.tools import StructuredTool
-from pydantic.v1 import BaseModel, Field
 
 from app.llm.tools.access_data.factory import GetAccessDataFactory
 from app.llm.tools.user_data.factory import GetUserDataFactory
@@ -7,12 +6,12 @@ from app.llm.tools.utils import create_expanded_model
 from app.services import factory_dir_store, factory_ws_store
 from app.sql import SQLAlchemyTransactionContext
 
-
-class RelevantDataInput(BaseModel):
-    workspace_id: str = Field(description="the workspace id")
-    app_name: str = Field(description="the app name")
-    directory_id: str = Field(description="the directory id")
-    user_email: str = Field(description="the user's email address")
+relevant_data_input_dict = {
+    "workspace_id": {"type": str, "description": "the workspace id"},
+    "app_name": {"type": str, "description": "the app name"},
+    "directory_id": {"type": str, "description": "the directory id"},
+    "user_email": {"type": str, "description": "the user's email address"},
+}
 
 
 async def _get_relevant_data(
@@ -49,8 +48,11 @@ def create_relevant_data_tool(app_id: str, ws_id: str) -> StructuredTool:
     dynamic_model = create_expanded_model(
         app_id=app_id,
         ws_id=ws_id,
-        base_model=RelevantDataInput,
+        base_model=relevant_data_input_dict,
         model_name="RelevantDataInput",
+        default_extra_fields={
+            "role_name": {"description": "should be a the role name"}
+        },
     )
 
     fetch_relevant_data_tool = StructuredTool.from_function(

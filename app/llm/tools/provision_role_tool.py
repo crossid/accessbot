@@ -1,10 +1,8 @@
 from langchain_core.tools import StructuredTool, ToolException
-from pydantic.v1 import BaseModel, Field, create_model
 
-from app.llm.tools.utils import update_conv
+from app.llm.tools.utils import create_expanded_model, update_conv
 from app.models import ConversationStatuses, Directory
 from app.services import (
-    factory_app_store,
     factory_conversation_store,
     factory_dir_store,
 )
@@ -100,45 +98,42 @@ async def _provision_role(
     return f"role approved for {requester_email} successfully"
 
 
-class ApproveRolesInput(BaseModel):
-    conv_summary: str = Field(
-        description="should be a summary of the conversation with the user"
-    )
-    requester_email: str = Field(
-        description="the email of the user who requested the role"
-    )
-    conversation_id: str = Field(description="the id of the current conversation")
-    user_email: str = Field(
-        description="the email of the current user in the conversation"
-    )
-    workspace_id: str = Field(description="workspace id of the current request")
-    app_name: str = Field(description="name of the application the user needs access")
-    directory: str = Field(description="directory related to the role")
-
-
-def create_expanded_model(extra_fields):
-    fields = {
-        k: (str, Field(description=info["description"]))
-        for k, info in extra_fields.items()
-    }
-    rrt_model = create_model(
-        "DynamicApproveRolesInput", __base__=ApproveRolesInput, **fields
-    )
-
-    return rrt_model
+approve_roles_input_dict = {
+    "conv_summary": {
+        "type": str,
+        "description": "should be a summary of the conversation with the user",
+    },
+    "requester_email": {
+        "type": str,
+        "description": "the email of the user who requested the role",
+    },
+    "conversation_id": {
+        "type": str,
+        "description": "the id of the current conversation",
+    },
+    "user_email": {
+        "type": str,
+        "description": "the email of the current user in the conversation",
+    },
+    "workspace_id": {"type": str, "description": "workspace id of the current request"},
+    "app_name": {
+        "type": str,
+        "description": "name of the application the user needs access",
+    },
+    "directory": {"type": str, "description": "directory related to the role"},
+}
 
 
 def create_provision_role_tool(app_id: str, ws_id: str) -> StructuredTool:
-    app_store = factory_app_store()
-    extra_fields = {"access_id": {"description": "should be a the access id"}}
-    with SQLAlchemyTransactionContext().manage() as tx_context:
-        app = app_store.get_by_id(
-            app_id=app_id, workspace_id=ws_id, tx_context=tx_context
-        )
-        if app is not None and app.provision_schema is not None:
-            extra_fields = app.provision_schema
+    default_extra_fields = {"access_id": {"description": "should be a the access id"}}
 
-    dynamic_model = create_expanded_model(extra_fields=extra_fields)
+    dynamic_model = create_expanded_model(
+        app_id=app_id,
+        ws_id=ws_id,
+        base_model=approve_roles_input_dict,
+        model_name="ApproveRolesInput",
+        default_extra_fields=default_extra_fields,
+    )
 
     provision_roles_tool = StructuredTool.from_function(
         func=_provision_role,
