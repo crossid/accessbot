@@ -27,11 +27,36 @@ def get_tools_for_workspace_and_conversation(
     return _tools
 
 
-def create_expanded_model(
-    app_id: str, ws_id: str, base_model: BaseModel, model_name: str
+def _create_expanded_model(
+    base_model: dict[str, dict[str, Any]], model_name: str, extra_fields: dict
 ):
+    fields = {
+        k: (info["type"], Field(description=info["description"]))
+        for k, info in base_model.items()
+    }
+    efields = {
+        k: (str, Field(description=info["description"]))
+        for k, info in extra_fields.items()
+    }
+
+    all_fields = {**fields, **efields}
+
+    dynamic_model = create_model(
+        f"Dynamic{model_name}", __base__=BaseModel, **all_fields
+    )
+
+    return dynamic_model
+
+
+def create_expanded_model(
+    app_id: str,
+    ws_id: str,
+    base_model: dict[str, dict[str, Any]],
+    model_name: str,
+    default_extra_fields={},
+):
+    extra_fields = default_extra_fields
     app_store = factory_app_store()
-    extra_fields = {"role_name": {"description": "should be a the role name"}}
     with SQLAlchemyTransactionContext().manage() as tx_context:
         app = app_store.get_by_id(
             app_id=app_id, workspace_id=ws_id, tx_context=tx_context
@@ -39,13 +64,9 @@ def create_expanded_model(
         if app is not None and app.provision_schema is not None:
             extra_fields = app.provision_schema
 
-    fields = {
-        k: (str, Field(description=info["description"]))
-        for k, info in extra_fields.items()
-    }
-    dynamic_model = create_model(f"Dynamic{model_name}", __base__=base_model, **fields)
-
-    return dynamic_model
+    return _create_expanded_model(
+        base_model=base_model, model_name=model_name, extra_fields=extra_fields
+    )
 
 
 def update_conv(

@@ -221,13 +221,13 @@ tests-no-zope = ["attrs[tests-mypy]", "cloudpickle", "hypothesis", "pympler", "p
 
 [[package]]
 name = "cachetools"
-version = "5.3.3"
+version = "5.4.0"
 description = "Extensible memoizing collections and decorators"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "cachetools-5.3.3-py3-none-any.whl", hash = "sha256:0abad1021d3f8325b2fc1d2e9c8b9c9d57b04c3932657a72465447332c24d945"},
-    {file = "cachetools-5.3.3.tar.gz", hash = "sha256:ba29e2dfa0b8b556606f097407ed1aa62080ee108ab0dc5ec9d6a723a007d105"},
+    {file = "cachetools-5.4.0-py3-none-any.whl", hash = "sha256:3ae3b49a3d5e28a77a0be2b37dbcb89005058959cb2323858c2657c4a8cab474"},
+    {file = "cachetools-5.4.0.tar.gz", hash = "sha256:b8adc2e7c07f105ced7bc56dbb6dfbe7c4a00acce20e2227b3f355be89bc6827"},
 ]
 
 [[package]]
@@ -929,13 +929,13 @@ socks = ["socksio (==1.*)"]
 
 [[package]]
 name = "huggingface-hub"
-version = "0.23.4"
+version = "0.23.5"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.23.4-py3-none-any.whl", hash = "sha256:3a0b957aa87150addf0cc7bd71b4d954b78e749850e1e7fb29ebbd2db64ca037"},
-    {file = "huggingface_hub-0.23.4.tar.gz", hash = "sha256:35d99016433900e44ae7efe1c209164a5a81dbbcd53a52f99c281dcd7ce22431"},
+    {file = "huggingface_hub-0.23.5-py3-none-any.whl", hash = "sha256:d7a7d337615e11a45cc14a0ce5a605db6b038dc24af42866f731684825226e90"},
+    {file = "huggingface_hub-0.23.5.tar.gz", hash = "sha256:67a9caba79b71235be3752852ca27da86bd54311d2424ca8afdb8dda056edf98"},
 ]
 
 [package.dependencies]
@@ -1212,23 +1212,23 @@ typing-extensions = ">=4.5.0"
 
 [[package]]
 name = "langchain"
-version = "0.2.6"
+version = "0.2.9"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain-0.2.6-py3-none-any.whl", hash = "sha256:f86e8a7afd3e56f8eb5ba47f01dd00144fb9fc2f1db9873bd197347be2857aa4"},
-    {file = "langchain-0.2.6.tar.gz", hash = "sha256:867f6add370c1e3911b0e87d3dd0e36aec1e8f513bf06131340fe8f151d89dc5"},
+    {file = "langchain-0.2.9-py3-none-any.whl", hash = "sha256:be23fcb29adbd5059944f1fed08fa575f0739d420b1c4127531e0fbf5663fcca"},
+    {file = "langchain-0.2.9.tar.gz", hash = "sha256:cc326a7f6347787a19882928c324433b1a79df629bba45604b2d26495ee5d69c"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
-langchain-core = ">=0.2.10,<0.3.0"
+langchain-core = ">=0.2.20,<0.3.0"
 langchain-text-splitters = ">=0.2.0,<0.3.0"
 langsmith = ">=0.1.17,<0.2.0"
 numpy = [
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
 pydantic = ">=1,<3"
 PyYAML = ">=5.3"
@@ -1238,24 +1238,24 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-community"
-version = "0.2.6"
+version = "0.2.7"
 description = "Community contributed LangChain integrations."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_community-0.2.6-py3-none-any.whl", hash = "sha256:758cc800acfe5dd396bf8ba1b57c4792639ead0eab48ed0367f0732ec6ee1f68"},
-    {file = "langchain_community-0.2.6.tar.gz", hash = "sha256:40ce09a50ed798aa651ddb34c8978200fa8589b9813c7a28ce8af027bbf249f0"},
+    {file = "langchain_community-0.2.7-py3-none-any.whl", hash = "sha256:c236e74249ab68a318c94c95327cbe75a76489b61f7bf93f14117d9233ce70b1"},
+    {file = "langchain_community-0.2.7.tar.gz", hash = "sha256:f52659dbb8a8f0c011cc7d634247686d11d768843cc3e5fe9e6f52321cde82c0"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.8.3,<4.0.0"
 dataclasses-json = ">=0.5.7,<0.7"
-langchain = ">=0.2.6,<0.3.0"
-langchain-core = ">=0.2.10,<0.3.0"
+langchain = ">=0.2.7,<0.3.0"
+langchain-core = ">=0.2.12,<0.3.0"
 langsmith = ">=0.1.0,<0.2.0"
 numpy = [
-    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
     {version = ">=1,<2", markers = "python_version < \"3.12\""},
+    {version = ">=1.26.0,<2.0.0", markers = "python_version >= \"3.12\""},
 ]
 PyYAML = ">=5.3"
 requests = ">=2,<3"
@@ -1264,13 +1264,13 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-core"
-version = "0.2.11"
+version = "0.2.21"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_core-0.2.11-py3-none-any.whl", hash = "sha256:c7ca4dc4d88e3c69fd7916c95a7027c2b1a11c2db5a51141c3ceb8afac212208"},
-    {file = "langchain_core-0.2.11.tar.gz", hash = "sha256:7a4661b50604eeb20c3373fbfd8a4f1b74482a6ab4e0f9df11e96821ead8ef0c"},
+    {file = "langchain_core-0.2.21-py3-none-any.whl", hash = "sha256:805b1f53e0e2424b83e3673cba1c9354105c5a5e4a1d0d768b1e70d8ac0d604d"},
+    {file = "langchain_core-0.2.21.tar.gz", hash = "sha256:3d1e28179a5d496b900ebef45e1471eaae9fb63fc570f89ded78b026fd08ba84"},
 ]
 
 [package.dependencies]
@@ -1278,25 +1278,25 @@ jsonpatch = ">=1.33,<2.0"
 langsmith = ">=0.1.75,<0.2.0"
 packaging = ">=23.2,<25"
 pydantic = [
-    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 PyYAML = ">=5.3"
 tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 
 [[package]]
 name = "langchain-openai"
-version = "0.1.14"
+version = "0.1.17"
 description = "An integration package connecting OpenAI and LangChain"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langchain_openai-0.1.14-py3-none-any.whl", hash = "sha256:fcd34cc5b5713798908a5828d364b4426e3b1afccbd564d344e5477acb86634a"},
-    {file = "langchain_openai-0.1.14.tar.gz", hash = "sha256:1f13d6041e8bedddf6eb47ccad7416e05af38fa169324f7f1bdf4f385780f8d8"},
+    {file = "langchain_openai-0.1.17-py3-none-any.whl", hash = "sha256:30bef5574ecbbbb91b8025b2dc5a1bd81fd62157d3ad1a35d820141f31c5b443"},
+    {file = "langchain_openai-0.1.17.tar.gz", hash = "sha256:c5d70ddecdcb93e146f376bdbadbb6ec69de9ac0f402cd5b83de50b655ba85ee"},
 ]
 
 [package.dependencies]
-langchain-core = ">=0.2.2,<0.3"
+langchain-core = ">=0.2.20,<0.3.0"
 openai = ">=1.32.0,<2.0.0"
 tiktoken = ">=0.7,<1"
 
@@ -1316,34 +1316,34 @@ langchain-core = ">=0.2.10,<0.3.0"
 
 [[package]]
 name = "langgraph"
-version = "0.0.69"
-description = "langgraph"
+version = "0.1.8"
+description = "Building stateful, multi-actor applications with LLMs"
 optional = false
 python-versions = "<4.0,>=3.9.0"
 files = [
-    {file = "langgraph-0.0.69-py3-none-any.whl", hash = "sha256:7eb628b25ed75d717c9521d98f147424df7dbd04cf0f12bfcf2b5c3122b04137"},
-    {file = "langgraph-0.0.69.tar.gz", hash = "sha256:25391195461e66783811f29dff34f071af8f3302382b80ac2fb524c12f0bc1f2"},
+    {file = "langgraph-0.1.8-py3-none-any.whl", hash = "sha256:cc70cc04c5cdfa0d76d2d10421554496e8827b5ad02f16ecd8b2d96ece101b47"},
+    {file = "langgraph-0.1.8.tar.gz", hash = "sha256:2612e39b049ca31f29a9dc16e9cf29351881d6d1afe139b6364f53513a3a51cf"},
 ]
 
 [package.dependencies]
-langchain-core = ">=0.2,<0.3"
+langchain-core = ">=0.2.15,<0.3"
 
 [[package]]
 name = "langsmith"
-version = "0.1.83"
+version = "0.1.90"
 description = "Client library to connect to the LangSmith LLM Tracing and Evaluation Platform."
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "langsmith-0.1.83-py3-none-any.whl", hash = "sha256:f54d8cd8479b648b6339f3f735d19292c3516d080f680933ecdca3eab4b67ed3"},
-    {file = "langsmith-0.1.83.tar.gz", hash = "sha256:5cdd947212c8ad19adb992c06471c860185a777daa6859bb47150f90daf64bf3"},
+    {file = "langsmith-0.1.90-py3-none-any.whl", hash = "sha256:40b43d908ae0ff061a7ef6f4e7eabf2624db54359210b6bc784ddfa32484e524"},
+    {file = "langsmith-0.1.90.tar.gz", hash = "sha256:f7032acf3736a3db52698126b60da0d909aba20b20ad8a70b678e64bf878c17d"},
 ]
 
 [package.dependencies]
 orjson = ">=3.9.14,<4.0.0"
 pydantic = [
-    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
     {version = ">=1,<3", markers = "python_full_version < \"3.12.4\""},
+    {version = ">=2.7.4,<3.0.0", markers = "python_full_version >= \"3.12.4\""},
 ]
 requests = ">=2,<3"
 
@@ -1865,13 +1865,13 @@ yarl = "*"
 
 [[package]]
 name = "openai"
-version = "1.35.10"
+version = "1.35.14"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.35.10-py3-none-any.whl", hash = "sha256:962cb5c23224b5cbd16078308dabab97a08b0a5ad736a4fdb3dc2ffc44ac974f"},
-    {file = "openai-1.35.10.tar.gz", hash = "sha256:85966949f4f960f3e4b239a659f9fd64d3a97ecc43c44dc0a044b5c7f11cccc6"},
+    {file = "openai-1.35.14-py3-none-any.whl", hash = "sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b"},
+    {file = "openai-1.35.14.tar.gz", hash = "sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de"},
 ]
 
 [package.dependencies]
@@ -2343,8 +2343,8 @@ files = [
 annotated-types = ">=0.4.0"
 pydantic-core = "2.20.1"
 typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
     {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
 ]
 
 [package.extras]
@@ -3307,17 +3307,20 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7
 
 [[package]]
 name = "sympy"
-version = "1.12.1"
+version = "1.13.0"
 description = "Computer algebra system (CAS) in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sympy-1.12.1-py3-none-any.whl", hash = "sha256:9b2cbc7f1a640289430e13d2a56f02f867a1da0190f2f99d8968c2f74da0e515"},
-    {file = "sympy-1.12.1.tar.gz", hash = "sha256:2877b03f998cd8c08f07cd0de5b767119cd3ef40d09f41c30d722f6686b0fb88"},
+    {file = "sympy-1.13.0-py3-none-any.whl", hash = "sha256:6b0b32a4673fb91bd3cac3b55406c8e01d53ae22780be467301cc452f6680c92"},
+    {file = "sympy-1.13.0.tar.gz", hash = "sha256:3b6af8f4d008b9a1a6a4268b335b984b23835f26d1d60b0526ebc71d48a25f57"},
 ]
 
 [package.dependencies]
-mpmath = ">=1.1.0,<1.4.0"
+mpmath = ">=1.1.0,<1.4"
+
+[package.extras]
+dev = ["hypothesis (>=6.70.0)", "pytest (>=7.1.0)"]
 
 [[package]]
 name = "tbb"
@@ -3638,13 +3641,13 @@ test = ["argcomplete (>=3.0.3)", "mypy (>=1.7.0)", "pre-commit", "pytest (>=7.0,
 
 [[package]]
 name = "transformers"
-version = "4.42.3"
+version = "4.42.4"
 description = "State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "transformers-4.42.3-py3-none-any.whl", hash = "sha256:a61a0df9609b7d69229d941b2fd857c841ba3043d6da503d0da1a4b133f65b92"},
-    {file = "transformers-4.42.3.tar.gz", hash = "sha256:7539873ff45809145265cbc94ea4619d2713c41ceaa277b692d8b0be3430f7eb"},
+    {file = "transformers-4.42.4-py3-none-any.whl", hash = "sha256:6d59061392d0f1da312af29c962df9017ff3c0108c681a56d1bc981004d16d24"},
+    {file = "transformers-4.42.4.tar.gz", hash = "sha256:f956e25e24df851f650cb2c158b6f4352dfae9d702f04c113ed24fc36ce7ae2d"},
 ]
 
 [package.dependencies]
@@ -4135,4 +4138,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "bade8bf30e7a385435b006b58d040a3031ccb524dd4e1c3b9f9b6526487f99a5"
+content-hash = "4de46e64773c65614f4d4f2e720030f4c208f0fb7bc0667d39540dd1454f7ab7"

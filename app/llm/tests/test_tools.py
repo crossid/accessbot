@@ -2,6 +2,7 @@ import asyncio
 import unittest
 import unittest.mock
 from typing import Any
+
 from app.models import User, Workspace
 
 
@@ -50,11 +51,16 @@ class TestCreateTicketTool(unittest.TestCase):
         self.assertEqual(owner.full_name, output)
 
     def test_extra_fields(self):
-        from app.llm.tools.create_ticket_for_role_request_tool import (
-            create_expanded_model,
+        from app.llm.tools.utils import (
+            _create_expanded_model,
         )
 
+        base_model = {"workspace_id": {"type": str, "description": "the workspace id"}}
         extra_fields = {"foo": {"description": "my foo"}}
 
-        rtt = create_expanded_model(extra_fields=extra_fields)
-        print(rtt)
+        rtt = _create_expanded_model(
+            model_name="", base_model=base_model, extra_fields=extra_fields
+        )
+
+        self.assertTrue("workspace_id" in rtt.__annotations__)
+        self.assertTrue("foo" in rtt.__annotations__)
