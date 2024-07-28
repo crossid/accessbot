@@ -60,13 +60,15 @@ def answer(client: WebClient, event, logger, say, context):
         # TODO: consider letting the user choose the ws to work with in Slack
         ws_ext_id = workspaces[0]
         ws_store = factory_ws_store()
-        conversation: Conversation = None
-        ws: Workspace = None
+        conversation: Conversation | None = None
+        ws: Workspace | None = None
         conversation_store = service_registry().get(ConversationStore)
         with SQLAlchemyTransactionContext().manage() as tx_context:
             ws = ws_store.get_by_id(workspace_id=ws_ext_id, tx_context=tx_context)
             if ws is None:
-                say(text=f"We could not find workspace {ws_ext_id}")
+                say(
+                    text=f"We could not find workspace {ws_ext_id}", thread_ts=thread_ts
+                )
                 return
 
             conversation = conversation_store.get_by_external_id(
@@ -119,6 +121,11 @@ def answer(client: WebClient, event, logger, say, context):
             )
     except Exception as e:
         import traceback
+
+        say(
+            f"Fatal bot error: {str(e)}. Please follow up with the system admin",
+            thread_ts=thread_ts,
+        )
 
         logger.error(f"Error answering message: {e}")
         logger.error(traceback.format_exc())

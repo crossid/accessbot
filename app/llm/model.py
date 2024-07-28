@@ -4,13 +4,21 @@ from urllib.parse import parse_qs, urlparse
 from langchain_core.language_models.chat_models import (
     BaseChatModel,
 )
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 from ..settings import settings
 from .fake_model import FakeChatOpenAI
 
 LLM_ALLOWED_ARGS = {
     "openai": ["model", "temperature", "streaming", "name"],
+    "azure-openai": [
+        "temperature",
+        "streaming",
+        "name",
+        "model",
+        "api_version",
+        "deployment_name",
+    ],
     "fake": ["responses", "sleep"],
 }
 
@@ -27,7 +35,7 @@ def create_model(model: Optional[str] = None, **args) -> BaseChatModel:
     if model is None:
         model = settings.LLM_MODEL
     # TODO convert qp as model args
-    type, model, qp = get_model_from_uri(model)
+    type, model_name, qp = get_model_from_uri(model)
     if type == "fake":
         filtered_args = {
             key: value for key, value in args.items() if key in LLM_ALLOWED_ARGS["fake"]
@@ -35,7 +43,7 @@ def create_model(model: Optional[str] = None, **args) -> BaseChatModel:
 
         return FakeChatOpenAI(**filtered_args)
     elif type.startswith("openai"):
-        args["model"] = model
+        args["model"] = model_name
         if "temperature" not in args:
             args["temperature"] = 0.9
         args["streaming"] = True
@@ -46,5 +54,21 @@ def create_model(model: Optional[str] = None, **args) -> BaseChatModel:
         }
 
         return ChatOpenAI(**filtered_args)
+    elif type.startswith("azure-openai"):
+        args["model"] = model_name
+        if "deployment_name" not in args:
+            args["deployment_name"] = model_name
+        if "temperature" not in args:
+            args["temperature"] = 0.9
+        if "api_version" not in args:
+            args["api_version"] = "2024-05-01-preview"
+        args["streaming"] = True
+        filtered_args = {
+            key: value
+            for key, value in args.items()
+            if key in LLM_ALLOWED_ARGS["azure-openai"]
+        }
+
+        return AzureChatOpenAI(**filtered_args)
     else:
         raise ValueError(f"LLM_MODEL env var with type '{type}' is not supported")
