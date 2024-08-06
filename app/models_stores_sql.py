@@ -45,6 +45,7 @@ from .models import (
     CurrentUser,
     Directory,
     PartialApplication,
+    PartialConversation,
     PartialDirectory,
     PartialRule,
     Rule,
@@ -412,7 +413,8 @@ class ConversationStoreSQL(ConversationStore):
         offset: int = 0,
         filters: dict[str, Any] = None,
         links: Optional[list[str]] = None,
-    ) -> tuple[list[Conversation], int]:
+        projection: List[str] = [],
+    ) -> tuple[list[PartialConversation], int]:
         # Query to count total documents
         # Base query for counting
         base_count_query = (
@@ -432,8 +434,13 @@ class ConversationStoreSQL(ConversationStore):
         total_count = tx_context.connection.execute(base_count_query).scalar_one()
 
         # Query for retrieving conversations
+        columns = [
+            self.conversations.c[column_name]
+            for column_name in projection
+            if column_name in self.conversations.c
+        ]
         query = (
-            select(self.conversations)
+            select(*columns if len(columns) > 0 else self.conversations.c)
             .where(self.conversations.c.workspace_id == workspace_id)
             .order_by(self.conversations.c.created_at.desc())
             .offset(offset)
@@ -447,7 +454,7 @@ class ConversationStoreSQL(ConversationStore):
         result = tx_context.connection.execute(query)
         conversations = []
         for record in result:
-            conversation = Conversation(**record._asdict())
+            conversation = PartialConversation(**record._asdict())
             conversations.append(conversation)
             if links and "messages" in links:
                 messages_query = select(self.messages).where(

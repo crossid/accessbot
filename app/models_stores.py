@@ -8,6 +8,7 @@ from .models import (
     Application,
     ChatMessage,
     Conversation,
+    PartialConversation,
     CurrentUser,
     Directory,
     PartialRule,
@@ -233,7 +234,8 @@ class ConversationStore(ABC):
         offset: int = 0,
         filters: dict[str, Any] = None,
         links: Optional[list[str]] = None,
-    ) -> tuple[list[Conversation], int]:
+        projection: List[str] = [],
+    ) -> tuple[list[PartialConversation], int]:
         pass
 
     @abstractmethod
