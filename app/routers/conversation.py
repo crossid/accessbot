@@ -9,6 +9,7 @@ from pydantic import BaseModel, ValidationError
 from starlette import status
 
 from app.authz import AdminOrScopes, Permissions, is_admin_or_has_scopes
+from app.utils.strings import str_to_filters
 
 from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
@@ -32,6 +33,7 @@ from ..models import (
     ConversationStatuses,
     CurrentUser,
     PaginatedListBase,
+    PartialConversation,
     Workspace,
 )
 from ..models_stores import ChatMessageStore, ConversationStore
@@ -144,7 +146,7 @@ def get(
 
 
 class ConversationList(PaginatedListBase):
-    items: List[Conversation]
+    items: List[PartialConversation]
 
 
 @router.get("", response_model=ConversationList, response_model_exclude_none=True)
@@ -158,18 +160,26 @@ def list(
         is_admin_or_has_scopes(scopes=[Permissions.READ_CONVERSATIONS.value])
     ),
 ):
-    filters = {} if admin_or_scope.is_admin else {"assignee": current_user.email}
+    limit = list_params.get("limit", 10)
+    offset = list_params.get("offset", 0)
+    projection = list_params.get("projection", [])
+    q_filter = list_params.get("q", "")
+    base_filters = {} if admin_or_scope.is_admin else {"assignee": current_user.email}
+    q_filters = str_to_filters(q_filter)
+    filters = q_filters | base_filters
+
     with SQLAlchemyTransactionContext().manage() as tx_context:
         try:
             items, count = conversation_store.list(
                 workspace_id=workspace.id,
                 tx_context=tx_context,
                 links=links,
-                limit=list_params["limit"],
-                offset=list_params["offset"],
+                limit=limit,
+                offset=offset,
                 filters=filters,
+                projection=projection,
             )
-            return ConversationList(items=items, offset=0, total=count)
+            return ConversationList(items=items, offset=offset, total=count)
         except ValidationError as e:
             raise HTTPException(status_code=422, detail=e.errors())
 

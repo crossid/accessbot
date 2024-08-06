@@ -123,6 +123,10 @@ class Conversation(BaseModel):
     )
 
 
+class PartialConversation(Conversation, OptionalModel):
+    pass
+
+
 class Application(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     workspace_id: str
