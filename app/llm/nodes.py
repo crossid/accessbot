@@ -157,7 +157,7 @@ def entry_point_node(data_context):
 
         corou = agent.ainvoke(state)
         result, ok = asyncio.new_event_loop().run_until_complete(
-            execute_chat_with_guardrail(runnable=corou, input=state[MEMORY_KEY][-3:])
+            execute_chat_with_guardrail(runnable=corou, input=state[MEMORY_KEY][-5:])
         )
 
         output = result["output"]

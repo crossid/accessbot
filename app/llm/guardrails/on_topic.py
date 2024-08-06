@@ -28,7 +28,9 @@ def on_topic_guard():
         "greeting",
         "access request",
         "recommending access",
-        "information about applications",
+        "assistant capabilities inquiry",
+        "information gathering about applications",
+        "information gathering about access",
     ]
     template = """
       Your job is to determine if the user's input is on topic
