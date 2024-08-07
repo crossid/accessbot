@@ -12,13 +12,15 @@ CONNECT_TIMEOUT = 10
 
 sqlalchemy_engine = create_engine(
     settings.DB_URI,
-    echo=True,
+    echo=True,  # Set to False in production
+    pool_pre_ping=True,
     # connect_args={"connect_timeout": 10},
 )
 
 doc_store_engine = create_engine(
     settings.VSTORE_URI,
-    echo=True,
+    echo=True,  # Set to False in production
+    pool_pre_ping=True,
     # connect_args={"connect_timeout": 10}
 )
 

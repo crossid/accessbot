@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 from fastapi import BackgroundTasks
-from langgraph.checkpoint import BaseCheckpointSaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from .models import (
     Application,
