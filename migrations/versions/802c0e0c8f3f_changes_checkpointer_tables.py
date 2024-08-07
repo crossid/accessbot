@@ -23,7 +23,7 @@ def upgrade() -> None:
         "checkpoints_writes",
         sa.Column("workspace_id", sa.String(length=10), nullable=False),
         sa.Column("thread_id", sa.String(length=10), nullable=False),
-        sa.Column("checkpoint_ns", sa.String(), nullable=False),
+        sa.Column("checkpoint_ns", sa.String(), nullable=False, default=""),
         sa.Column("checkpoint_id", sa.String(), nullable=False),
         sa.Column("task_id", sa.String(), nullable=False),
         sa.Column("idx", sa.Integer(), nullable=False),
@@ -43,7 +43,8 @@ def upgrade() -> None:
         ),
     )
     op.add_column(
-        "checkpoints", sa.Column("checkpoint_ns", sa.String(), nullable=False)
+        "checkpoints",
+        sa.Column("checkpoint_ns", sa.String(), nullable=False, default=""),
     )
     op.add_column(
         "checkpoints", sa.Column("checkpoint_id", sa.String(), nullable=False)
