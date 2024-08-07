@@ -36,6 +36,7 @@ class CreateRuleBody(BaseModel):
     when: str
     then: ThenTypes
     type: RuleTypes
+    active: Optional[bool] = Field(default=False)
     directory_ids: Optional[List[str]] = Field(default=None)
     application_ids: Optional[List[str]] = Field(default=None)
 
@@ -59,6 +60,7 @@ def create(
                 workspace_id=workspace.id,
                 directory_ids=body.directory_ids,
                 application_ids=body.application_ids,
+                active=body.active,
                 when=body.when,
                 then=body.then,
                 type=body.type,
