@@ -2,9 +2,10 @@
 import json
 from typing import Any, Optional
 
-from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 from langchain_core.messages import HumanMessage
-from langgraph.checkpoint import BaseCheckpointSaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
+
+from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 
 from ..embeddings import create_embedding
 from ..llm.graph import CONVERSATION_TYPE_KEY

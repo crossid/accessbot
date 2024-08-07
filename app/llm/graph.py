@@ -7,7 +7,7 @@ from langchain_core.messages import BaseMessage, ToolMessage
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables.base import RunnableLike
 from langchain_core.tools import BaseTool
-from langgraph.checkpoint import BaseCheckpointSaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 

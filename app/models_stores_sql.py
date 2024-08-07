@@ -1,10 +1,10 @@
-from datetime import datetime
-from typing import Any, AsyncIterator, List, Optional
+from typing import Any, AsyncIterator, List, Optional, Tuple
 
 import sqlalchemy
 from fastapi import BackgroundTasks, HTTPException
 from langchain_core.runnables import ConfigurableFieldSpec, RunnableConfig
 from langgraph.checkpoint.base import (
+    ChannelVersions,
     Checkpoint,
     CheckpointMetadata,
     CheckpointThreadId,
@@ -12,7 +12,6 @@ from langgraph.checkpoint.base import (
 )
 from sqlalchemy import (
     JSON,
-    TIMESTAMP,
     Boolean,
     Column,
     Connection,
@@ -20,6 +19,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     LargeBinary,
     MetaData,
     String,
@@ -72,6 +72,7 @@ CONVERSATION_TABLE_NAME = "conversations"
 MESSAGE_TABLE_NAME = "messages"
 APPLICATIONS_TABLE_NAME = "applications"
 CHECKPOINT_TABLE_NAME = "checkpoints"
+CHECKPOINT_WRITES_TABLE_NAME = "checkpoints_writes"
 DIRECTORIES_TABLE_NAME = "directories"
 RULES_TABLE_NAME = "rules"
 RULES_CONTEXT_TABLE_NAME = "rules_context"
@@ -138,9 +139,6 @@ message_table = sqlalchemy.Table(
 checkpoint_table = sqlalchemy.Table(
     CHECKPOINT_TABLE_NAME,
     metadata,
-    Column("thread_id", String(10), primary_key=True),
-    Column("thread_ts", TIMESTAMP(), primary_key=True),
-    Column("parent_ts", TIMESTAMP(), primary_key=False, nullable=True),
     Column(
         "workspace_id",
         String(10),
@@ -148,8 +146,30 @@ checkpoint_table = sqlalchemy.Table(
         nullable=False,
         primary_key=True,
     ),
+    Column("thread_id", String(10), primary_key=True),
+    Column("checkpoint_ns", String(), primary_key=True, default=""),
+    Column("checkpoint_id", String(), primary_key=True),
+    Column("parent_checkpoint_id", String(), nullable=True),
     Column("checkpoint", LargeBinary()),
     Column("metadata", LargeBinary()),
+)
+
+checkpoint_writes_table = sqlalchemy.Table(
+    CHECKPOINT_WRITES_TABLE_NAME,
+    metadata,
+    Column(
+        "workspace_id",
+        String(10),
+        ForeignKey(workspace_table.c.id),
+        primary_key=True,
+    ),
+    Column("thread_id", String(10), primary_key=True),
+    Column("checkpoint_ns", String(), primary_key=True, default=""),
+    Column("checkpoint_id", String(), primary_key=True),
+    Column("task_id", String(), primary_key=True),
+    Column("idx", Integer(), primary_key=True),
+    Column("channel", String(), nullable=False),
+    Column("blob", LargeBinary()),
 )
 
 directory_table = sqlalchemy.Table(
@@ -1104,6 +1124,7 @@ class CheckpointStoreSQL(CheckpointStore):
     default_table_name: str = CHECKPOINT_TABLE_NAME
     metadata: MetaData = metadata
     checkpoints: Table = checkpoint_table
+    writes: Table = checkpoint_writes_table
     engine: Engine
 
     @classmethod
@@ -1145,7 +1166,7 @@ class CheckpointStoreSQL(CheckpointStore):
                 select(self.checkpoints)
                 .where(self.checkpoints.c.workspace_id == workspace_id)
                 .where(self.checkpoints.c.thread_id == thread_id)
-                .order_by(self.checkpoints.c.thread_ts.desc())
+                .order_by(self.checkpoints.c.checkpoint_id.desc())
             )
 
             result = conn.execute(query).all()
@@ -1157,7 +1178,8 @@ class CheckpointStoreSQL(CheckpointStore):
                     {
                         "configurable": {
                             "thread_id": thread_id,
-                            "thread_ts": rdict["thread_ts"],
+                            "checkpoint_ns": rdict["checkpoint_ns"],
+                            "checkpoint_id": rdict["checkpoint_id"],
                             "workspace_id": workspace_id,
                         }
                     },
@@ -1168,13 +1190,15 @@ class CheckpointStoreSQL(CheckpointStore):
                     {
                         "configurable": {
                             "thread_id": thread_id,
-                            "thread_ts": rdict["parent_ts"],
                             "workspace_id": workspace_id,
+                            "checkpoint_ns": rdict["checkpoint_ns"],
+                            "checkpoint_id": rdict["parent_checkpoint_id"],
                         }
                     }
-                    if rdict.get("parent_ts")
+                    if rdict.get("parent_checkpoint_id")
                     else None,
                 )
+
                 tuples.append(tuple)
 
             return tuples
@@ -1182,102 +1206,130 @@ class CheckpointStoreSQL(CheckpointStore):
     async def aget_tuple(self, config: RunnableConfig) -> Optional[CheckpointTuple]:
         thread_id = config["configurable"]["thread_id"]
         workspace_id = config["configurable"]["workspace_id"]
-        thread_ts = config["configurable"].get("thread_ts")
+        checkpoint_ns = config["configurable"].get("checkpoint_ns", "")
+        checkpoint_id = config["configurable"].get("checkpoint_id")
         with self.engine.connect() as conn:
-            if thread_ts:
+            if checkpoint_id:
                 query = (
                     select(self.checkpoints)
                     .where(self.checkpoints.c.workspace_id == workspace_id)
                     .where(self.checkpoints.c.thread_id == thread_id)
-                    .where(
-                        self.checkpoints.c.thread_ts
-                        == datetime.fromisoformat(thread_ts)
-                    )
+                    .where(self.checkpoints.c.checkpoint_ns == checkpoint_ns)
+                    .where(self.checkpoints.c.checkpoint_id == checkpoint_id)
                 )
-
-                value = conn.execute(query).fetchone()
-                if value:
-                    vdict = value._asdict()
-                    return CheckpointTuple(
-                        config,
-                        self.serde.loads(vdict["checkpoint"]),
-                        self.serde.loads(vdict["metadata"])
-                        if vdict["metadata"] is not None
-                        else {},
-                        {
-                            "configurable": {
-                                "thread_id": thread_id,
-                                "thread_ts": vdict.get("parent_ts"),
-                                "workspace_id": workspace_id,
-                            }
-                        }
-                        if vdict.get("parent_ts")
-                        else None,
-                    )
             else:
                 query = (
                     select(self.checkpoints)
                     .where(self.checkpoints.c.workspace_id == workspace_id)
                     .where(self.checkpoints.c.thread_id == thread_id)
-                    .order_by(self.checkpoints.c.thread_ts.desc())
+                    .where(self.checkpoints.c.checkpoint_ns == checkpoint_ns)
+                    .order_by(self.checkpoints.c.checkpoint_id.desc())
                 )
 
-                value = conn.execute(query).fetchone()
-                if value:
-                    vdict = value._asdict()
-                    return CheckpointTuple(
-                        {
-                            "configurable": {
-                                "thread_id": thread_id,
-                                "thread_ts": vdict.get("thread_ts"),
-                                "workspace_id": workspace_id,
-                            }
-                        },
-                        self.serde.loads(vdict["checkpoint"]),
-                        self.serde.loads(vdict["metadata"])
-                        if vdict["metadata"] is not None
-                        else {},
-                        {
-                            "configurable": {
-                                "thread_id": thread_id,
-                                "thread_ts": vdict.get("parent_ts"),
-                                "workspace_id": workspace_id,
-                            }
+            # find pending writes
+            pwrites_query = (
+                select(self.writes)
+                .where(self.checkpoints.c.workspace_id == workspace_id)
+                .where(self.checkpoints.c.thread_id == thread_id)
+                .where(self.checkpoints.c.checkpoint_ns == checkpoint_ns)
+            )
+
+            pwrites = conn.execute(pwrites_query).all()
+
+            value = conn.execute(query).fetchone()
+            if value:
+                vdict = value._asdict()
+                return CheckpointTuple(
+                    config={
+                        "configurable": {
+                            "thread_id": thread_id,
+                            "checkpoint_ns": checkpoint_ns,
+                            "checkpoint_id": vdict["checkpoint_id"],
                         }
-                        if vdict.get("parent_ts")
-                        else None,
-                    )
+                    },
+                    checkpoint=self.serde.loads(vdict["checkpoint"]),
+                    metadata=self.serde.loads(vdict["metadata"])
+                    if vdict["metadata"] is not None
+                    else {},
+                    parent_config={
+                        "configurable": {
+                            "thread_id": thread_id,
+                            "checkpoint_ns": checkpoint_ns,
+                            "checkpoint_id": vdict["parent_checkpoint_id"],
+                        }
+                    }
+                    if vdict["parent_checkpoint_id"]
+                    else None,
+                    pending_writes=[
+                        (row.task_id, row.channel, self.serde.loads(row.blob))
+                        for row in pwrites
+                    ],
+                )
 
     async def aput(
         self,
         config: RunnableConfig,
         checkpoint: Checkpoint,
         metadata: CheckpointMetadata,
-    ) -> None:
-        thread_id = config["configurable"]["thread_id"]
-        workspace_id = config["configurable"]["workspace_id"]
-        with self.engine.connect() as conn:
-            record = {
-                "thread_id": thread_id,
-                "workspace_id": workspace_id,
-                "thread_ts": datetime.fromisoformat(checkpoint["ts"]),
-                "parent_ts": datetime.fromisoformat(checkpoint.get("parent_ts"))
-                if checkpoint.get("parent_ts")
-                else None,
-                "checkpoint": self.serde.dumps(checkpoint),
-                "metadata": self.serde.dumps(metadata),
-            }
+        new_versions: ChannelVersions,
+    ) -> RunnableConfig:
+        configurable = config["configurable"].copy()
+        thread_id = configurable.pop("thread_id")
+        checkpoint_ns = configurable.pop("checkpoint_ns", "")
+        parent_checkpoint_id = configurable.pop(
+            "checkpoint_id", configurable.pop("thread_ts", None)
+        )
+        checkpoint_id = checkpoint["id"]
+        workspace_id = configurable.pop("workspace_id")
 
+        record = {
+            "thread_id": thread_id,
+            "workspace_id": workspace_id,
+            "checkpoint_ns": checkpoint_ns,
+            "checkpoint_id": checkpoint_id,
+            "parent_checkpoint_id": parent_checkpoint_id,
+            "checkpoint": self.serde.dumps(checkpoint),
+            "metadata": self.serde.dumps(metadata),
+        }
+
+        with self.engine.connect() as conn:
             conn.execute(self.checkpoints.insert(), record)
             conn.commit()
 
         return {
             "configurable": {
                 "thread_id": thread_id,
-                "thread_ts": checkpoint["ts"],
-                "workspace_id": workspace_id,
+                "checkpoint_ns": checkpoint_ns,
+                "checkpoint_id": parent_checkpoint_id,
             }
         }
+
+    async def aput_writes(
+        self, config: RunnableConfig, writes: List[Tuple[str, Any]], task_id: str
+    ) -> None:
+        configurable = config["configurable"].copy()
+        thread_id = configurable.pop("thread_id")
+        checkpoint_ns = configurable.pop("checkpoint_ns")
+        checkpoint_id = configurable.pop(
+            "checkpoint_id", configurable.pop("thread_ts", None)
+        )
+        workspace_id = configurable.pop("workspace_id")
+        records = [
+            {
+                "workspace_id": workspace_id,
+                "thread_id": thread_id,
+                "checkpoint_ns": checkpoint_ns,
+                "checkpoint_id": checkpoint_id,
+                "task_id": task_id,
+                "idx": idx,
+                "channel": channel,
+                "blob": self.serde.dumps(value),
+            }
+            for idx, (channel, value) in enumerate(writes)
+        ]
+        with self.engine.connect() as conn:
+            conn.execute(self.writes.insert().values(records))
+            conn.commit()
 
     def delete_for_workspace(
         self, workspace_id: str, tx_context: TransactionContext = None
@@ -1289,6 +1341,11 @@ class CheckpointStoreSQL(CheckpointStore):
             self.checkpoints.c.workspace_id == workspace_id
         )
         tx_context.connection.execute(q)
+
+        qwrites = self.writes.delete().where(
+            self.checkpoints.c.workspace_id == workspace_id
+        )
+        tx_context.connection.execute(qwrites)
         return None
 
 
