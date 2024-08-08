@@ -1342,9 +1342,7 @@ class CheckpointStoreSQL(CheckpointStore):
         )
         tx_context.connection.execute(q)
 
-        qwrites = self.writes.delete().where(
-            self.checkpoints.c.workspace_id == workspace_id
-        )
+        qwrites = self.writes.delete().where(self.writes.c.workspace_id == workspace_id)
         tx_context.connection.execute(qwrites)
         return None
 
