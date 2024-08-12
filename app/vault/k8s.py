@@ -8,7 +8,7 @@ from app.vault.api import VaultAPI
 
 
 class KubernetesVaultImpl(VaultAPI):
-    def __init__(self, namespace, config_file) -> None:
+    def __init__(self, namespace=None, config_file=None) -> None:
         # Load the Kubernetes configuration
         if config_file is None:
             config.load_incluster_config()  # Use this if running inside the cluster
