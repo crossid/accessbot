@@ -40,7 +40,7 @@ from ..services import (
 )
 from ..sql import SQLAlchemyTransactionContext
 from ..tx import TransactionContext
-from ..vault import VaultAPI
+from ..vault.api import VaultAPI
 from ..vector_store import delete_store
 
 logger = logging.getLogger(__name__)
