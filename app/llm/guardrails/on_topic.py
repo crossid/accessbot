@@ -9,9 +9,10 @@ from app.settings import settings
 
 
 class Valid(BaseModel):
-    """Is the user message valid for topics"""
+    """Is the user message valid for allowed topics"""
 
     is_valid: bool = Field(description="user message is valid")
+    why: str = Field(description="explanation why is the user message valid or not")
 
 
 _parser = PydanticOutputParser(pydantic_object=Valid)
@@ -20,26 +21,30 @@ _parser = PydanticOutputParser(pydantic_object=Valid)
 def on_topic_guard():
     model = create_model(
         model=settings.SMALL_LLM_MODEL,
-        temperature=0.2,
+        temperature=0.3,
         streaming=False,
         name="guardrails",
     )
     allowed_topics = [
         "greeting",
         "access request",
+        "work related request",
         "recommending access",
         "assistant capabilities inquiry",
         "information gathering about applications",
         "information gathering about access",
+        "action repetition request",
     ]
     template = """
-      Your job is to determine if the user's input is on topic
-      allowed topics are: {allowed_topics}
+      Your job is to determine if the user's input is on topic. 
+      Any of the following topics are allowed, together or individually: 
+      {allowed_topics}
+
       {format_instructions}
     """
     pv = {
         "format_instructions": _parser.get_format_instructions(),
-        "allowed_topics": ",".join(allowed_topics),
+        "allowed_topics": "\n".join(f"- {topic}" for topic in allowed_topics),
     }
     prompt = PromptTemplate.from_template(template=template, partial_variables=pv)
     sys_msg = SystemMessagePromptTemplate(prompt=prompt)
