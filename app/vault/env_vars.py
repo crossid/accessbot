@@ -2,7 +2,7 @@ import os
 import re
 from typing import List
 
-from .vault import VaultAPI
+from .api import VaultAPI
 
 
 class EnvVarVault(VaultAPI):

@@ -1,7 +1,7 @@
 from typing import Any
 
 from .services import factory_vault
-from .vault import VaultAPI
+from .vault.api import VaultAPI
 
 VAULT_VAR_URI = "vault://"
 

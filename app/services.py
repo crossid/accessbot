@@ -15,7 +15,7 @@ from .models_stores import (
     UserStore,
     WorkspaceStore,
 )
-from .vault import VaultAPI
+from .vault.api import VaultAPI
 
 _service_registry: injector.Injector = None
 

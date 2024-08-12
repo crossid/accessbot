@@ -23,8 +23,8 @@ class TestGetDataOwner(unittest.TestCase):
             WorkspaceStoreHooksPass,
         )
         from app.services import set_service_registry
-        from app.vault import VaultAPI
-        from app.vault_env_vars import EnvVarVault
+        from app.vault.api import VaultAPI
+        from app.vault.env_vars import EnvVarVault
 
         class TestUserStore(UserStore):
             users: dict[str, User] = {

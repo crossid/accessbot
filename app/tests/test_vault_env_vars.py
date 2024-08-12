@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.vault_env_vars import EnvVarVault
+from app.vault.env_vars import EnvVarVault
 
 
 @pytest.fixture

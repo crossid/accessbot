@@ -27,8 +27,8 @@ from app.models_stores import (
     WorkspaceStore,
 )
 from app.services import set_service_registry
-from app.vault import VaultAPI
-from app.vault_env_vars import EnvVarVault
+from app.vault.api import VaultAPI
+from app.vault.env_vars import EnvVarVault
 from app.vector_store import create_retriever
 
 from .stores import (
