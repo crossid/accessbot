@@ -1271,7 +1271,7 @@ class CheckpointStoreSQL(CheckpointStore):
         config: RunnableConfig,
         checkpoint: Checkpoint,
         metadata: CheckpointMetadata,
-        new_versions: ChannelVersions,
+        new_versions: ChannelVersions = None,
     ) -> RunnableConfig:
         configurable = config["configurable"].copy()
         thread_id = configurable.pop("thread_id")
