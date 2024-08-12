@@ -1,10 +1,8 @@
 import base64
-from cProfile import label
 from typing import List
 
 from fastapi import HTTPException
 from kubernetes import client, config
-from regex import D
 
 from app.vault.api import VaultAPI
 
@@ -13,7 +11,7 @@ class KubernetesVaultImpl(VaultAPI):
     def __init__(self, namespace, config_file) -> None:
         # Load the Kubernetes configuration
         if config_file is None:
-             config.load_incluster_config()  # Use this if running inside the cluster
+            config.load_incluster_config()  # Use this if running inside the cluster
         else:
             config.load_kube_config(config_file=config_file)
         self.core_v1_api = client.CoreV1Api()
@@ -65,7 +63,9 @@ class KubernetesVaultImpl(VaultAPI):
             if e.status_code == 409:
                 # Secret already exists, so update it
                 self.core_v1_api.patch_namespaced_secret(
-                    name=secret_name, namespace=self.getNamespace(workspace_id), body=secret_body
+                    name=secret_name,
+                    namespace=self.getNamespace(workspace_id),
+                    body=secret_body,
                 )
             else:
                 raise e
@@ -75,7 +75,8 @@ class KubernetesVaultImpl(VaultAPI):
         secret_name = self.create_workspace_path(workspace_id, path)
         try:
             self.core_v1_api.delete_namespaced_secret(
-                name=secret_name, namespace=self.getNamespace(workspace_id),
+                name=secret_name,
+                namespace=self.getNamespace(workspace_id),
             )
             return True
         except HTTPException as e:
