@@ -188,6 +188,7 @@ async def _request_roles(
         }
         cmetadata = CheckpointMetadata()
         cmetadata["source"] = "update"
+        cmetadata["step"] = -1
 
         checkpointer = factory_checkpointer()
         config = {
