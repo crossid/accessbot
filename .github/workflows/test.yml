@@ -1,13 +1,6 @@
 name: Test
 
-on:
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch to test"
-        required: true
-        default: "main"
+on: pull_request
 
 env:
   DB_URI: "sqlite:///:memory:"
@@ -21,8 +14,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.branch || github.ref_name }}
       - name: Install Poetry
         run: |
           pipx install poetry
