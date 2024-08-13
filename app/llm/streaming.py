@@ -39,7 +39,7 @@ async def streaming(
                     msgs = ep_output.get("messages")
                     msg_content = msgs[0].content
                     final_outputs.append(msg_content)
-                    content = event_transformer(msg_content, llm_name)
+                    content = event_transformer(msg_content, "guardrail")
                     yield content
         elif kind == "on_tool_start":
             inputs = {"inputs": event["data"].get("input")}
