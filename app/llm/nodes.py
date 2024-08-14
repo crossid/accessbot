@@ -3,7 +3,7 @@ import functools
 import json
 from types import coroutine
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, ToolMessage
 
 from app.llm.guardrails.on_topic import topical_guardrail
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
@@ -43,7 +43,7 @@ def agent_node(state, agent_creator, name):
     if isinstance(result, ToolMessage):
         pass
     else:
-        result = HumanMessage(content=result["output"], name=name)
+        result = AIMessage(content=result["output"], name=name)
 
     return {
         MEMORY_KEY: [result],
