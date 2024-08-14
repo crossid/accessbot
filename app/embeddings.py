@@ -9,7 +9,7 @@ from .settings import settings
 
 def create_embedding(embedding_type: str = settings.VSTORE_EMBEDDING) -> Embeddings:
     if embedding_type == "openai":
-        return OpenAIEmbeddings()
+        return OpenAIEmbeddings(model="text-embedding-3-large")
     elif embedding_type == "sentence_transformer":
         return SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     else:
