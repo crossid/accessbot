@@ -37,13 +37,16 @@ def on_topic_guard():
         "action repetition request",
     ]
     template = """
-      Your job is to determine if the conversation is on topic. 
-      Any of the following topics are allowed, together or individually: 
+      You are a guardrail agent with the job of determining if the conversation is on topic.
+      The topic of the conversation is, generally, requesting and granting access.
+      Here are example allowed topics:
       {allowed_topics}
 
       The conversation is valid if the entire conversation is on topic or if the latest human message
       tries to bring it back on topic.
-
+      Be permissive in your judgment, but don't allow general information questions or nonsense messages.
+      Remember, there are other LLM agents that need to interact with the user after you.   
+      
       {format_instructions}
     """
     pv = {
