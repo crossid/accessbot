@@ -33,12 +33,16 @@ def on_topic_guard():
         "assistant capabilities inquiry",
         "information gathering about applications",
         "information gathering about access",
+        "asking for clarification about the conversation or previous messages",
         "action repetition request",
     ]
     template = """
-      Your job is to determine if the user's input is on topic. 
+      Your job is to determine if the conversation is on topic. 
       Any of the following topics are allowed, together or individually: 
       {allowed_topics}
+
+      The conversation is valid if the entire conversation is on topic or if the latest human message
+      tries to bring it back on topic.
 
       {format_instructions}
     """
