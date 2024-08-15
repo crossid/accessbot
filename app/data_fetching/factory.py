@@ -7,6 +7,7 @@ from app.data_fetching.mock import DFMockImpl
 from app.data_fetching.okta import DFOktaImpl
 from app.data_fetching.utils import prepare_metadata_ids_content
 from app.models import Directory
+from app.sql import SQLAlchemyTransactionContext
 from app.vault_utils import resolve_ws_config_secrets
 from app.vector_store import delete_ids
 
@@ -30,7 +31,7 @@ def DataFetcherFactory(dir: Directory) -> DataFetcherInterface:
         case "_mock_":
             return DFMockImpl()
         case "okta":
-            return DFOktaImpl(**resolved_config)
+            return DFOktaImpl(workspace_id=dir.workspace_id, **resolved_config)
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -39,19 +40,26 @@ def DataFetcherFactory(dir: Directory) -> DataFetcherInterface:
 
 
 async def background_data_fetch(
-    data_fetcher: DataFetcherInterface, ovstore, dir: Directory
+    data_fetcher: DataFetcherInterface, ovstore, dir: Directory, **kwargs
 ):
     try:
-        docs = await data_fetcher.fetch_content(dir_name=dir.name)
-        for doc in docs:
-            doc.external_id = dir.name
+        docs = await data_fetcher.fetch_content(dir_name=dir.name, **kwargs)
     except Exception as e:
         log.error(f"failed to fetch directory {dir.name} data: {str(e)}")
         return
 
     texts, metadata, ids = prepare_metadata_ids_content(docs)
     try:
-        delete_ids(ovstore=ovstore, ids=[dir.name])
+        with SQLAlchemyTransactionContext().manage() as tx_context:
+            docs, _ = ovstore.__list_docs__(
+                workspace_id=dir.workspace_id,
+                directory=dir.name,
+                limit=100000,
+                projection=["custom_id"],
+                tx_context=tx_context,
+            )
+            ids_to_delete = [d.custom_id for d in docs]
+            delete_ids(ovstore=ovstore, ids=ids_to_delete)
     except NotImplementedError:
         log.error(f"could not delete directory {dir.name} data before importing")
         return

@@ -57,7 +57,7 @@ def create_projection(proj: Optional[List[str]] = []):
         "content": "document",
     }
 
-    to_get = {translate[item] for item in proj if item in translate}
+    to_get = {translate.get(item, item) for item in proj}
     return ", ".join(to_get)
 
 
