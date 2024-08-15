@@ -75,7 +75,9 @@ TEMPLATES = {
         {known_apps}
     </known applications>
     
-    When you have all the information you need, tell the user you have recommendations for him and ask if he would like to open a ticket.
+    A good recommendation is one with confidence level of more than 80 percent.
+    If there are *no good* recommendations, relay this to the user and ask for more specific information.
+    If there are *good* recommendations, tell the user you have recommendations for him and ask if he would like to open a ticket.
     
     REMEMBER:
     - You can only provide access to the known applications.
