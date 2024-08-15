@@ -5,5 +5,5 @@ from app.data_fetching.utils import Doc
 
 
 class DFMockImpl(DataFetcherInterface):
-    async def fetch_content() -> List[Doc]:
+    async def fetch_content(dir_name: str, **kwargs) -> List[Doc]:
         return []

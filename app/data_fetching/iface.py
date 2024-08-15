@@ -6,5 +6,5 @@ from app.data_fetching.utils import Doc
 
 class DataFetcherInterface(ABC):
     @abstractmethod
-    async def fetch_content(dir_name: str) -> List[Doc]:
+    async def fetch_content(self, dir_name: str, **kwargs) -> List[Doc]:
         pass

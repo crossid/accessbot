@@ -130,9 +130,9 @@ class Application(BaseModel):
     workspace_id: str
     name: str
     _normalize_name = field_validator("name")(must_be_lowercase_alphanumeric_validator)
-    aliases: Optional[list[str]]
-    extra_instructions: Optional[str]
-    provision_schema: Optional[dict]
+    aliases: Optional[list[str]] = []
+    extra_instructions: Optional[str] = None
+    provision_schema: Optional[dict] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
 

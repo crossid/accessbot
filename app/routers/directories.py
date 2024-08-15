@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, List
+from typing import Annotated, Any, List
 
 import jsonpatch
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
@@ -199,6 +199,7 @@ async def list(
     "/{dir_id}/.import", response_model=dict, status_code=status.HTTP_202_ACCEPTED
 )
 async def import_content(
+    body: dict[str, Any],
     dir_id: str,
     workspace: Annotated[Workspace, Depends(get_current_workspace)],
     directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
@@ -215,5 +216,5 @@ async def import_content(
             raise HTTPException(status_code=404, detail="Directory not found")
 
     data_fetcher = DataFetcherFactory(dir=dir)
-    background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir)
+    background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir, **body)
     return {"message": "data import happening in background"}

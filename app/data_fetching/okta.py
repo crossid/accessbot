@@ -1,7 +1,13 @@
+import logging
 from typing import List
 
 from app.data_fetching.iface import DataFetcherInterface
 from app.data_fetching.utils import Doc
+from app.models import Application
+from app.services import factory_app_store
+from app.sql import SQLAlchemyTransactionContext
+
+logger = logging.getLogger(__name__)
 
 
 def okta_group_to_doc(id, name, description, dir_name, apps) -> Doc:
@@ -11,11 +17,21 @@ def okta_group_to_doc(id, name, description, dir_name, apps) -> Doc:
         f"**role description**: {description}",
     ]
     content = "\n".join(ra)
-    return Doc(directory=dir_name, content=content, external_id="okta", apps=apps)
+    return Doc(
+        directory=dir_name,
+        display_name=name,
+        content=content,
+        external_id=id,
+        apps=apps,
+    )
+
+
+def create_app_name(name: str):
+    return name.replace("_", "")
 
 
 class DFOktaImpl(DataFetcherInterface):
-    def __init__(self, tenant, token) -> None:
+    def __init__(self, workspace_id, tenant, token) -> None:
         try:
             from okta.client import Client as OktaClient
         except ImportError:
@@ -26,21 +42,29 @@ class DFOktaImpl(DataFetcherInterface):
 
         config = {"orgUrl": f"https://{tenant}", "token": token}
         self.client = OktaClient(config)
+        self.workspace_id = workspace_id
 
-    async def fetch_content(self, dir_name: str) -> List[Doc]:
-        groups, resp, err = await self.client.list_groups()
+    async def fetch_content(self, dir_name: str, **kwargs) -> List[Doc]:
+        groups, resp, err = await self.client.list_groups(
+            query_params={"expand": "stats"}
+        )
         if err is not None:
             raise ValueError(f"error while fetching groups: {err}")
 
         groups_md = []
+        all_apps = set()
         while True:
             for group in groups:
+                if group.embedded.get("stats", {}).get("appsCount", 0) == 0:
+                    continue
+
                 gapps, _, err = await self.client.list_assigned_applications_for_group(
                     groupId=group.id
                 )
 
-                # TODO: this is a bit weird, and we'll have to think about this
-                apps = [a.label.lower().replace(" ", "_") for a in gapps]
+                # apps must be alphanumeric only
+                apps = [create_app_name(a.name) for a in gapps]
+                all_apps.update(gapps)
 
                 gmd = okta_group_to_doc(
                     id=group.id,
@@ -56,5 +80,25 @@ class DFOktaImpl(DataFetcherInterface):
                     raise ValueError(f"error while fetching groups: {err}")
             else:
                 break
+
+        if kwargs.get("create_apps"):
+            app_store = factory_app_store()
+            with SQLAlchemyTransactionContext().manage() as tx_context:
+                known_apps, _ = app_store.list(
+                    workspace_id=self.workspace_id,
+                    limit=1000,
+                    tx_context=tx_context,
+                    projection=["name"],
+                )
+                known_apps_names = [ka.name for ka in known_apps]
+                for gapp in all_apps:
+                    gapp_name = create_app_name(gapp.name)
+                    if gapp_name not in known_apps_names:
+                        a = Application(
+                            name=gapp_name,
+                            aliases=[gapp.label],
+                            workspace_id=self.workspace_id,
+                        )
+                        app_store.insert(app=a, tx_context=tx_context)
 
         return groups_md
