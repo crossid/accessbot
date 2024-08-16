@@ -10,7 +10,6 @@ class TestCreateTicketTool(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import injector
-
         from app.injector_extensions_module import ExtensionModule
         from app.services import set_service_registry
 
@@ -27,7 +26,7 @@ class TestCreateTicketTool(unittest.TestCase):
 
         ws = Workspace(
             display_name="foo",
-            unique_name="foo",
+            name="foo",
             creator_id="bar",
             config=config,
             created_by="bar",

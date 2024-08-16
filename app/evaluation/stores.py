@@ -1,7 +1,5 @@
 from typing import Any, Optional
 
-from fastapi import BackgroundTasks
-
 from app.consts import DATAOWNER_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from app.models import (
     Application,
@@ -22,6 +20,7 @@ from app.models_stores import (
     WorkspaceStatuses,
     WorkspaceStore,
 )
+from fastapi import BackgroundTasks
 
 SINGLE_USER_EMAIL = "jondoe@foobar.com"
 
@@ -147,7 +146,7 @@ class ChatMessageStoreMock(ChatMessageStore):
 class ApplicationStoreMock(ApplicationStore):
     application = Application(
         id="1",
-        unique_name="projects",
+        name="projects",
         aliases=["jira"],
         workspace_id="1",
         extra_instructions="Project Access Levels:**Basic User Access**: Allows viewing project details and statuses without the ability to make changes.**Team Member Access**: Permits adding, editing, and commenting on tasks within assigned projects.**Project Manager Access**: Grants capabilities to manage project settings, assign tasks, manage budgets, and generate reports.**Administrator Access**: Provides full control over the project management tool, including creating projects, managing user roles, and setting up integrations.**Audit and Compliance Access**: Allows viewing all project activities, audit logs, and compliance reports to ensure the project adheres to legal and organizational standards.You should try to figure out what access level the user requires, otherwise fallback to `Basic User Access`",

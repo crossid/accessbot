@@ -29,7 +29,7 @@ router = APIRouter(
 
 
 class CreateApplicationBody(BaseModel):
-    unique_name: str
+    name: str
     aliases: list[str]
     extra_instructions: Optional[str] = None
     provision_schema: Optional[dict] = None
@@ -51,7 +51,7 @@ def create(
         try:
             app = Application(
                 workspace_id=workspace.id,
-                unique_name=body.unique_name,
+                name=body.name,
                 aliases=body.aliases,
                 provision_schema=body.provision_schema,
                 extra_instructions=body.extra_instructions,

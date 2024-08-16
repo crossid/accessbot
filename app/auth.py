@@ -169,6 +169,6 @@ async def setup_workspace_vstore(
     wvstore = create_workspace_vstore(
         workspace_id=ws.id,
         embedding=create_embedding(settings.VSTORE_EMBEDDING),
-        workspace_unique_name=ws.unique_name,
+        workspace_name=ws.name,
     )
     return wvstore

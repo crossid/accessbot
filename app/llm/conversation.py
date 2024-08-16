@@ -2,10 +2,9 @@
 import json
 from typing import Any, Optional
 
+from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
-
-from app.llm.tools.utils import get_tools_for_workspace_and_conversation
 
 from ..embeddings import create_embedding
 from ..llm.graph import CONVERSATION_TYPE_KEY
@@ -38,12 +37,12 @@ def create_agent_for_access_request_conversation(
     data_context: dict[str, Any],
     checkpointer: BaseCheckpointSaver = None,
 ):
-    workspace_unique_name = ws.unique_name if ws is not None else None
+    workspace_name = ws.name if ws is not None else None
     embedding = create_embedding()
     retriever = create_retriever(
         workspace_id=conversation.workspace_id,
         embedding=embedding,
-        workspace_unique_name=workspace_unique_name,
+        workspace_name=workspace_name,
     )
 
     if checkpointer is None:
@@ -69,7 +68,7 @@ def add_messages(
 def prepare_known_apps_str(apps: list[Application]):
     app_str = []
     for app in apps:
-        astr = app.unique_name
+        astr = app.name
         if app.aliases:
             astr += f" - aka {', '.join(app.aliases)}"
         astr += ";"

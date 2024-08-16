@@ -81,7 +81,7 @@ workspace_table = sqlalchemy.Table(
     WORKSPACE_TABLE_NAME,
     metadata,
     Column("id", String(10), primary_key=True),
-    Column("unique_name", String(32), nullable=False, unique=True),
+    Column("name", String(32), nullable=False, unique=True),
     Column("display_name", String(32), nullable=False),
     Column("logo_url", String(), nullable=True),
     Column("status", Enum(WorkspaceStatuses)),
@@ -208,7 +208,7 @@ applications_table = sqlalchemy.Table(
         ForeignKey(workspace_table.c.id),
         nullable=False,
     ),
-    Column("unique_name", String(), nullable=False),
+    Column("name", String(), nullable=False),
     Column("aliases", JSON(), nullable=False),
     Column("extra_instructions", String(), nullable=True),
     Column("provision_schema", JSON(), nullable=True),
@@ -218,7 +218,7 @@ applications_table = sqlalchemy.Table(
 Index(
     "ix_ws_un",
     applications_table.c.workspace_id,
-    applications_table.c.unique_name,
+    applications_table.c.name,
     unique=True,
 )
 
@@ -662,7 +662,7 @@ class ApplicationStoreSQL(ApplicationStore):
         query = (
             select(*columns if len(columns) > 0 else self.apps.c)
             .where(self.apps.c.workspace_id == workspace_id)
-            .order_by(self.apps.c.unique_name.asc())
+            .order_by(self.apps.c.name.asc())
             .offset(offset)
             .limit(limit)
         )
@@ -698,7 +698,7 @@ class ApplicationStoreSQL(ApplicationStore):
             .where(self.apps.c.workspace_id == workspace_id)
             .where(
                 or_(
-                    self.apps.c.unique_name.ilike(app_name),
+                    self.apps.c.name.ilike(app_name),
                     cast(self.apps.c.aliases, Text).ilike(f"%{app_name}%"),
                 )
             )

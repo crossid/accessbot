@@ -73,7 +73,7 @@ def create(
                 error = ErrorDetails(
                     type="uniqueness",
                     loc=("body", "name"),
-                    msg=f"name '{workspace.unique_name}' already exists",
+                    msg=f"name '{workspace.name}' already exists",
                 )
                 raise HTTPException(status_code=409, detail=[error])
             else:

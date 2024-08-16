@@ -8,7 +8,7 @@ from .id import generate
 
 
 def must_be_lowercase_alphanumeric_validator(v: str):
-    if not v.isalnum() or not v.islower():
+    if not v.isalnum() or not v.islower() and (len(v) > 2 and len(v) < 32):
         raise ValueError("must be lowercase alphanumeric")
     return v
 
@@ -62,10 +62,8 @@ class WorkspaceStatuses(enum.Enum):
 class Workspace(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     external_id: Optional[str] = None
-    unique_name: str
-    _normalize_unique_name = field_validator("unique_name")(
-        must_be_lowercase_alphanumeric_validator
-    )
+    name: str
+    _normalize_name = field_validator("name")(must_be_lowercase_alphanumeric_validator)
     display_name: str
     logo_url: Optional[str] = None
     status: WorkspaceStatuses = Field(default=WorkspaceStatuses.creating)
@@ -130,10 +128,8 @@ class PartialConversation(Conversation, OptionalModel):
 class Application(BaseModel):
     id: str = Field(default_factory=lambda: generate())
     workspace_id: str
-    unique_name: str
-    _normalize_unique_name = field_validator("unique_name")(
-        must_be_lowercase_alphanumeric_validator
-    )
+    name: str
+    _normalize_name = field_validator("name")(must_be_lowercase_alphanumeric_validator)
     aliases: Optional[list[str]]
     extra_instructions: Optional[str]
     provision_schema: Optional[dict]
