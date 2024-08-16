@@ -24,7 +24,7 @@ class TestWorkspaceStoreSQL:
         with SQLAlchemyTransactionContext(engine=engine).manage() as tx_context:
             ws = Workspace(
                 display_name="Acme, Inc.",
-                unique_name="acme",
+                name="acme",
                 created_by=generate(),
                 config={},
             )
@@ -43,7 +43,7 @@ class TestWorkspaceStoreSQL:
         with SQLAlchemyTransactionContext(engine=engine).manage() as tx_context:
             ws = Workspace(
                 display_name="Acme, Inc.",
-                unique_name="acme",
+                name="acme",
                 created_by=generate(),
                 config={},
             )
@@ -72,7 +72,7 @@ class TestWorkspaceStoreSQL:
         with SQLAlchemyTransactionContext(engine=engine).manage() as tx_context:
             ws = Workspace(
                 display_name="Acme1, Inc.",
-                unique_name="acme1",
+                name="acme1",
                 created_by=generate(),
                 config={},
             )
@@ -80,7 +80,7 @@ class TestWorkspaceStoreSQL:
                 ws, tx_context=tx_context, current_user=None, background_tasks=None
             )
             lws = test_store.get_by_id(ws.id, tx_context=tx_context)
-            assert lws.unique_name == "acme1"
+            assert lws.name == "acme1"
             assert lws.display_name == "ACME1, INC."
 
     def test_get_by_id_not_found(self, db):
@@ -94,7 +94,7 @@ class TestWorkspaceStoreSQL:
         with SQLAlchemyTransactionContext(engine=engine).manage() as tx_context:
             ws = Workspace(
                 display_name="Acme2, Inc.",
-                unique_name="acme2",
+                name="acme2",
                 created_by=generate(),
                 config={},
             )

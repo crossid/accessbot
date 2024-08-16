@@ -1,13 +1,12 @@
 from typing import Optional
 
-from langchain_core.tools import StructuredTool
-from pydantic.v1 import BaseModel, Field
-
 from app.llm.prompts import APP_ID_KEY, APP_NAME_KEY, EXTRA_INSTRUCTIONS_KEY
 from app.services import (
     factory_app_store,
 )
 from app.sql import SQLAlchemyTransactionContext
+from langchain_core.tools import StructuredTool
+from pydantic.v1 import BaseModel, Field
 
 
 class FindAppInput(BaseModel):
@@ -36,7 +35,7 @@ async def _find_app(workspace_id: str, app_name: Optional[str] = "") -> str:
         ei = "None" if app.extra_instructions is None else app.extra_instructions
 
         return {
-            APP_NAME_KEY: app.unique_name,
+            APP_NAME_KEY: app.name,
             APP_ID_KEY: app.id,
             EXTRA_INSTRUCTIONS_KEY: ei,
         }

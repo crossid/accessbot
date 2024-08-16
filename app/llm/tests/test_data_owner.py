@@ -15,7 +15,6 @@ class TestGetDataOwner(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import injector
-
         from app.models import User
         from app.models_stores import (
             UserStore,
@@ -59,10 +58,9 @@ class TestGetDataOwner(unittest.TestCase):
         set_service_registry(service_registry)
 
     def test_get_data_owner(self):
-        from dotenv import load_dotenv
-
         from app.consts import DATAOWNER_CONFIG_KEY
         from app.llm.tools.data_owner.factory import get_data_owner
+        from dotenv import load_dotenv
 
         load_dotenv()
 
@@ -71,7 +69,7 @@ class TestGetDataOwner(unittest.TestCase):
 
         ws = Workspace(
             display_name="foo",
-            unique_name="foo",
+            name="foo",
             creator_id="bar",
             config=config,
             created_by="bar",
@@ -93,7 +91,7 @@ class TestGetDataOwner(unittest.TestCase):
         }
         ws = Workspace(
             display_name="foo",
-            unique_name="foo",
+            name="foo",
             creator_id="bar",
             config=config,
             created_by="bar",

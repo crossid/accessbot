@@ -1,10 +1,6 @@
 import enum
 from typing import List
 
-from langchain.output_parsers import PydanticOutputParser
-from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field
-
 from app.llm.agents import create_agent
 from app.llm.prompts import MEMORY_KEY, RULE_ENGINE_TEMPLATE, get_prompt
 from app.llm.tools.rule_engine.rule_engine_relevant_data import (
@@ -14,6 +10,9 @@ from app.models import Application, Directory, Rule, RuleTypes, ThenTypes, Works
 from app.services import factory_rule_store
 from app.settings import settings
 from app.sql import SQLAlchemyTransactionContext
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.messages import HumanMessage
+from pydantic import BaseModel, Field
 
 
 class FinalAnswer(enum.Enum):
@@ -80,7 +79,7 @@ def create_msg(
     kwargs_str = "\n".join(f"{key}: {value};" for key, value in kwargs.items())
     content = f"""
       workspace_id: {ws.id};
-      app_name: {app.unique_name};
+      app_name: {app.name};
       app_id: {app.id};
       directory_name: {dir.name};
       directory_id: {dir.id};

@@ -9,6 +9,6 @@ Some of the services are not accepting various characters (e.g., Azure's key vau
 
 Decisions:
 
-- Agreed to avoid maintaining another _unique_name_ property as it's annoying to ask it from the user.
+- Agreed to avoid maintaining another _name_ property as it's annoying to ask it from the user.
 - Whenever possible maintain a convertion table between the unique name on the service and the workspace_id.
 - In cases convertion table is not possible, convert one char to another dynamically (collision-wise it's a bit risky)

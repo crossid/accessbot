@@ -27,7 +27,7 @@ class TestWorkspaceStoreSQL:
                 id="1",
                 workspace_id="1",
                 display_name="FooQuery",
-                unique_name="fooquery",
+                name="fooquery",
                 aliases=["fquery", "fq"],
                 extra_instructions="dssa",
                 provision_schema=None,

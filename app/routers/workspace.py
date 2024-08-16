@@ -54,7 +54,7 @@ router = APIRouter(
 class CreateWorkspaceBody(BaseModel):
     external_id: Optional[str] = None
     logo_url: Optional[HttpUrl] = None
-    unique_name: str
+    name: str
     display_name: str
 
 
@@ -76,7 +76,7 @@ def create(
             ws = Workspace(
                 external_id=body.external_id,
                 display_name=body.display_name,
-                unique_name=body.unique_name,
+                name=body.name,
                 logo_url=body.logo_url.unicode_string() if body.logo_url else None,
                 created_by=current_user.email,
                 config={},
