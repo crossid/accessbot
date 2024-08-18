@@ -8,6 +8,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 
 from app.ext_vector_store import get_document, list_documents
+from app.sql import doc_store_engine
 
 from .settings import settings
 
@@ -41,6 +42,7 @@ def create_workspace_vstore(
             connection_string=uri,
             collection_name=workspace_id,
             collection_metadata={"workspace_id": workspace_id},
+            connection=doc_store_engine,
         )
 
         pgvector.__list_docs__ = list_documents
