@@ -32,6 +32,14 @@ class User(BaseModel):
     disabled: bool | None = None
 
 
+def get_workspace_id_from_token(decoded_access_token: dict[str, Any]) -> str:
+    return (
+        decoded_access_token.get("org_id")
+        or decoded_access_token.get("ext", {}).get("org_id")
+        or None
+    )
+
+
 class CurrentUser(User):
     workspace_id: Optional[str] = None
     scopes: Optional[List[str]] = None
@@ -44,9 +52,7 @@ class CurrentUser(User):
             email=userinfo["email"],
             full_name=userinfo["name"],
             disabled=userinfo.get("blocked", False),
-            workspace_id=decoded_access_token.get("org_id")
-            or decoded_access_token.get("ext", {}).get("org_id")
-            or None,
+            workspace_id=get_workspace_id_from_token(decoded_access_token),
             scopes=scopes,
         )
 
