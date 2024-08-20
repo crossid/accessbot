@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessage, ToolMessage
 
 from app.llm.guardrails.on_topic import topical_guardrail
 from app.llm.tools.deny_access_tool import create_deny_provision_tool
+from app.llm.tools.users_access_by_names import create_users_details_from_names_tool
 from app.models import ConversationTypes
 from app.settings import settings
 
@@ -103,11 +104,14 @@ def create_recommend_agent(data_context, ret_tool):
         _dctx = data_context.copy()
         _dctx[APP_NAME_KEY] = state[APP_NAME_KEY]
         _dctx[EXTRA_INSTRUCTIONS_KEY] = state[EXTRA_INSTRUCTIONS_KEY]
+
+        udfn = create_users_details_from_names_tool(ws_id=data_context.get(WS_ID_KEY))
+
         agent = create_agent(
             prompt=get_prompt(
                 prompt_id=RECOMMENDATION_TEMPLATE, data_context=data_context
             ),
-            tools=[ret_tool],
+            tools=[ret_tool, udfn],
             name=RECOMMENDER_AGENT_NAME,
         )
         return agent

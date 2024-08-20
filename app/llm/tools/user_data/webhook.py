@@ -34,3 +34,8 @@ class WebhookImpl(UserDataInterface):
             return response.json()
         else:
             raise ValueError(response.text)
+
+    async def get_user_data_for_names(
+        self, names: list[str], **kwargs
+    ) -> dict[str, Any]:
+        pass

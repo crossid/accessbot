@@ -76,7 +76,7 @@ TEMPLATES = {
     </known applications>
     
     A good recommendation is one with confidence level of more than 80 percent.
-    If there are *no good* recommendations, relay this to the user and ask for more specific information.
+    If there are *no good* recommendations, relay this to the user and ask if there are any other users that the user knows have the access he needs.
     If there are *good* recommendations, tell the user you have recommendations for him and ask if he would like to open a ticket.
     
     REMEMBER:
