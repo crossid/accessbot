@@ -99,6 +99,7 @@ def store_doc_to_api_doc(doc: Document) -> Doc:
         external_id=doc.custom_id if doc.custom_id != "" else None,
         content=doc.document if doc.document != "" else None,
         apps=doc.cmetadata.get("app", None),
+        display_name=doc.cmetadata.get("display_name", None),
         directory=doc.cmetadata.get("directory", None),
     )
 
