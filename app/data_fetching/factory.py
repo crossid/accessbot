@@ -1,15 +1,16 @@
 import logging
 
-from fastapi import HTTPException, status
-
+from app.celery_app import celery_app
 from app.data_fetching.iface import DataFetcherInterface
 from app.data_fetching.mock import DFMockImpl
 from app.data_fetching.okta import DFOktaImpl
 from app.data_fetching.utils import prepare_metadata_ids_content
 from app.models import Directory
+from app.services import factory_dir_store
 from app.sql import SQLAlchemyTransactionContext
 from app.vault_utils import resolve_ws_config_secrets
 from app.vector_store import delete_ids
+from fastapi import HTTPException, status
 
 log = logging.getLogger(__name__)
 
@@ -66,3 +67,17 @@ async def background_data_fetch(
 
     inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
     log.debug(f"inserted {len(inserted_ids)} into directory {dir.name} vector store")
+
+
+@celery_app.task
+def background_data_fetch_task(workspace_id: str, directory_id: str, **kwargs):
+    # asyncio.run(background_data_fetch(data_fetcher, ovstore, dir, **kwargs))
+    # TODO currenyly fails as I think dependency injection is not configured
+    # we can lazily initialize the injection or share the injector intiialization with main app
+    dirstore = factory_dir_store()
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        # TODO currenyly fails as I think dependency injection is not configured
+        # we can lazily initialize the injection or share the injector intiialization with main app
+        dir = dirstore.get_by_id(
+            directory_id=directory_id, workspace_id=workspace_id, tx_context=tx_context
+        )
