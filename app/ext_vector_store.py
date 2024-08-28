@@ -123,7 +123,7 @@ def list_documents(
 
     proj = create_projection(proj=projection)
     query = text(
-        f"select {proj} from {embedding_table_name} where {filters} order by uuid limit :limit offset :offset;"
+        f"select {proj} from {embedding_table_name} where {filters} order by uuid {'limit :limit' if limit > 0 else ''} offset :offset;"
     )
 
     result = tx_context.connection.execute(
