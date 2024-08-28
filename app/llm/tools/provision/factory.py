@@ -3,6 +3,7 @@ from typing import Any
 from app.llm.tools.provision.webhook import WebhookImpl
 from app.vault_utils import resolve_ws_config_secrets
 
+from .azure import AzureImpl
 from .boundary import BoundaryImpl
 from .iface import ProvisionInterface
 from .mock import MockImpl
@@ -23,6 +24,8 @@ def ProvisionerFactory(
             return OktaImpl(**resolved_config)
         case "boundary":
             return BoundaryImpl(**resolved_config)
+        case "azure":
+            return AzureImpl(**resolved_config)
         case "webhook":
             return WebhookImpl(**resolved_config)
 

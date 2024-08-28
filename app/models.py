@@ -1,8 +1,11 @@
 import enum
 from datetime import datetime
 from typing import Any, ClassVar, Generic, List, Optional, Set, TypeVar
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
+
+from app.settings import settings
 
 from .id import generate
 
@@ -33,11 +36,22 @@ class User(BaseModel):
 
 
 def get_workspace_id_from_token(decoded_access_token: dict[str, Any]) -> str:
-    return (
-        decoded_access_token.get("org_id")
-        or decoded_access_token.get("ext", {}).get("org_id")
-        or None
-    )
+    domain = urlparse(settings.OAUTH2_OPENID_CONFIGURATION).netloc
+    if "auth0" in domain:
+        return decoded_access_token.get("org_id")
+    elif "microsoft" in domain:
+        return decoded_access_token.get("tid")
+    else:
+        return decoded_access_token.get("ext", {}).get("org_id")
+
+
+def get_scopes_from_token(decoded_access_token: dict[str, Any]) -> List[str]:
+    domain = urlparse(settings.OAUTH2_OPENID_CONFIGURATION).netloc
+    scopes = decoded_access_token.get("scope", "")
+    if "microsoft" in domain:
+        scopes = decoded_access_token.get("scp", "")
+
+    return scopes.split(" ")
 
 
 class CurrentUser(User):
@@ -46,12 +60,14 @@ class CurrentUser(User):
 
     @staticmethod
     def from_oauth2(userinfo, decoded_access_token: dict[str, Any]):
-        scopes = decoded_access_token.get("scope", "").split(" ")
+        scopes = get_scopes_from_token(decoded_access_token)
         self = CurrentUser(
             id=decoded_access_token["sub"],
-            email=userinfo["email"],
-            full_name=userinfo["name"],
-            disabled=userinfo.get("blocked", False),
+            email=userinfo.get("email", decoded_access_token.get("email")),
+            full_name=userinfo.get("name", decoded_access_token.get("name")),
+            disabled=userinfo.get(
+                "blocked", decoded_access_token.get("blocked", False)
+            ),
             workspace_id=get_workspace_id_from_token(decoded_access_token),
             scopes=scopes,
         )
