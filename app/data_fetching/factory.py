@@ -49,20 +49,60 @@ async def background_data_fetch(
         return
 
     texts, metadata, ids = prepare_metadata_ids_content(docs)
+
     try:
         with SQLAlchemyTransactionContext().manage() as tx_context:
-            docs, _ = ovstore.__list_docs__(
+            existing_docs, _ = ovstore.__list_docs__(
                 workspace_id=dir.workspace_id,
                 directory=dir.name,
-                limit=100000,
-                projection=["custom_id"],
+                limit=-1,
+                projection=["custom_id", "document"],
                 tx_context=tx_context,
             )
-            ids_to_delete = [d.custom_id for d in docs]
-            delete_ids(ovstore=ovstore, ids=ids_to_delete)
+
+            existing_doc_dict = {doc.custom_id: doc.document for doc in existing_docs}
+
+            docs_to_delete = []
+            metadata_to_insert = []
+            ids_to_insert = []
+            texts_to_insert = []
+
+            for i, doc_id in enumerate(ids):
+                if doc_id not in existing_doc_dict:
+                    # New document
+                    texts_to_insert.append(texts[i])
+                    metadata_to_insert.append(metadata[i])
+                    ids_to_insert.append(doc_id)
+                elif existing_doc_dict[doc_id] != texts[i]:
+                    # Changed document
+                    docs_to_delete.append(doc_id)
+                    texts_to_insert.append(texts[i])
+                    metadata_to_insert.append(metadata[i])
+                    ids_to_insert.append(doc_id)
+
+            # Delete documents that no longer exist
+            docs_to_delete_not_exist = set(existing_doc_dict.keys()) - set(ids)
+            # Append documents that no longer exist to the deletion list
+            docs_to_delete.extend(docs_to_delete_not_exist)
+
+            # Delete changed and non-existent documents
+            if docs_to_delete:
+                delete_ids(ovstore=ovstore, ids=docs_to_delete)
+                log.debug(
+                    f"Deleted {len(docs_to_delete)} changed documents from directory {dir.name}"
+                )
+
     except NotImplementedError:
-        log.error(f"could not delete directory {dir.name} data before importing")
+        log.error(f"could not process directory {dir.name} data")
         return
 
-    inserted_ids = ovstore.add_texts(texts=texts, metadatas=metadata, ids=ids)
-    log.debug(f"inserted {len(inserted_ids)} into directory {dir.name} vector store")
+    # Insert new or changed documents
+    if len(texts_to_insert) > 0:
+        inserted_ids = ovstore.add_texts(
+            texts=texts_to_insert, metadatas=metadata_to_insert, ids=ids_to_insert
+        )
+        log.debug(
+            f"Inserted {len(inserted_ids)} new or changed documents into directory {dir.name} vector store"
+        )
+    else:
+        log.debug(f"No new or changed documents to insert for directory {dir.name}")
