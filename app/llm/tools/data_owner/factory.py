@@ -2,14 +2,15 @@ import logging
 from typing import Any, Optional
 
 from app.consts import DATAOWNER_CONFIG_KEY
+from app.llm.tools.data_owner.azure import AzureImpl
 from app.llm.tools.data_owner.mock import MockImpl
+from app.llm.tools.data_owner.okta import OktaImpl
 from app.models import Directory, User, Workspace
 from app.services import factory_reg_provider, factory_user_store
 from app.utils.emails.factory import EmailFactoryForWS
 from app.vault_utils import resolve_ws_config_secrets
 
 from .iface import DataOwnerInterface
-from .okta import OktaImpl
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,8 @@ def DataOwnerFactory(type: str, config: dict[str, Any]) -> DataOwnerInterface:
     match type:
         case "okta":
             return OktaImpl(**config)
+        case "azure":
+            return AzureImpl(**config)
         case "_mock_":
             return MockImpl(**config)
 

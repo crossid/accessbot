@@ -1,4 +1,4 @@
-from .models_stores import UserStore
+from app.models_stores import UserStore
 
 
 class UserStoreSCIM(UserStore):
