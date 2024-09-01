@@ -77,11 +77,26 @@ def update_conv(
     workspace_id: str,
     conversation_id: str,
     tx_context,
+    **kwargs,  # provision kwargs
 ):
+    conv = conv_store.get_by_id(
+        workspace_id=workspace_id,
+        conversation_id=conversation_id,
+        tx_context=tx_context,
+    )
+
+    if conv is None:
+        raise ValueError(f"conversation [{conversation_id}] not found")
+
     updates: dict[str, Any] = {
         "status": status,
         "summary": conv_summary,
     }
+
+    # Only update the context if kwargs are provided
+    if kwargs:
+        updates["context"] = {**conv.context, "provision_data": kwargs}
+
     conv_store.update(
         workspace_id=workspace_id,
         conversation_id=conversation_id,
