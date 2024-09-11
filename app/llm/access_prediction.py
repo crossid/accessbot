@@ -32,19 +32,33 @@ def dict_to_md(data: dict[str, Any]) -> str:
     return "\n".join(md_lines)
 
 
+def prepare_retriever(ws: Workspace, top_k: int, min_relevance: float):
+    vstore = create_workspace_vstore(
+        workspace_id=ws.id,
+        embedding=create_embedding(settings.VSTORE_EMBEDDING),
+        workspace_name=ws.name,
+    )
+
+    ret = vstore.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={
+            "k": top_k,
+            "fetch_k": max(40, top_k * 2),
+            "score_threshold": min_relevance,
+            "filter": {"type": "user"},
+        },
+    )
+
+    return ret
+
+
 async def predict_access_to_user(
-    user: dict[str, Any],
+    user_md: str,
     ws: Workspace,
     app: Application,
     top_k: int = 10,
     min_relevance: float = 0.7,
 ) -> str:
-    wvstore = create_workspace_vstore(
-        workspace_id=ws.id,
-        embedding=create_embedding(settings.VSTORE_EMBEDDING),
-        workspace_name=ws.name,
-    )
-    pass
-    # ret = vstore.as_retriever(
-    # search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.75}
-    # )
+    ret = prepare_retriever(ws=ws, top_k=top_k, min_relevance=min_relevance)
+    docs = ret.invoke(user_md)
+    similar_users_emails = [doc.metadata["email"] for doc in docs]
