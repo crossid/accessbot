@@ -140,6 +140,9 @@ class Application(BaseModel):
     extra_instructions: Optional[str] = None
     provision_schema: Optional[dict] = None
     created_at: datetime = Field(default_factory=datetime.now)
+    read_directory_id: Optional[str] = None
+    write_directory_id: Optional[str] = None
+    business_instructions: Optional[str] = None
 
 
 class PartialApplication(Application, OptionalModel):

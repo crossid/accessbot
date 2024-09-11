@@ -33,6 +33,9 @@ class CreateApplicationBody(BaseModel):
     aliases: list[str]
     extra_instructions: Optional[str] = None
     provision_schema: Optional[dict] = None
+    read_directory_id: Optional[str] = None
+    write_directory_id: Optional[str] = None
+    business_instructions: Optional[str] = None
 
 
 @router.post(
@@ -55,6 +58,9 @@ def create(
                 aliases=body.aliases,
                 provision_schema=body.provision_schema,
                 extra_instructions=body.extra_instructions,
+                read_directory_id=body.read_directory_id,
+                write_directory_id=body.write_directory_id,
+                business_instructions=body.business_instructions,
             )
             papp = application_store.insert(
                 app=app,
@@ -113,7 +119,14 @@ async def delete(
 
 
 class ApplicationPatchOperation(PatchOperation):
-    mutable_fields = ["aliases", "extra_instructions", "provision_schema"]
+    mutable_fields = [
+        "aliases",
+        "extra_instructions",
+        "provision_schema",
+        "read_directory_id",
+        "write_directory_id",
+        "business_instructions",
+    ]
 
 
 ApplicationJsonPatchDocument = JsonPatchDocument[ApplicationPatchOperation]
