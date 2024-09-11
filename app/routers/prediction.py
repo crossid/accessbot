@@ -10,7 +10,7 @@ from app.auth import (
     get_current_workspace,
 )
 from app.authz import Permissions, is_admin_or_has_scopes
-from app.llm.access_prediction import predict_access_to_user
+from app.llm.access_prediction import dict_to_md, predict_access_to_user
 from app.models import (
     CurrentUser,
     Workspace,
@@ -65,9 +65,10 @@ async def predict_access_for_user(
             )
 
     # Run predict_access_to_user for each application simultaneously
+    user_md = dict_to_md(body.user)
     tasks = [
         predict_access_to_user(
-            user=body.user,
+            user_md=user_md,
             ws=workspace,
             app=app,
             top_k=body.top_k,
