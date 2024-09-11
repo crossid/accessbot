@@ -12,6 +12,7 @@ from langgraph.checkpoint.base import (
 )
 from sqlalchemy import (
     JSON,
+    TEXT,
     Boolean,
     Column,
     Connection,
@@ -213,6 +214,16 @@ applications_table = sqlalchemy.Table(
     Column("extra_instructions", String(), nullable=True),
     Column("provision_schema", JSON(), nullable=True),
     Column("created_at", DateTime(), nullable=False),
+    Column(
+        "read_directory_id", String(10), ForeignKey(directory_table.c.id), nullable=True
+    ),
+    Column(
+        "write_directory_id",
+        String(10),
+        ForeignKey(directory_table.c.id),
+        nullable=True,
+    ),
+    Column("business_instructions", TEXT(), nullable=True),
 )
 
 Index(
