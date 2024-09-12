@@ -48,6 +48,7 @@ async def predict_access_for_user(
     _=Depends(is_admin_or_has_scopes(scopes=[Permissions.ADMIN.value])),
 ):
     applications = []
+    user_md = dict_to_md(body.user)
     with SQLAlchemyTransactionContext().manage() as tx_context:
         # Find all applications from application_ids
         for app_id in body.application_ids:
@@ -65,7 +66,6 @@ async def predict_access_for_user(
             )
 
     # Run predict_access_to_user for each application simultaneously
-    user_md = dict_to_md(body.user)
     tasks = [
         predict_access_to_user(
             user_md=user_md,
@@ -76,10 +76,26 @@ async def predict_access_for_user(
         )
         for app in applications
     ]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Process results and handle exceptions
+    error_results = []
+    processed_results = []
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error(f"Error in predict_access_to_user: {str(result)}")
+            error_results.append(f"Error occurred: {str(result)}")
+        else:
+            processed_results.append(result)
+
+    if not processed_results:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"all applications returned errors. {str(error_results)}",
+        )
 
     # Combine results and format output
-    combined_results = "\n\n".join(results)
+    combined_results = "\n\n".join(processed_results)
     formatted_output = f"{body.output_instructions}\n\n{combined_results}"
 
     return {"prediction": formatted_output}
