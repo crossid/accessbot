@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.llm.tools.user_data.iface import UserDataInterface
+from app.llm.tools.user_data.iface import UserAccess, UserDataInterface
 
 
 class MockImpl(UserDataInterface):
@@ -12,5 +12,5 @@ class MockImpl(UserDataInterface):
 
     async def get_user_access(
         self, user_email: str, app_names: list[str] = [], **kwargs
-    ) -> dict[str, Any]:
-        return {"mock": ["foo", "bar", "baz"]}
+    ) -> dict[str, list[UserAccess]]:
+        return {"mock": [UserAccess(id="foo")]}
