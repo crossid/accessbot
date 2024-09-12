@@ -3,7 +3,13 @@ import logging
 from collections import Counter
 from typing import Any
 
+from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate
+from langchain_core.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
+from pydantic import BaseModel
+
 from app.embeddings import create_embedding
+from app.llm.model import create_model
 from app.llm.tools.user_data.factory import GetUserDataFactory
 from app.llm.tools.user_data.iface import UserDataInterface
 from app.models import Application, Workspace
@@ -72,13 +78,42 @@ async def safe_get_user_access(udf: UserDataInterface, email: str, app_name: str
         return {email: []}
 
 
+def get_sys_msg():
+    sys_msg = """
+You are a helpful assistant that takes in user data and outputs a list of access groups that the user has.
+Here is the access level density for the 10 closest users: {access_density}
+Here is the business logic: {business_logic}
+
+Rank the access groups relevancy to the user based on the access level density and the business logic, with a score of 0-10.
+0 is not relevant at all, 10 is the most relevant.
+explain your reasoning for the score.
+
+example output:
+[
+    {{"access_group": "access_group_name", "score": 100, "explanation": "reasoning for the score"}},
+    {{"access_group": "access_group_name", "score": 90, "explanation": "reasoning for the score"}},
+    {{"access_group": "access_group_name", "score": 80, "explanation": "reasoning for the score"}},
+]
+"""
+    return SystemMessagePromptTemplate(prompt=sys_msg)
+
+
+class UserAccessPrediction(BaseModel):
+    app_name: str
+    prediction: str
+
+
 async def predict_access_to_user(
     user_md: str,
     ws: Workspace,
     app: Application,
     top_k: int = 10,
     min_relevance: float = 0.7,
-) -> str:
+) -> UserAccessPrediction:
+    """
+    returns a tuple of app_name to the prediction response
+    """
+
     dir_store = factory_dir_store()
     with SQLAlchemyTransactionContext().manage() as tx_context:
         dir = dir_store.get_by_id(
@@ -108,3 +143,60 @@ async def predict_access_to_user(
 
     # Call calculate_access_density
     access_density = calculate_access_density(combined_results)
+    sys_msg = get_sys_msg()
+
+    model = create_model(temperature=0.5)
+    parser = StrOutputParser()
+
+    msg = HumanMessage(content=f"predict for user:{user_md}")
+    prompt = ChatPromptTemplate.from_messages([sys_msg, msg])
+
+    chain = prompt | model | parser
+    response = await chain.ainvoke(
+        {
+            "access_density": access_density,
+            "business_logic": app.business_instructions or "no special instructions",
+        }
+    )
+    return UserAccessPrediction(app_name=app.name, prediction=response)
+
+
+def user_access_predictions_to_llm_format(predictions: list[UserAccessPrediction]):
+    header = "User Access Predictions:\n\n"
+    items = "\n".join(
+        f"App: {p.app_name}\nPrediction: {p.prediction}\n" for p in predictions
+    )
+    footer = "\nPlease summarize the access predictions above."
+    return header + items + footer
+
+
+async def format_response(
+    predictions: list[UserAccessPrediction], output_instructions: str
+):
+    sys_msg = SystemMessagePromptTemplate(
+        content="""
+You are a helpful formatting assistant. 
+You'll get a text explaining access groups relevancy to a user from different applications.
+Your task is to format the input text according to the output instructions.
+Remember: include all access groups and all applications.
+<output_instructions>
+{output_instructions}
+</output_instructions>
+"""
+    )
+
+    model = create_model(temperature=0.7)
+    parser = StrOutputParser()
+
+    msg = HumanMessage(content="{text}")
+    prompt = ChatPromptTemplate.from_messages([sys_msg, msg])
+
+    chain = prompt | model | parser
+    response = await chain.ainvoke(
+        {
+            "output_instructions": output_instructions,
+            "text": user_access_predictions_to_llm_format(predictions),
+        }
+    )
+
+    return response
