@@ -8,7 +8,15 @@ from app.routers import directories
 
 from .injector_extensions_module import ExtensionModule
 from .injector_main_module import MainModule
-from .routers import application, content, conversation, internal, rule, workspace
+from .routers import (
+    application,
+    content,
+    conversation,
+    internal,
+    prediction,
+    rule,
+    workspace,
+)
 from .services import set_service_registry
 
 logger = logging.getLogger(__name__)
@@ -36,6 +44,7 @@ api.include_router(content.router)
 api.include_router(directories.router)
 api.include_router(application.router)
 api.include_router(rule.router)
+api.include_router(prediction.router)
 app.include_router(api)
 
 # extensions

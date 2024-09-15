@@ -60,7 +60,7 @@ def prepare_retriever(ws: Workspace, top_k: int, min_relevance: float):
         search_type="similarity_score_threshold",
         search_kwargs={
             "k": top_k,
-            "fetch_k": max(40, top_k * 2),
+            # "fetch_k": max(40, top_k * 2),
             "score_threshold": min_relevance,
             "filter": {"type": "user"},
         },
@@ -72,9 +72,9 @@ def prepare_retriever(ws: Workspace, top_k: int, min_relevance: float):
 async def safe_get_user_access(udf: UserDataInterface, email: str, app_name: str):
     try:
         user_access = await udf.get_user_access(user_email=email, app_names=[app_name])
-        return {email: user_access[app_name]}
+        return {email: user_access[app_name] or []}
     except Exception as e:
-        logger.log(f"failed to fetch user access {str(e)}")
+        logger.info(f"failed to fetch user access {str(e)}")
         return {email: []}
 
 
@@ -82,11 +82,16 @@ def get_sys_msg():
     sys_msg = """
 You are a helpful assistant that takes in user data and outputs a list of access groups that the user has.
 Here is the access level density for the 10 closest users: {access_density}
-Here is the business logic: {business_logic}
+Here is the business logic:
+<business_logic>
+{business_logic}
+</business_logic>
 
 Rank the access groups relevancy to the user based on the access level density and the business logic, with a score of 0-10.
 0 is not relevant at all, 10 is the most relevant.
 explain your reasoning for the score.
+
+Remember: if there are no access groups to choose from, return an empty array.
 
 example output:
 [
@@ -95,7 +100,7 @@ example output:
     {{"access_group": "access_group_name", "score": 80, "explanation": "reasoning for the score"}},
 ]
 """
-    return SystemMessagePromptTemplate(prompt=sys_msg)
+    return SystemMessagePromptTemplate.from_template(template=sys_msg)
 
 
 class UserAccessPrediction(BaseModel):
@@ -173,12 +178,13 @@ def user_access_predictions_to_llm_format(predictions: list[UserAccessPrediction
 async def format_response(
     predictions: list[UserAccessPrediction], output_instructions: str
 ):
-    sys_msg = SystemMessagePromptTemplate(
-        content="""
-You are a helpful formatting assistant. 
+    sys_msg = SystemMessagePromptTemplate.from_template(
+        template="""
+You are a helpful summarization and formatting assistant. 
 You'll get a text explaining access groups relevancy to a user from different applications.
-Your task is to format the input text according to the output instructions.
+Your task is to summarize and format the input text according to the output instructions.
 Remember: include all access groups and all applications.
+
 <output_instructions>
 {output_instructions}
 </output_instructions>
@@ -188,15 +194,10 @@ Remember: include all access groups and all applications.
     model = create_model(temperature=0.7)
     parser = StrOutputParser()
 
-    msg = HumanMessage(content="{text}")
+    msg = HumanMessage(content=user_access_predictions_to_llm_format(predictions))
     prompt = ChatPromptTemplate.from_messages([sys_msg, msg])
 
     chain = prompt | model | parser
-    response = await chain.ainvoke(
-        {
-            "output_instructions": output_instructions,
-            "text": user_access_predictions_to_llm_format(predictions),
-        }
-    )
+    response = await chain.ainvoke({"output_instructions": output_instructions})
 
     return response
