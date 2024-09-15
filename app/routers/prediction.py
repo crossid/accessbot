@@ -36,9 +36,7 @@ class PredictAccessForUserBody(BaseModel):
     application_ids: List[str] = Field(default=[])
     top_k: Optional[int] = Field(description="", default=10)
     min_relevance: Optional[float] = Field(default=0.7)
-    output_instructions: Optional[str] = Field(
-        default='summarize all data into a good looking professional email, directed to information security experts. produce a json with subject and content. Sign the email with "best regards, the accessbot team".'
-    )
+    output_instructions: Optional[str] = Field(default=None)
 
 
 @router.post(
@@ -97,6 +95,10 @@ async def predict_access_for_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"all applications returned errors. {str(error_results)}",
         )
+
+    # Combine results and format output, if necessary
+    if not body.output_instructions:
+        return {"prediction": processed_results}
 
     # Combine results and format output
     formatted_output = await format_response(
