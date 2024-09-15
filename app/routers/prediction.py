@@ -10,7 +10,11 @@ from app.auth import (
     get_current_workspace,
 )
 from app.authz import Permissions, is_admin_or_has_scopes
-from app.llm.access_prediction import dict_to_md, predict_access_to_user
+from app.llm.access_prediction import (
+    dict_to_md,
+    format_response,
+    predict_access_to_user,
+)
 from app.models import (
     CurrentUser,
     Workspace,
@@ -33,7 +37,7 @@ class PredictAccessForUserBody(BaseModel):
     top_k: Optional[int] = Field(description="", default=10)
     min_relevance: Optional[float] = Field(default=0.7)
     output_instructions: Optional[str] = Field(
-        default="summarize all data into a good looking professional email, directed to information security experts"
+        default='summarize all data into a good looking professional email, directed to information security experts. produce a json with subject and content. Sign the email with "best regards, the accessbot team".'
     )
 
 
@@ -95,7 +99,8 @@ async def predict_access_for_user(
         )
 
     # Combine results and format output
-    combined_results = "\n\n".join(processed_results)
-    formatted_output = f"{body.output_instructions}\n\n{combined_results}"
+    formatted_output = await format_response(
+        predictions=processed_results, output_instructions=body.output_instructions
+    )
 
     return {"prediction": formatted_output}
