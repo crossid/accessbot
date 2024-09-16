@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from app.embeddings import create_embedding
 from app.llm.model import create_model
 from app.llm.tools.user_data.factory import GetUserDataFactory
-from app.llm.tools.user_data.iface import UserDataInterface
+from app.llm.tools.user_data.iface import UserAccess, UserDataInterface
 from app.models import Application, Workspace
 from app.services import factory_dir_store
 from app.settings import settings
@@ -21,7 +21,7 @@ from app.vector_store import create_workspace_vstore
 logger = logging.getLogger(__name__)
 
 
-def calculate_access_density(data: dict[str, list[str]]):
+def calculate_access_density(data: dict[str, list[UserAccess]]):
     # Flatten all access objects into a single list
     all_access = [access for user_access in data.values() for access in user_access]
 
@@ -37,7 +37,7 @@ def calculate_access_density(data: dict[str, list[str]]):
         if access.id not in access_density:
             density = access_counts[access.id] / total_users
             updated_access = access.model_copy(update={"density": density})
-            access_density[access.id] = updated_access
+            access_density[access.id] = updated_access.model_dump()
 
     return access_density
 
@@ -89,15 +89,15 @@ Here is the business logic:
 
 Rank the access groups relevancy to the user based on the access level density and the business logic, with a score of 0-10.
 0 is not relevant at all, 10 is the most relevant.
-explain your reasoning for the score.
 
 Remember: if there are no access groups to choose from, return an empty array.
 
+only return a json array as with with the access group name, access group score and explanation. 
 example output:
 [
-    {{"access_group": "access_group_name", "score": 100, "explanation": "reasoning for the score"}},
-    {{"access_group": "access_group_name", "score": 90, "explanation": "reasoning for the score"}},
-    {{"access_group": "access_group_name", "score": 80, "explanation": "reasoning for the score"}},
+    {{"access_group": "access_group_name", "score": 10, "explanation": "reasoning for the score"}},
+    {{"access_group": "access_group_name", "score": 9, "explanation": "reasoning for the score"}},
+    {{"access_group": "access_group_name", "score": 8, "explanation": "reasoning for the score"}},
 ]
 """
     return SystemMessagePromptTemplate.from_template(template=sys_msg)
