@@ -89,6 +89,7 @@ Here is the business logic:
 
 Rank the access groups relevancy to the user based on the access level density and the business logic, with a score of 0-10.
 0 is not relevant at all, 10 is the most relevant.
+Put the phrase "density" as "frequency" in percentage
 
 Remember: if there are no access groups to choose from, return an empty array.
 
@@ -158,10 +159,11 @@ async def predict_access_to_user(
 
     chain = prompt | model | parser
     response = await chain.ainvoke(
-        {
+        input={
             "access_density": access_density,
             "business_logic": app.business_instructions or "no special instructions",
-        }
+        },
+        config={"run_name": "access_prediction"},
     )
     return UserAccessPrediction(app_name=app.name, prediction=response)
 
