@@ -120,6 +120,8 @@ async def _request_roles(
                             workspace_id=workspace_id,
                             conversation_id=conversation_id,
                             tx_context=tx_context,
+                            app_name=app_name,
+                            **kwargs,
                         )
                         return "access approved automatically"
                     else:
