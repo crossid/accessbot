@@ -42,3 +42,7 @@ app.include_router(api)
 from .slack.router import register as slack_register  # noqa
 
 slack_register(app)
+
+from .email_comms.google_cloud.router import register as email_register  # noqa
+
+email_register(app)
