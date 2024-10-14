@@ -30,6 +30,7 @@ from sqlalchemy import (
     func,
     or_,
     select,
+    text,
 )
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
@@ -325,6 +326,53 @@ class WorkspaceStoreSQL(WorkspaceStore):
         )
         tx_context.connection.execute(q)
         return workspace
+
+    def list(
+        self,
+        tx_context: TransactionContext,
+        limit: int = 10,
+        offset: int = 0,
+        filters: dict[str, Any] = None,
+        projection: List[str] = [],
+    ) -> tuple[list[Workspace], int]:
+        # Query to count total documents
+        # Base query for counting
+        base_count_query = select(func.count()).select_from(self.workspaces)
+
+        # Applying filters to the count query
+        if filters:
+            for field, value in filters.items():
+                base_count_query = base_count_query.where(
+                    self.workspaces.c[field] == value
+                )
+
+        # Execute count query
+        total_count = tx_context.connection.execute(base_count_query).scalar_one()
+
+        # Query for retrieving workspaces
+        columns = [
+            self.workspaces.c[column_name]
+            for column_name in projection
+            if column_name in self.workspaces.c
+        ]
+        query = (
+            select(*columns if len(columns) > 0 else self.workspaces.c)
+            .order_by(self.workspaces.c.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if filters:
+            for field, value in filters.items():
+                if field == "__text__":
+                    query = query.where(text(value))
+                else:
+                    query = query.where(self.workspaces.c[field] == value)
+
+        result = tx_context.connection.execute(query)
+        workspaces = [Workspace(**record._asdict()) for record in result]
+
+        return workspaces, total_count
 
     def delete(
         self,
