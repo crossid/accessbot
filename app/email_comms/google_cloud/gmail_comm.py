@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from pydantic import BaseModel, ConfigDict
 
 from app.auth import get_current_workspace
@@ -14,13 +14,16 @@ from app.email_comms.google_cloud.gmail_utils import (
     respond,
     start_watch,
 )
-from app.email_comms.router import router
 from app.models import Workspace
 from app.models_stores import WorkspaceStore
 from app.services import get_service
 from app.sql import SQLAlchemyTransactionContext
 
 logger = logging.getLogger(__name__)
+
+router = APIRouter(
+    prefix="/google_cloud", tags=["google_cloud"], include_in_schema=False
+)
 
 
 class EmailNotification(BaseModel):
@@ -104,7 +107,7 @@ async def respond_to_email(notif: WebhookNotification, ws_store: WorkspaceStore)
         ws_store.update(workspace, tx_context)
 
 
-@router.post("/google_cloud")
+@router.post("/events")
 async def endpoint(
     body: WebhookNotification,
     background_tasks: BackgroundTasks,
