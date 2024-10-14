@@ -8,9 +8,9 @@ from .models import (
     Application,
     ChatMessage,
     Conversation,
-    PartialConversation,
     CurrentUser,
     Directory,
+    PartialConversation,
     PartialRule,
     Rule,
     User,
@@ -43,6 +43,17 @@ class WorkspaceStore(ABC):
         workspace: Workspace,
         tx_context: TransactionContext,
     ) -> Workspace:
+        pass
+
+    @abstractmethod
+    def list(
+        self,
+        tx_context: TransactionContext,
+        limit: int = 10,
+        offset: int = 0,
+        filters: dict[str, Any] = None,
+        projection: List[str] = [],
+    ) -> tuple[list[Workspace], int]:
         pass
 
     @abstractmethod
@@ -155,6 +166,22 @@ class WorkspaceStoreProxy:
         tx_context: TransactionContext,
     ) -> Workspace:
         return self._store.update(workspace=workspace, tx_context=tx_context)
+
+    def list(
+        self,
+        tx_context: TransactionContext,
+        limit: int = 10,
+        offset: int = 0,
+        filters: dict[str, Any] = None,
+        projection: List[str] = [],
+    ) -> tuple[list[Workspace], int]:
+        return self._store.list(
+            tx_context=tx_context,
+            limit=limit,
+            offset=offset,
+            filters=filters,
+            projection=projection,
+        )
 
     def delete(
         self,
