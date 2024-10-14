@@ -342,9 +342,12 @@ class WorkspaceStoreSQL(WorkspaceStore):
         # Applying filters to the count query
         if filters:
             for field, value in filters.items():
-                base_count_query = base_count_query.where(
-                    self.workspaces.c[field] == value
-                )
+                if field == "__text__":
+                    base_count_query = base_count_query.where(text(value))
+                else:
+                    base_count_query = base_count_query.where(
+                        self.workspaces.c[field] == value
+                    )
 
         # Execute count query
         total_count = tx_context.connection.execute(base_count_query).scalar_one()
