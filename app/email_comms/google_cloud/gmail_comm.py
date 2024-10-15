@@ -65,14 +65,10 @@ async def respond_to_email(notif: WebhookNotification, ws_store: WorkspaceStore)
                 workspace_id=workspace.id,
                 config=workspace.config[EMAIL_CONFIG_KEY]["config"],
             )
-            history_id = workspace.config["access_requests_method"]["config"][
-                "history_id"
-            ]
+            history_id = resolved_config["history_id"]
 
             new_history_id = msg_body["historyId"]
-            workspace.config["access_requests_method"]["config"][
-                "history_id"
-            ] = new_history_id
+            workspace.config[EMAIL_CONFIG_KEY]["config"]["history_id"] = new_history_id
             ws_store.update(workspace, tx_context)
         except Exception as e:
             logger.fatal(f"{str(e)}")
@@ -168,11 +164,6 @@ async def install(
             "email_address": body.email_address,
             "client_id": body.client_id,
             "client_secret": body.client_secret,
-        },
-    }
-    workspace.config["access_requests_method"] = {
-        "type": COMM_TYPE_GMAIL,
-        "config": {
             "project_id": body.project_id,
             "topic_id": body.topic_id,
             "history_id": watch_resp["historyId"],
@@ -184,5 +175,4 @@ async def install(
 
     return {
         EMAIL_CONFIG_KEY: workspace.config[EMAIL_CONFIG_KEY],
-        "access_requests_method": workspace.config["access_requests_method"],
     }

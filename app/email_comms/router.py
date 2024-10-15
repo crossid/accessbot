@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.authz import Permissions, is_admin_or_has_scopes
+from app.consts import EMAIL_CONFIG_KEY
 from app.email_comms.consts import ALL_COMM_TYPES, COMM_TYPE_GMAIL
 from app.email_comms.google_cloud.gmail_comm import router as gmail_comm_router
 from app.email_comms.google_cloud.gmail_utils import gmail_authenticate, start_watch
@@ -19,8 +20,8 @@ async def watch(
     _=Depends(is_admin_or_has_scopes(scopes=[Permissions.ADMIN.value])),
 ):
     all_comm_types_text = "','".join(ALL_COMM_TYPES)
-    query = f"config::jsonb -> 'access_requests_method' ->> 'type' IN ('{all_comm_types_text}')"
-
+    query = f"config::jsonb -> 'email' ->> 'type' IN ('{all_comm_types_text}')"
+    response = {}
     # start watch for all workspaces with email_communication enabled
     with SQLAlchemyTransactionContext().manage() as tx_context:
         workspaces, _ = workspace_store.list(
@@ -28,19 +29,22 @@ async def watch(
         )
 
         for workspace in workspaces:
-            arm = workspace.config.get("access_requests_method", {})
-            if arm.get("type") == COMM_TYPE_GMAIL:
-                arm_config = arm.get("config", {})
+            email_config = workspace.config.get(EMAIL_CONFIG_KEY, {})
+            if email_config.get("type") == COMM_TYPE_GMAIL:
+                gm_config = email_config.get("config", {})
                 service = gmail_authenticate()
                 watch_resp = start_watch(
-                    user_id=arm_config["email_address"],
-                    project_id=arm_config["project_id"],
-                    topic_id=arm_config["topic_id"],
+                    user_id=gm_config["email_address"],
+                    project_id=gm_config["project_id"],
+                    topic_id=gm_config["topic_id"],
                     service=service,
                 )
-                arm_config["history_id"] = watch_resp["historyId"]
-                workspace.config["access_requests_method"]["config"] = arm_config
+                gm_config["history_id"] = watch_resp["historyId"]
+                workspace.config[EMAIL_CONFIG_KEY]["config"] = gm_config
                 workspace_store.update(workspace, tx_context)
+                response[workspace.id] = watch_resp
+
+    return response
 
 
 router.include_router(gmail_comm_router)
