@@ -2,6 +2,7 @@ from typing import Any
 
 from app.consts import EMAIL_CONFIG_KEY
 from app.models import Workspace
+from app.utils.emails.gmail import GmailImpl
 from app.utils.emails.iface import EmailSenderInterface
 from app.utils.emails.smtp import SMTPImpl
 from app.vault_utils import resolve_ws_config_secrets
@@ -20,5 +21,7 @@ def EmailFactory(type: str, config: dict[str, Any]) -> EmailSenderInterface:
     match type:
         case "smtp":
             return SMTPImpl(**config)
+        case "gmail":
+            return GmailImpl(**config)
 
     return None
