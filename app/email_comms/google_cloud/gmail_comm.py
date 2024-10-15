@@ -155,7 +155,12 @@ async def install(
     # auth with the provided credentials
     service = gmail_authenticate()
     # start watch
-    watch_resp = start_watch(body.project_id, body.topic_id, service)
+    watch_resp = start_watch(
+        user_id=body.email_address,
+        project_id=body.project_id,
+        topic_id=body.topic_id,
+        service=service,
+    )
     # install the gmail address to the workspace
     workspace.config[EMAIL_CONFIG_KEY] = {
         "type": COMM_TYPE_GMAIL,
