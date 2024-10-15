@@ -39,6 +39,7 @@ def on_topic_guard():
     template = """
       You are a guardrail agent with the job of determining if the conversation is on topic.
       The topic of the conversation is, generally, requesting and granting access.
+      Asking about assistant capabilities is always allowed.
       Here are example allowed topics:
       {allowed_topics}
 

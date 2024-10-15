@@ -175,9 +175,7 @@ def entry_point_node(data_context):
                 trimmed_json_string = output.lstrip("`json")
                 output = json.loads(trimmed_json_string)
             except json.JSONDecodeError:
-                return {
-                    "sender": "entry_point",
-                }
+                output = {}
 
         return {
             "sender": "entry_point",

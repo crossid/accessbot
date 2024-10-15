@@ -30,6 +30,8 @@ TEMPLATES = {
     The conversation id is: {conversation_id}
 
     return a json object with the fields: "extra_instructions", "app_id", "app_name".
+    example response:
+    1. {{extra_instructions: "some instructions", app_id: "some id", app_name: "some name"}}
 """,
     RECOMMENDATION_TEMPLATE: """
     Your only goal is to help users get the correct access by recommendation.
