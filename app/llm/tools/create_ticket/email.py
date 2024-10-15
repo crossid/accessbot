@@ -30,7 +30,7 @@ class EmailTicketImpl(TicketInterface):
         self.email_sender.send(
             from_addr=self.sender_email,
             to=owner.email,
-            msg=content,
+            content=content,
             subject=self.subject,
         )
 
