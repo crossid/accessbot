@@ -33,7 +33,10 @@ async def watch(
                 arm_config = arm.get("config", {})
                 service = gmail_authenticate()
                 watch_resp = start_watch(
-                    arm_config["project_id"], arm_config["topic_id"], service=service
+                    user_id=arm_config["email_address"],
+                    project_id=arm_config["project_id"],
+                    topic_id=arm_config["topic_id"],
+                    service=service,
                 )
                 arm_config["history_id"] = watch_resp["historyId"]
                 workspace.config["access_requests_method"]["config"] = arm_config

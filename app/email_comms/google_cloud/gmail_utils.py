@@ -45,14 +45,14 @@ def gmail_authenticate(**kwargs):
     return build("gmail", "v1", credentials=creds)
 
 
-def start_watch(project_id: str, topic_id: str, service):
+def start_watch(user_id: str, project_id: str, topic_id: str, service):
     request = {
         "labelIds": ["INBOX"],
         "topicName": f"projects/{project_id}/topics/{topic_id}",
         "labelFilterBehavior": "INCLUDE",
     }
 
-    response = service.users().watch(userId="me", body=request).execute()
+    response = service.users().watch(userId=user_id, body=request).execute()
     # return {"historyId": response["historyId"], "expiration": response["expiration"]}
     return response
 

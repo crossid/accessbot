@@ -28,7 +28,11 @@ class GmailImpl(EmailSenderInterface):
         msg = create_message(
             sender=self.email_address, to=to, subject=subject, message_text=content
         )
-        self.service.users().messages().send(
-            userId=self.email_address, body=msg
-        ).execute()
+        _ = (
+            self.service.users()
+            .messages()
+            .send(userId=self.email_address, body=msg)
+            .execute()
+        )
+
         return True
