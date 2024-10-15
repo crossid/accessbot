@@ -4,5 +4,7 @@ from typing import List
 
 class EmailSenderInterface(ABC):
     @abstractmethod
-    def send(self, from_addr: str, to: str | List[str], msg: str, subject: str) -> bool:
+    def send(
+        self, from_addr: str, to: str | List[str], content: str, subject: str
+    ) -> bool:
         pass
