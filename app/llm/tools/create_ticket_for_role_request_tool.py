@@ -47,6 +47,7 @@ async def make_request(
 ) -> str:
     ts = TicketSystemFactory(ws=ws)
     if ts is None:
+        logger.debug("no ticket system found, not failing for demo purposes")
         return ""
 
     # Owner might be none, so the ticket creation has to be defensive if it needs an owner

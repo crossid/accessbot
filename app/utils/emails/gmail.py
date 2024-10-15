@@ -9,7 +9,11 @@ class GmailImpl(EmailSenderInterface):
     email_address: str
 
     def __init__(self, client_id: str, client_secret: str, email_address: str) -> None:
-        service = gmail_authenticate(client_id, client_secret, email_address)
+        service = gmail_authenticate(
+            client_id=client_id,
+            client_secret=client_secret,
+            email_address=email_address,
+        )
         self.service = service
         self.email_address = email_address
 
