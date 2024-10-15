@@ -8,12 +8,14 @@ from .iface import TicketInterface
 
 class EmailTicketImpl(TicketInterface):
     email_sender: EmailSenderInterface
-    sender_email = "noreply@crossid.io"
+    sender = "noreply@crossid.io"
     subject = "Role Request waiting for you"
 
     def __init__(self, **kwargs) -> None:
         _type = kwargs.get("type")
         _config = kwargs.get("config")
+        if _config.get("sender"):
+            self.sender = _config.get("sender")
         self.email_sender = EmailFactory(_type, _config)
 
     def create_ticket(
@@ -28,7 +30,7 @@ class EmailTicketImpl(TicketInterface):
         **kwargs,
     ) -> str:
         self.email_sender.send(
-            from_addr=self.sender_email,
+            from_addr=self.sender,
             to=owner.email,
             content=content,
             subject=self.subject,

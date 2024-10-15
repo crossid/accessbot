@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.tools import StructuredTool, ToolException
 from langgraph.checkpoint.base import CheckpointMetadata, empty_checkpoint
 
-from app.consts import TICKET_SYSTEM_CONFIG_KEY
+from app.consts import COMMUNICATION_CHANNEL_CONFIG_KEY, TICKET_SYSTEM_CONFIG_KEY
 from app.llm.prompts import MEMORY_KEY
 from app.llm.sql_chat_message_history import LangchainChatMessageHistory
 from app.llm.tools.provision_role_tool import provision_role
@@ -152,7 +152,7 @@ async def _request_roles(
             assignee=owner.email,
             previous_conversation=conversation_id,
             context={
-                "communication_channel": ws.config.get(
+                COMMUNICATION_CHANNEL_CONFIG_KEY: ws.config.get(
                     TICKET_SYSTEM_CONFIG_KEY, {}
                 ).get("type", "portal")
             },
