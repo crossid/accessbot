@@ -118,4 +118,7 @@ def answer(client: WebClient, event, logger, say, context):
                 thread_ts=thread_ts,
             )
     except Exception as e:
+        import traceback
+
         logger.error(f"Error answering message: {e}")
+        logger.error(traceback.format_exc())

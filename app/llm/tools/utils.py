@@ -1,5 +1,8 @@
 from typing import Any, Optional
 
+from langchain.tools import Tool
+from pydantic import BaseModel, Field, create_model
+
 from app.i18n import i18n
 from app.models import Conversation, Workspace
 from app.models_stores import ConversationStore
@@ -7,8 +10,6 @@ from app.services import (
     factory_app_store,
 )
 from app.sql import SQLAlchemyTransactionContext
-from langchain.tools import Tool
-from pydantic.v1 import BaseModel, Field, create_model
 
 
 def get_tools_for_workspace_and_conversation(

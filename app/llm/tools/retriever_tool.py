@@ -6,8 +6,8 @@ from langchain_core.callbacks.manager import (
     Callbacks,
 )
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate, format_document
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.vectorstores import VectorStoreRetriever
+from pydantic import BaseModel, Field
 
 
 class RetrieverInput(BaseModel):
