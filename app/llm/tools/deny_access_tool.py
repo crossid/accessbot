@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from langchain_core.tools import StructuredTool
-from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 from app.models import ConversationStatuses
 from app.services import factory_conversation_store
