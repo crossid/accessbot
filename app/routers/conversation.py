@@ -15,6 +15,7 @@ from ..auth import get_current_active_user, get_current_workspace
 from ..llm.conversation import (
     add_messages,
     create_agent_for_access_request_conversation,
+    make_conversation,
     prepare_known_apps_str,
     sse_client_transformer,
 )
@@ -194,7 +195,7 @@ class ConversationBody(BaseModel):
     response_model_exclude_none=True,
     status_code=status.HTTP_200_OK,
 )
-async def conversation(
+async def stream_conversation(
     conversation_id: str,
     body: ConversationBody,
     current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
@@ -287,6 +288,64 @@ async def conversation(
             ),
             media_type="text/event-stream",
         )
+
+
+@router.post(
+    "/{conversation_id}/converse",
+    response_model_exclude_none=True,
+    status_code=status.HTTP_200_OK,
+)
+async def conversation(
+    conversation_id: str,
+    body: ConversationBody,
+    current_user: Annotated[CurrentUser, Depends(get_current_active_user)],
+    workspace: Annotated[Workspace | None, Depends(get_current_workspace)],
+    conversation_store: ConversationStore = Depends(factory_conversation_store),
+    admin_or_scope: AdminOrScopes = Depends(
+        is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONVERSATIONS.value])
+    ),
+):
+    workspace_id = workspace.id
+
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        ar = conversation_store.get_by_id(
+            conversation_id=conversation_id,
+            workspace_id=workspace_id,
+            tx_context=tx_context,
+        )
+        if ar is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="conversation not found"
+            )
+
+        if ar.status != ConversationStatuses.active:
+            raise HTTPException(
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+                detail="conversation has ended, please start a new one",
+            )
+
+        if admin_or_scope.is_admin is not True and ar.assignee != current_user.email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="not conversation owner",
+            )
+
+        result = await make_conversation(
+            current_user=current_user,
+            conversation=ar,
+            input=body.input,
+            tx_context=tx_context,
+        )
+
+        ar = conversation_store.get_by_id(
+            conversation_id=conversation_id,
+            workspace_id=workspace_id,
+            tx_context=tx_context,
+        )
+
+        result["status"] = ar.status
+
+        return result
 
 
 class CancelConvResp(BaseModel):
