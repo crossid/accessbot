@@ -10,14 +10,22 @@ class ServiceNowTicketImpl(TicketInterface):
     username: str
     password: str
     table: str
+    # static ticket parameters to add to each ticket
+    ticket_params: dict[str, str] = {}
 
     def __init__(
-        self, instance: str, username: str, password: str, table: str = "incident"
+        self,
+        instance: str,
+        username: str,
+        password: str,
+        ticket_params: dict[str, str],
+        table: str = "incident",
     ) -> None:
         self.instance = instance
         self.username = username
         self.password = password
         self.table = table
+        self.ticket_params = ticket_params
         self.base_url = f"https://{instance}.service-now.com/api/now/v1/table/{table}"
 
     def create_ticket(
@@ -54,12 +62,16 @@ class ServiceNowTicketImpl(TicketInterface):
         requester_id = user_result["result"][0]["sys_id"]
 
         payload = {
-            "short_description": content[:160],
+            "short_description": conv_summary[:160],
             "description": content,
             "caller_id": requester_id,
-            # "assigned_to": owner.email,
             "comments": "\n".join(f"{k}: {v}" for k, v in kwargs.items()),
+            # I expect this to be assigned by service now business rules
+            # "assigned_to": owner.email,
         }
+
+        # Add the static ticket parameters to the payload, without overwriting any existing keys
+        payload = {**self.ticket_params, **payload}
 
         response = requests.post(
             self.base_url,
