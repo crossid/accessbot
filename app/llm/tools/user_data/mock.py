@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from app.llm.tools.user_data.iface import UserAccess, UserDataInterface
 
@@ -739,6 +739,9 @@ data = {
 class MockImpl(UserDataInterface):
     def __init__(self) -> None:
         pass
+
+    async def list_users_data(self, **kwargs) -> List[dict[str, Any]]:
+        return [{"email": "jon.doe@vandelay.com"}]
 
     async def get_user_data(self, user_email, **kwargs) -> dict[str, Any]:
         return {"email": "jon.doe@vandelay.com"}

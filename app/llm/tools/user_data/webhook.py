@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from app.llm.tools.user_data.iface import UserDataInterface
 from app.utils.strings import add_prefix
@@ -21,6 +21,22 @@ class WebhookImpl(UserDataInterface):
         self.user_data_url = add_prefix(user_type_mapping, "/")
         user_access_type_mapping = type_mapping.get("user_access_url", "/user_access")
         self.user_access_url = add_prefix(user_access_type_mapping, "/")
+
+    async def list_users_data(self, **kwargs) -> List[dict[str, Any]]:
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "Could not import requests package. "
+                "Please install it with `pip install requests`"
+            )
+
+        url = f"{self.url}{self.user_data_url}"
+        response = requests.post(url=url, json=kwargs)
+        if response.status_code >= 200 and response.status_code <= 399:
+            return response.json()
+        else:
+            raise ValueError(response.text)
 
     async def get_user_data(self, user_email, **kwargs) -> dict[str, Any]:
         try:

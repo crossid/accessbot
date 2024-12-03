@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 from pydantic import BaseModel, ConfigDict
 
@@ -10,6 +10,13 @@ class UserAccess(BaseModel):
 
 
 class UserDataInterface(ABC):
+    @abstractmethod
+    async def list_users_data(self, **kwargs) -> List[dict[str, Any]]:
+        """
+        returns a list of dictionaries with the user's data. Doesn't necessarily include the user's access.
+        """
+        pass
+
     @abstractmethod
     async def get_user_data(self, user_email: str, **kwargs) -> dict[str, Any]:
         """
