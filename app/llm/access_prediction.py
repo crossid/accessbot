@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections import Counter
-from typing import Any
 
 from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import HumanMessage
@@ -40,13 +39,6 @@ def calculate_access_density(data: dict[str, list[UserAccess]]):
             access_density[access.id] = updated_access.model_dump()
 
     return access_density
-
-
-def dict_to_md(data: dict[str, Any]) -> str:
-    md_lines = []
-    for key, value in data.items():
-        md_lines.append(f"**{key}**: {value}")
-    return "\n".join(md_lines)
 
 
 def prepare_retriever(ws: Workspace, top_k: int, min_relevance: float):

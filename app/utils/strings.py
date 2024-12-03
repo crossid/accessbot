@@ -24,3 +24,10 @@ def str_to_filters(str_filter: str | None) -> dict[str, Any]:
                 filters[key] = value
 
     return filters
+
+
+def dict_to_md(data: dict[str, Any]) -> str:
+    md_lines = []
+    for key, value in data.items():
+        md_lines.append(f"**{key}**: {value}")
+    return "\n".join(md_lines)

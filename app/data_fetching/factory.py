@@ -8,6 +8,7 @@ from app.data_fetching.okta import DFOktaImpl
 from app.data_fetching.utils import prepare_metadata_ids_content
 from app.models import Directory
 from app.sql import SQLAlchemyTransactionContext
+from app.utils.changes_discovery import discover_document_changes
 from app.vault_utils import resolve_ws_config_secrets
 from app.vector_store import delete_ids
 
@@ -60,30 +61,12 @@ async def background_data_fetch(
                 tx_context=tx_context,
             )
 
-            existing_doc_dict = {doc.custom_id: doc.document for doc in existing_docs}
-
-            docs_to_delete = []
-            metadata_to_insert = []
-            ids_to_insert = []
-            texts_to_insert = []
-
-            for i, doc_id in enumerate(ids):
-                if doc_id not in existing_doc_dict:
-                    # New document
-                    texts_to_insert.append(texts[i])
-                    metadata_to_insert.append(metadata[i])
-                    ids_to_insert.append(doc_id)
-                elif existing_doc_dict[doc_id] != texts[i]:
-                    # Changed document
-                    docs_to_delete.append(doc_id)
-                    texts_to_insert.append(texts[i])
-                    metadata_to_insert.append(metadata[i])
-                    ids_to_insert.append(doc_id)
-
-            # Delete documents that no longer exist
-            docs_to_delete_not_exist = set(existing_doc_dict.keys()) - set(ids)
-            # Append documents that no longer exist to the deletion list
-            docs_to_delete.extend(docs_to_delete_not_exist)
+            (
+                docs_to_delete,
+                texts_to_insert,
+                metadata_to_insert,
+                ids_to_insert,
+            ) = discover_document_changes(existing_docs, texts, metadata, ids)
 
             # Delete changed and non-existent documents
             if docs_to_delete:

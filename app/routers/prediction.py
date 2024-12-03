@@ -11,7 +11,6 @@ from app.auth import (
 )
 from app.authz import Permissions, is_admin_or_has_scopes
 from app.llm.access_prediction import (
-    dict_to_md,
     format_response,
     predict_access_to_user,
 )
@@ -22,6 +21,7 @@ from app.models import (
 from app.models_stores import ApplicationStore
 from app.services import get_service
 from app.sql import SQLAlchemyTransactionContext
+from app.utils.strings import dict_to_md
 
 logger = logging.getLogger(__name__)
 

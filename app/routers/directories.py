@@ -8,6 +8,7 @@ from pydantic_core import ErrorDetails
 
 from app.authz import Permissions, is_admin_or_has_scopes
 from app.data_fetching.factory import DataFetcherFactory, background_data_fetch
+from app.llm.tools.user_data.factory import GetUserDataFactory
 from app.models_stores_sql import PartialDirectory
 
 from ..auth import (
@@ -223,3 +224,28 @@ async def import_content(
     data_fetcher = DataFetcherFactory(dir=dir)
     background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir, **body)
     return {"message": "data import happening in background"}
+
+
+@router.post(
+    "/{dir_id}/.import_users", response_model=dict, status_code=status.HTTP_202_ACCEPTED
+)
+async def import_users(
+    body: dict[str, Any],
+    dir_id: str,
+    workspace: Annotated[Workspace, Depends(get_current_workspace)],
+    directory_store: Annotated[DirectoryStore, Depends(get_service(DirectoryStore))],
+    background_tasks: BackgroundTasks,
+    ovstore=Depends(setup_workspace_vstore),
+    _=Depends(is_admin_or_has_scopes(scopes=[Permissions.UPDATE_CONTENT.value])),
+):
+    with SQLAlchemyTransactionContext().manage() as tx_context:
+        dir = directory_store.get_by_id(
+            directory_id=dir_id, workspace_id=workspace.id, tx_context=tx_context
+        )
+
+        if not dir:
+            raise HTTPException(status_code=404, detail="Directory not found")
+
+    data_fetcher = GetUserDataFactory(workspace=workspace, directory=dir)
+    background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir, **body)
+    return {"message": "user data import happening in background"}
