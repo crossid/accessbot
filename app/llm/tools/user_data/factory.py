@@ -41,7 +41,7 @@ def GetUserDataFactory(workspace: Workspace, directory: Directory) -> UserDataIn
 
 def prepare_user_docs(users: List[dict], dir_name: str):
     texts = []
-    metadata = []
+    metadatas = []
     ids = []
 
     for user in users:
@@ -52,12 +52,12 @@ def prepare_user_docs(users: List[dict], dir_name: str):
             "email": user.get("email", ""),
             "type": "user",
             "created_at": datetime.now().isoformat(),
-            "display_name": user.get("display_name", ""),
+            "display_name": user.get("display_name", user.get("displayName", "")),
             "directory": dir_name,
         }
-        metadata.append(metadata)
+        metadatas.append(metadata)
 
-    return texts, metadata, ids
+    return texts, metadatas, ids
 
 
 async def background_users_fetch(
@@ -69,7 +69,7 @@ async def background_users_fetch(
         log.error(f"failed to fetch directory {dir.name} data: {str(e)}")
         return
 
-    texts, metadata, ids = prepare_user_docs(docs)
+    texts, metadata, ids = prepare_user_docs(users=docs, dir_name=dir.name)
 
     try:
         with SQLAlchemyTransactionContext().manage() as tx_context:

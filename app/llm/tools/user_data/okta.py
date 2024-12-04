@@ -6,6 +6,39 @@ from .iface import UserAccess, UserDataInterface
 logger = logging.getLogger(__name__)
 
 
+def get_relevant_attributes() -> List[str]:
+    security_relevant_attributes = [
+        # Primary attributes
+        "department",
+        "division",
+        "organization",
+        "title",
+        "manager",
+        "managerId",
+        "userType",
+        "costCenter",
+        # Secondary attributes
+        "employeeNumber",
+        "countryCode",
+        "locale",
+        "email",
+        "login",
+        # so we'll have it in the metadata
+        "displayName",
+    ]
+    return security_relevant_attributes
+
+
+def okta_user_to_dict(user) -> dict[str, Any]:
+    user_data = {"id": user.id}
+    for attr in get_relevant_attributes():
+        user_attr = getattr(user.profile, attr)
+        if user_attr is not None:
+            user_data[attr] = user_attr
+
+    return user_data
+
+
 class OktaUserDataImpl(UserDataInterface):
     def __init__(self, tenant: str, token: str) -> None:
         try:
@@ -27,16 +60,13 @@ class OktaUserDataImpl(UserDataInterface):
 
         result = []
         for user in users:
-            user_data = {"id": user.id}
-            user_data.update(user.profile)
-            result.append(user_data)
+            result.append(okta_user_to_dict(user))
 
         return result
 
     async def get_user_data(self, user_email: str, **kwargs) -> dict[str, Any]:
-        users, resp, err = await self.client.list_users(
-            search=f'profile.email eq "{user_email}"'
-        )
+        qp = {"search": f'profile.email eq "{user_email}"'}
+        users, resp, err = await self.client.list_users(query_params=qp)
         if err:
             raise ValueError(f"Error fetching okta user data: {err.error_summary}")
 
@@ -46,17 +76,14 @@ class OktaUserDataImpl(UserDataInterface):
             )
 
         user = users[0]
-        result = {"id": user.id}
-        result.update(user.profile)
-        return result
+        return okta_user_to_dict(user)
 
     async def get_user_access(
         self, user_email: str, app_names: list[str] = [], **kwargs
     ) -> dict[str, list[UserAccess]]:
         # First get the user
-        users, resp, err = await self.client.list_users(
-            search=f'profile.email eq "{user_email}"'
-        )
+        qp = {"search": f'profile.email eq "{user_email}"'}
+        users, resp, err = await self.client.list_users(query_params=qp)
         if err:
             raise ValueError(f"Error fetching okta user: {err.error_summary}")
 

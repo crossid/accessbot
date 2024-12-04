@@ -8,7 +8,7 @@ from pydantic_core import ErrorDetails
 
 from app.authz import Permissions, is_admin_or_has_scopes
 from app.data_fetching.factory import DataFetcherFactory, background_data_fetch
-from app.llm.tools.user_data.factory import GetUserDataFactory
+from app.llm.tools.user_data.factory import GetUserDataFactory, background_users_fetch
 from app.models_stores_sql import PartialDirectory
 
 from ..auth import (
@@ -247,5 +247,7 @@ async def import_users(
             raise HTTPException(status_code=404, detail="Directory not found")
 
     data_fetcher = GetUserDataFactory(workspace=workspace, directory=dir)
-    background_tasks.add_task(background_data_fetch, data_fetcher, ovstore, dir, **body)
+    background_tasks.add_task(
+        background_users_fetch, data_fetcher, ovstore, dir, **body
+    )
     return {"message": "user data import happening in background"}
