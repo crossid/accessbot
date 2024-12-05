@@ -1,3 +1,4 @@
+from app.llm.tools.user_data.azure import AzureImpl
 from app.llm.tools.user_data.iface import UserDataInterface
 from app.llm.tools.user_data.mock import MockImpl
 from app.llm.tools.user_data.webhook import WebhookImpl
@@ -18,6 +19,8 @@ def GetUserDataFactory(workspace: Workspace, directory: Directory) -> UserDataIn
     match read_type:
         case "webhook":
             return WebhookImpl(**resolved_config)
+        case "azure":
+            return AzureImpl(**resolved_config)
         case "_mock_":
             return MockImpl(**resolved_config)
 
