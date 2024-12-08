@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated, Any, List
+from typing import Annotated, Any, List, Optional
 
 import jsonpatch
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
@@ -35,9 +35,11 @@ router = APIRouter(
 )
 
 
-# TODO consider adding provisioning_config, data_owner_config, etc.
 class CreateDirectoryBody(BaseModel):
     name: str
+    provisioning_config: Optional[dict] = None
+    read_config: Optional[dict] = None
+    data_owner_config: Optional[dict] = None
 
 
 @router.post(
@@ -58,6 +60,9 @@ def create(
             dir = Directory(
                 workspace_id=workspace.id,
                 name=body.name,
+                provisioning_config=body.provisioning_config,
+                read_config=body.read_config,
+                data_owner_config=body.data_owner_config,
                 created_by=current_user.email,
             )
             pdir = directory_store.insert(
@@ -73,7 +78,7 @@ def create(
                 error = ErrorDetails(
                     type="uniqueness",
                     loc=("body", "name"),
-                    msg=f"name '{workspace.name}' already exists",
+                    msg=f"name '{body.name}' already exists",
                 )
                 raise HTTPException(status_code=409, detail=[error])
             else:
