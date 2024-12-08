@@ -4,8 +4,8 @@ from collections import Counter
 
 from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import HumanMessage
-from langchain_core.output_parsers import StrOutputParser
-from pydantic import BaseModel
+from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
+from pydantic import BaseModel, Field
 
 from app.embeddings import create_embedding
 from app.llm.model import create_model
@@ -73,6 +73,7 @@ async def safe_get_user_access(udf: UserDataInterface, email: str, app_name: str
 def get_sys_msg():
     sys_msg = """
 You are a helpful assistant that takes in user data and outputs a list of access groups that the user has.
+The app name is: {app_name}
 Here is the access level density for the 10 closest users: {access_density}
 Here is the business logic:
 <business_logic>
@@ -85,20 +86,24 @@ Put the phrase "density" as "frequency" in percentage
 
 Remember: if there are no access groups to choose from, return an empty array.
 
-only return a json array as with with the access group name, access group score and explanation. 
-example output:
-[
-    {{"access_group": "access_group_name", "score": 10, "explanation": "reasoning for the score"}},
-    {{"access_group": "access_group_name", "score": 9, "explanation": "reasoning for the score"}},
-    {{"access_group": "access_group_name", "score": 8, "explanation": "reasoning for the score"}},
-]
+{format_instructions}
 """
     return SystemMessagePromptTemplate.from_template(template=sys_msg)
 
 
+class AccessGroupPrediction(BaseModel):
+    access_group: str
+    score: int
+    explanation: str
+
+
 class UserAccessPrediction(BaseModel):
-    app_name: str
-    prediction: str
+    app_name: str = Field(
+        description="the name of the application for which the prediction is made"
+    )
+    prediction: list[AccessGroupPrediction] = Field(
+        description="list of access group predictions"
+    )
 
 
 async def predict_access_to_user(
@@ -144,7 +149,7 @@ async def predict_access_to_user(
     sys_msg = get_sys_msg()
 
     model = create_model(temperature=0.5)
-    parser = StrOutputParser()
+    parser = PydanticOutputParser(pydantic_object=UserAccessPrediction)
 
     msg = HumanMessage(content=f"predict for user:{user_md}")
     prompt = ChatPromptTemplate.from_messages([sys_msg, msg])
@@ -154,10 +159,13 @@ async def predict_access_to_user(
         input={
             "access_density": access_density,
             "business_logic": app.business_instructions or "no special instructions",
+            "app_name": app.name,
+            "format_instructions": parser.get_format_instructions(),
         },
         config={"run_name": "access_prediction"},
     )
-    return UserAccessPrediction(app_name=app.name, prediction=response)
+
+    return UserAccessPrediction(app_name=app.name, prediction=response.prediction)
 
 
 def user_access_predictions_to_llm_format(predictions: list[UserAccessPrediction]):
